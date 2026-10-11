@@ -39,4 +39,11 @@
   <ItemGroup>
     <Using Include="ViaTTS.Lang" Static="true" />
   </ItemGroup>
+  <!-- Windows App SDK 自带 88 种语言的控件文字（.mui），软件界面只有中英文，只保留这两种；其他系统语言会退回英文 -->
+  <Target Name="TrimWinUILanguages" AfterTargets="Publish">
+    <ItemGroup>
+      <_ExtraMui Include="$(PublishDir)*\*.mui" Exclude="$(PublishDir)zh-CN\*.mui;$(PublishDir)en-us\*.mui" />
+    </ItemGroup>
+    <RemoveDir Directories="@(_ExtraMui->'%(RootDir)%(Directory)'->Distinct())" />
+  </Target>
 </Project>
