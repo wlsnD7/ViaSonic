@@ -69,12 +69,16 @@ GPT-SoVITS整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.c
 
 ```
 ViaTTS/
-├─ ui/              界面与音频（C#/WinUI 3）：Edge TTS、系统语音、播放、快捷键、配置
-├─ gsv_server.py    GPT-SoVITS合成服务
-├─ installer/       Inno Setup安装脚本
-├─ tools/           开发脚本（翻译检查）
-├─ app/             dotnet publish输出
-└─ dist/            安装包
+├─ ui/               界面与音频（C# / WinUI 3）
+├─ gsv_server.py     GPT-SoVITS 合成服务
+├─ installer/        Inno Setup 安装脚本
+├─ tools/            开发脚本（翻译检查）
+├─ design/           图标生成脚本
+├─ docs/             README 截图
+├─ start.bat         直接运行 app/ 里的程序
+├─ start_debug.bat   同上，并显示 GPT-SoVITS 服务的控制台
+├─ app/              dotnet publish 输出（构建后生成）
+└─ dist/             安装包（构建后生成）
 ```
 
 ### 构建

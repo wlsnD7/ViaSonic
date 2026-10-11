@@ -69,12 +69,16 @@ Closing the main window keeps ViaTTS running in the background. Right-click the 
 
 ```
 ViaTTS/
-├─ ui/              UI and audio (C#/WinUI 3): Edge TTS, system voice, playback, hotkeys, config
-├─ gsv_server.py    GPT-SoVITS synthesis service
-├─ installer/       Inno Setup script
-├─ tools/           Development scripts (translation check)
-├─ app/             dotnet publish output
-└─ dist/            Installer
+├─ ui/               UI and audio (C# / WinUI 3)
+├─ gsv_server.py     GPT-SoVITS synthesis service
+├─ installer/        Inno Setup script
+├─ tools/            Development scripts (translation check)
+├─ design/           Icon generation script
+├─ docs/             README screenshots
+├─ start.bat         Runs the app in app/
+├─ start_debug.bat   Same, with the GPT-SoVITS service console
+├─ app/              dotnet publish output (created by the build)
+└─ dist/             Installer (created by the build)
 ```
 
 ### Build
