@@ -39,6 +39,32 @@ GPT-SoVITS 是可选的：没装整合包也能用 Edge 和系统语音。整合
 
 关闭主窗口只是隐藏到托盘，快捷键照常可用；右键托盘图标可以退出。
 
+## 常见问题
+
+**对方听不到我说话**
+
+游戏或语音软件里的麦克风要选择CABLE Output，另外检查「音频」页的虚拟麦克风是不是输出到CABLE Input。
+
+**快捷键没反应**
+
+可能被其他软件占用，如果游戏以管理员身份运行，ViaTTS 也要以管理员身份运行，不然快捷键等对游戏都不起作用。
+
+**弹出输入框时游戏最小化了**
+
+把游戏改成无边框窗口模式。
+
+**Edge TTS 合成失败**
+
+Edge TTS需要联网。开着代理的话，试试关掉或者换个节点。
+
+**GPT-SoVITS 用不了**
+
+只支持 Nvidia显卡。第一次加载要 30 秒左右，属于正常现象。显存不够时，在「设备」里改成 CPU，不过速度会变慢。报错详情可以在「关于」页的日志里看到。
+
+**卸载后怎么删配置**
+
+配置、常用语和日志都在 %LOCALAPPDATA%\ViaTTS，卸载时会保留，需手动删除。
+
 ## 相比 QN-TTS 的改进
 
 - **游戏里打字不再被打断**：QN-TTS 默认用 `Space + 数字` 这类组合，在聊天框打空格加数字就会误触发。
@@ -70,8 +96,17 @@ ISCC installer\ViaTTS.iss
 
 `start_debug.bat` 会让 GPT-SoVITS 服务显示控制台窗口，方便看报错。
 
+## 免责声明
+
+- ViaTTS 是免费的开源软件。
+- Edge TTS 用的是微软 Edge「大声朗读」的接口。用 Edge TTS 时，你输入的文字会发送到微软的服务器。
+- ViaTTS 不收集、不上传任何数据，启动时会访问 GitHub 检查新版本。
+- ViaTTS 会监听全局快捷键，还会模拟按下按键说话的键。个别游戏的反作弊系统可能会因此有反应，请自行判断。因此造成的封号等后果由使用者承担。
+- 使用 GPT-SoVITS 模型时，不要用来冒充他人、诈骗或骚扰，由此产生的责任由使用者承担。模型的版权归原作者。
+
 ## 致谢与授权
 
 - 代码以 [MIT](LICENSE) 许可证开源。
+- 安装包附带的第三方组件及其许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 - 图标字样使用 [Yellowtail](https://fonts.google.com/specimen/Yellowtail)（Astigmatic，Apache License 2.0）。仓库里只有渲染好的图标图片，不包含字体文件；重新生成图标见 `design/make_icon_final.py`。
 - 老牧师模型来自 [cubk1/laomushi-tts](https://github.com/cubk1/laomushi-tts)，语音合成基于 [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)。

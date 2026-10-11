@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace ViaTTS;
 
 public class HotkeyException(string message) : Exception(message);
@@ -61,9 +59,6 @@ public static class HotkeyText
         var names = Mods.Where(x => (mods & x.Flag) != 0).Select(x => x.Name).Append(key);
         return (mods, Vk[key], string.Join("+", names));
     }
-
-    /// <summary>可以单独绑定的修饰键。</summary>
-    public static readonly string[] TapModifiers = ["alt", "ctrl", "shift"];
 
     public static List<string> PressedModifiers()
     {

@@ -91,6 +91,13 @@ public sealed partial class HomePage : Page
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
         LoadButton.IsEnabled = !ready && !loading;
 
+        if (A.NewRelease is { } rel)
+        {
+            UpdateBar.Title = $"发现新版本 {rel.Tag}";
+            UpdateLink.NavigateUri = new Uri(rel.Url);
+        }
+        UpdateBar.IsOpen = A.NewRelease != null;
+
         var kind = key == "gsv" ? en?["error_kind"]?.GetValue<string>() ?? "" : "";
         GsvBar.IsOpen = kind.Length > 0;
         if (kind == "gsv_missing")
@@ -106,13 +113,12 @@ public sealed partial class HomePage : Page
         {
             GsvBar.Title = Models.Count == 0 ? "还没有模型" : "模型文件不全";
             GsvBar.Message = en?["error"]?.GetValue<string>() ?? "";
-            var url = CurrentModel()?["url"]?.GetValue<string>() ?? "";
-            GsvLink.Content = "下载模型";
-            GsvLink.Visibility = url.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-            if (url.Length > 0) GsvLink.NavigateUri = new Uri(url);
+            GsvLink.Visibility = Visibility.Collapsed;
             ModelPanel.IsExpanded = true;
         }
     }
+
+    private void UpdateBar_Closed(InfoBar sender, InfoBarClosedEventArgs args) => A.NewRelease = null;
 
     private void ShowEngineOptions()
     {
@@ -216,12 +222,7 @@ public sealed partial class HomePage : Page
 
     private void AddModel_Click(object sender, RoutedEventArgs e)
     {
-        var m = new JsonObject
-        {
-            ["id"] = Guid.NewGuid().ToString("N")[..8],
-            ["name"] = "新模型",
-            ["gpt"] = "", ["sovits"] = "", ["ref"] = "", ["ref_text"] = "", ["ref_lang"] = "zh", ["url"] = "",
-        };
+        var m = ConfigStore.NewModel();
         Models.Add((JsonNode)m);
         A.Config["gsv_model"] = m["id"]!.GetValue<string>();
         A.Commit("gsv_models");

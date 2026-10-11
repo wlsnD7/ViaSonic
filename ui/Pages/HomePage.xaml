@@ -8,6 +8,18 @@
 
     <ScrollViewer Style="{StaticResource PageScroll}">
         <StackPanel Style="{StaticResource PageStack}">
+            <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,0,0,24">
+                <Image Source="ms-appx:///Assets/ViaTTS.png" Width="44" Height="44" VerticalAlignment="Center" />
+                <TextBlock Text="ViaTTS" Style="{StaticResource TitleLargeTextBlockStyle}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <InfoBar x:Name="UpdateBar" Severity="Informational" IsClosable="True" IsOpen="False" Margin="0,0,0,4"
+                     Closed="UpdateBar_Closed">
+                <InfoBar.ActionButton>
+                    <HyperlinkButton x:Name="UpdateLink" Content="下载" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
             <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="True" IsOpen="False" Margin="0,0,0,4"
                      Title="未检测到虚拟麦克风" Message="需要安装 VB-Cable，游戏里的人才能听到。">
                 <InfoBar.ActionButton>

@@ -2,7 +2,8 @@
 ; 编译：ISCC.exe installer\ViaTTS.iss，输入为 app\（dotnet publish 的输出）
 
 #define AppName "ViaTTS"
-#define AppVersion "1.0.0"
+; 版本号来自 exe（在 ui\ViaTTS.csproj 里改），去掉第四段 .0
+#define AppVersion RemoveFileExt(GetVersionNumbersString(AddBackslash(SourcePath) + "..\app\ViaTTS.exe"))
 #define AppExe "ViaTTS.exe"
 
 [Setup]
@@ -39,6 +40,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\gsv_server.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"

@@ -8,7 +8,6 @@ namespace ViaTTS.Pages;
 
 public sealed partial class AboutPage : Page
 {
-    private static App A => App.Current;
     private readonly StringBuilder _log = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private int _seq;
@@ -16,6 +15,7 @@ public sealed partial class AboutPage : Page
     public AboutPage()
     {
         InitializeComponent();
+        AppCard.Description = $"版本 {App.Version}";
         _timer.Tick += async (_, _) => await PollAsync();
     }
 

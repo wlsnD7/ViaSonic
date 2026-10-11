@@ -8,6 +8,7 @@ namespace ViaTTS;
 public partial class App : Application
 {
     public static new App Current => (App)Application.Current;
+    public static readonly string Version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "";
 
     /// <summary>界面线程上的配置，只在界面线程修改。</summary>
     public JsonObject Config { get; private set; } = new();
@@ -16,6 +17,8 @@ public partial class App : Application
 
     public Speaker Speaker { get; private set; } = null!;
     public JsonObject State { get; private set; } = new();
+    /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
+    public UpdateCheck.Release? NewRelease { get; set; }
     public Dictionary<string, string> HotkeyErrors { get; private set; } = [];
     public DispatcherQueue UI { get; private set; } = null!;
     public MainWindow Main { get; private set; } = null!;
@@ -93,6 +96,15 @@ public partial class App : Application
         _tray.ExitRequested += () => UI.TryEnqueue(ExitApp);
         Main.OnReady();
         Speaker.OnEngineChanged();
+        _ = CheckUpdateAsync();
+    }
+
+    private async Task CheckUpdateAsync()
+    {
+        NewRelease = await UpdateCheck.NewerAsync(Version);
+        if (NewRelease == null) return;
+        Log.Info($"发现新版本 {NewRelease.Tag}");
+        StateChanged?.Invoke();
     }
 
     /// <summary>页面沿用的状态结构：engine / busy / error / error_seq / engines[]。</summary>

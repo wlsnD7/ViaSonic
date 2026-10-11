@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace ViaTTS;
 
-/// <summary>config.json 读写、默认值与旧版迁移。</summary>
+/// <summary>config.json 读写与默认值。</summary>
 public static class ConfigStore
 {
     private static readonly JsonSerializerOptions WriteOptions = new()
@@ -25,7 +25,7 @@ public static class ConfigStore
     {
         ["id"] = NewId(),
         ["name"] = name,
-        ["gpt"] = "", ["sovits"] = "", ["ref"] = "", ["ref_text"] = "", ["ref_lang"] = "zh", ["url"] = "",
+        ["gpt"] = "", ["sovits"] = "", ["ref"] = "", ["ref_text"] = "", ["ref_lang"] = "zh",
     };
 
     public static string NewId() => Guid.NewGuid().ToString("N")[..8];
@@ -67,15 +67,12 @@ public static class ConfigStore
     public static JsonObject Load()
     {
         JsonObject? raw = null;
-        // 旧版把配置放在程序目录，第一次运行时搬过来
-        var legacy = AppPaths.ScriptDir == null ? null : Path.Combine(AppPaths.ScriptDir, "config.json");
-        foreach (var path in new[] { AppPaths.ConfigFile, legacy })
+        var path = AppPaths.ConfigFile;
+        if (File.Exists(path))
         {
-            if (path == null || !File.Exists(path)) continue;
             try
             {
                 raw = JsonNode.Parse(File.ReadAllText(path))?.AsObject();
-                break;
             }
             catch (Exception e)
             {
@@ -96,8 +93,6 @@ public static class ConfigStore
             }
         }
 
-        // 旧版的引擎名
-        if (cfg["engine"]?.GetValue<string>() == "laomushi") cfg["engine"] = "gsv";
         if (cfg["gsv_models"] is not JsonArray) cfg["gsv_models"] = new JsonArray();
         var models = cfg["gsv_models"]!.AsArray();
         var cur = cfg["gsv_model"]?.GetValue<string>();
