@@ -18,6 +18,7 @@ public sealed class WelcomeDialog : ContentDialog
     public WelcomeDialog(XamlRoot root)
     {
         XamlRoot = root;
+        Resources["ContentDialogMaxWidth"] = 640.0; // 默认 548 放不下卡片，右边会被截掉
         Title = T("欢迎使用 ViaTTS");
         PrimaryButtonText = T("开始使用");
         DefaultButton = ContentDialogButton.Primary;
@@ -66,7 +67,6 @@ public sealed class WelcomeDialog : ContentDialog
         if (advice.File != null)
         {
             _gsvActions.Children.Add(new HyperlinkButton { Content = T("下载"), NavigateUri = new Uri(advice.Url) });
-            _gsvActions.Children.Add(new HyperlinkButton { Content = "7-Zip", NavigateUri = new Uri(GsvDownload.SevenZipUrl) });
         }
         var pick = new Button { Content = T("选择文件夹") };
         pick.Click += async (_, _) =>

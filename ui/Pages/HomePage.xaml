@@ -97,14 +97,14 @@
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8B7;" /></tk:SettingsExpander.HeaderIcon>
                 <tk:SettingsExpander.Items>
                     <tk:SettingsCard Header="{l:T Text='名称'}">
-                        <TextBox x:Name="ModelName" Width="340" LostFocus="ModelField_LostFocus" Tag="name" />
+                        <TextBox x:Name="ModelName" Width="340" LostFocus="ModelField_LostFocus" TextChanged="ModelField_TextChanged" KeyDown="ModelField_KeyDown" Tag="name" />
                     </tk:SettingsCard>
                     <tk:SettingsCard>
                         <tk:SettingsCard.Header>
                             <c:InfoHeader Text="{l:T Text='GPT 权重'}" Tip="{l:T Text='训练得到的 .ckpt 文件（GPT_weights 目录下）。'}" />
                         </tk:SettingsCard.Header>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox x:Name="ModelGpt" Width="340" LostFocus="ModelField_LostFocus" Tag="gpt" />
+                            <TextBox x:Name="ModelGpt" Width="340" LostFocus="ModelField_LostFocus" TextChanged="ModelField_TextChanged" KeyDown="ModelField_KeyDown" Tag="gpt" />
                             <Button Content="{l:T Text='浏览'}" Click="BrowseModelFile_Click" Tag="gpt" />
                         </StackPanel>
                     </tk:SettingsCard>
@@ -113,7 +113,7 @@
                             <c:InfoHeader Text="{l:T Text='SoVITS 权重'}" Tip="{l:T Text='训练得到的 .pth 文件（SoVITS_weights 目录下）。版本会自动识别。'}" />
                         </tk:SettingsCard.Header>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox x:Name="ModelSovits" Width="340" LostFocus="ModelField_LostFocus" Tag="sovits" />
+                            <TextBox x:Name="ModelSovits" Width="340" LostFocus="ModelField_LostFocus" TextChanged="ModelField_TextChanged" KeyDown="ModelField_KeyDown" Tag="sovits" />
                             <Button Content="{l:T Text='浏览'}" Click="BrowseModelFile_Click" Tag="sovits" />
                         </StackPanel>
                     </tk:SettingsCard>
@@ -122,7 +122,7 @@
                             <c:InfoHeader Text="{l:T Text='参考音频'}" Tip="{l:T Text='3~10 秒的人声片段，决定音色和语气。'}" />
                         </tk:SettingsCard.Header>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox x:Name="ModelRef" Width="340" LostFocus="ModelField_LostFocus" Tag="ref" />
+                            <TextBox x:Name="ModelRef" Width="340" LostFocus="ModelField_LostFocus" TextChanged="ModelField_TextChanged" KeyDown="ModelField_KeyDown" Tag="ref" />
                             <Button Content="{l:T Text='浏览'}" Click="BrowseModelFile_Click" Tag="ref" />
                         </StackPanel>
                     </tk:SettingsCard>
@@ -130,7 +130,7 @@
                         <tk:SettingsCard.Header>
                             <c:InfoHeader Text="{l:T Text='参考文本'}" Tip="{l:T Text='参考音频里说的文本，需要与音频完全一致。'}" />
                         </tk:SettingsCard.Header>
-                        <TextBox x:Name="ModelRefText" Width="340" LostFocus="ModelField_LostFocus" Tag="ref_text" />
+                        <TextBox x:Name="ModelRefText" Width="340" LostFocus="ModelField_LostFocus" TextChanged="ModelField_TextChanged" KeyDown="ModelField_KeyDown" Tag="ref_text" />
                     </tk:SettingsCard>
                     <tk:SettingsCard Header="{l:T Text='参考语言'}">
                         <ComboBox x:Name="ModelRefLang" MinWidth="160" SelectionChanged="ModelRefLang_Changed" />

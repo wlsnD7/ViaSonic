@@ -16,6 +16,7 @@ public sealed partial class HomePage : Page
 
     private static App A => App.Current;
     private readonly Debouncer _save = new();
+    private readonly Debouncer _fieldSave = new(500);
     private bool _init = true;
     private List<(string Id, string Name)> _edge = [], _sapi = [];
 
@@ -255,21 +256,52 @@ public sealed partial class HomePage : Page
         FillModels();
     }
 
-    private void SetModelField(string key, string value)
+    private void SetModelField(string key, string value) => SetModelField(CurrentModel(), key, value);
+
+    private void SetModelField(JsonObject? model, string key, string value)
     {
-        var cur = CurrentModel();
-        if (cur == null || Field(cur, key) == value) return;
-        cur[key] = value;
+        if (model == null || !Models.Contains(model) || Field(model, key) == value) return;
+        model[key] = value;
         A.Commit("gsv_models");
-        if (key == "name") FillModels();
+        // 改名只更新下拉框里这一项；重建列表会重置正在输入的文本框
+        if (key == "name" && ModelBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Field(model, "id")) is { } item)
+            item.Content = value;
+    }
+
+    /// <summary>模型文件里的输入框：停止输入 0.5 秒后保存，回车或失去焦点时立即保存。</summary>
+    private void SaveModelField(TextBox box, JsonObject? model, bool final)
+    {
+        var key = (string)box.Tag;
+        var v = box.Text.Trim();
+        if (key == "name" && v.Length == 0)
+        {
+            if (!final) return; // 正在输入时允许暂时为空
+            v = T("未命名");
+            _init = true;
+            box.Text = v;
+            _init = false;
+        }
+        SetModelField(model, key, v);
+    }
+
+    private void ModelField_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_init) return;
+        var box = (TextBox)sender;
+        var model = CurrentModel(); // 记下当时的模型，防止切换模型后存错地方
+        _fieldSave.Run(() => SaveModelField(box, model, false));
+    }
+
+    private void ModelField_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Enter) return;
+        e.Handled = true;
+        SaveModelField((TextBox)sender, CurrentModel(), true);
     }
 
     private void ModelField_LostFocus(object sender, RoutedEventArgs e)
     {
-        var box = (TextBox)sender;
-        var v = box.Text.Trim();
-        if ((string)box.Tag == "name" && v.Length == 0) v = T("未命名");
-        SetModelField((string)box.Tag, v);
+        SaveModelField((TextBox)sender, CurrentModel(), true);
     }
 
     private void ModelRefLang_Changed(object sender, SelectionChangedEventArgs e)

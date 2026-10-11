@@ -194,7 +194,7 @@ public static partial class Lang
         ["系统语音失败：{0}"] = "System voice failed: {0}",
         ["未知显卡"] = "Unknown GPU",
         ["没有检测到 Nvidia 显卡，GPT-SoVITS 会很慢，建议直接使用 Edge TTS 或系统语音。"] = "No NVIDIA GPU found. GPT-SoVITS would be very slow; use Edge TTS or System voice instead.",
-        ["检测到 {0}，请下载 {1}（约 9GB），用 7-Zip 解压后选择解压出来的文件夹。"] = "Found {0}. Download {1} (about 9 GB), extract it with 7-Zip, then choose the extracted folder.",
+        ["检测到 {0}，请下载 {1}（约 9GB），解压后选择解压出来的文件夹。"] = "Found {0}. Download {1} (about 9 GB), extract it, then choose the extracted folder.",
 
         // 播放
         ["找不到虚拟麦克风（未安装 VB-Cable）"] = "Virtual mic not found (VB-Cable not installed)",

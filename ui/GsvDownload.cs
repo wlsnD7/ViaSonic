@@ -7,7 +7,6 @@ public static class GsvDownload
 {
     private const string Base = "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/resolve/main/";
     public const string ListUrl = "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main";
-    public const string SevenZipUrl = "https://www.7-zip.org/";
 
     public record Advice(string Gpu, string? File, string Url, string Text);
 
@@ -40,6 +39,6 @@ public static class GsvDownload
         bool rtx50 = System.Text.RegularExpressions.Regex.IsMatch(nvidia, @"RTX\s*50\d\d", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         var file = rtx50 ? "GPT-SoVITS-v2pro-20250604-nvidia50.7z" : "GPT-SoVITS-v2pro-20250604.7z";
         return new Advice(nvidia, file, Base + file,
-            T("检测到 {0}，请下载 {1}（约 9GB），用 7-Zip 解压后选择解压出来的文件夹。", nvidia, file));
+            T("检测到 {0}，请下载 {1}（约 9GB），解压后选择解压出来的文件夹。", nvidia, file));
     }
 }
