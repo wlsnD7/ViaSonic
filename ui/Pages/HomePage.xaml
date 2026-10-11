@@ -74,7 +74,7 @@
                     </tk:SettingsCard>
                     <tk:SettingsCard>
                         <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="{l:T Text='设备'}" Tip="{l:T Text='CUDA 使用 Nvidia显卡推理，CPU在没有 Nvidia显卡时使用。修改后需重启。'}" />
+                            <c:InfoHeader Text="{l:T Text='设备'}" Tip="{l:T Text='CUDA 使用 NVIDIA 显卡推理，CPU在没有 NVIDIA 显卡时使用。修改后需重启。'}" />
                         </tk:SettingsCard.Header>
                         <ComboBox x:Name="GsvDevice" MinWidth="160" SelectionChanged="GsvDevice_Changed">
                             <ComboBoxItem Content="CUDA" Tag="cuda" />

@@ -49,7 +49,7 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 1. Install [VB-Audio Virtual Cable](https://vb-audio.com/Cable/). The app tells you if it's missing.
 2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**.
 3. The Audio page outputs to `CABLE Input` by default, and also plays to your headphones so you can hear it.
-4. If the game uses push to talk, enter the key under Push to talk (e.g. `v`, `mouse4`). The key is held down while speech plays.
+4. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays.
 5. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
 
 ## Default hotkeys
@@ -90,7 +90,6 @@ dotnet publish ui -c Release -p:Platform=x64 -o app
 ISCC installer\ViaTTS.iss
 ```
 
-`start_debug.bat` shows the GPT-SoVITS service console window.
 
 ## License
 

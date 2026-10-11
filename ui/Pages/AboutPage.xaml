@@ -39,7 +39,7 @@
                     <tk:SettingsCard Header="{l:T Text='Edge TTS 合成失败'}"
                                      Description="{l:T Text='Edge TTS需要联网。开着代理的话，试试关掉或者换个节点。'}" />
                     <tk:SettingsCard Header="{l:T Text='GPT-SoVITS 用不了'}"
-                                     Description="{l:T Text='只支持 Nvidia显卡。第一次加载要 30 秒左右，属于正常现象。显存不够时，在「设备」里改成 CPU，不过速度会变慢。报错详情可以在「关于」页的日志里看到。'}" />
+                                     Description="{l:T Text='只支持 NVIDIA 显卡。第一次加载要 30 秒左右，属于正常现象。显存不够时，在「设备」里改成 CPU，不过速度会变慢。报错详情可以在「关于」页的日志里看到。'}" />
                     <tk:SettingsCard Header="{l:T Text='卸载后怎么删配置'}"
                                      Description="{l:T Text='配置、常用语和日志都在 %LOCALAPPDATA%\ViaTTS，卸载时会保留，需手动删除。'}" />
                 </tk:SettingsExpander.Items>

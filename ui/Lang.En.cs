@@ -38,7 +38,7 @@ public static partial class Lang
         ["模型"] = "Model",
         ["添加模型"] = "Add model",
         ["删除模型"] = "Delete model",
-        ["CUDA 使用 Nvidia显卡推理，CPU在没有 Nvidia显卡时使用。修改后需重启。"] = "CUDA runs on an NVIDIA GPU. Use CPU if you don't have one. Restart to apply.",
+        ["CUDA 使用 NVIDIA 显卡推理，CPU在没有 NVIDIA 显卡时使用。修改后需重启。"] = "CUDA runs on an NVIDIA GPU. Use CPU if you don't have one. Restart to apply.",
         ["GPT-SoVITS 目录"] = "GPT-SoVITS folder",
         ["GPT-SoVITS 整合包所在的文件夹。"] = "The folder of the GPT-SoVITS package.",
         ["模型文件"] = "Model files",
@@ -109,7 +109,7 @@ public static partial class Lang
         ["Edge TTS 合成失败"] = "Edge TTS fails",
         ["Edge TTS需要联网。开着代理的话，试试关掉或者换个节点。"] = "Edge TTS needs an internet connection. If you use a proxy, try turning it off or switching servers.",
         ["GPT-SoVITS 用不了"] = "GPT-SoVITS doesn't work",
-        ["只支持 Nvidia显卡。第一次加载要 30 秒左右，属于正常现象。显存不够时，在「设备」里改成 CPU，不过速度会变慢。报错详情可以在「关于」页的日志里看到。"] = "Only NVIDIA GPUs are supported. The first load takes about 30 seconds, which is normal. If you run out of VRAM, set Device to CPU, but it will be slower. Error details are in the log on the About page.",
+        ["只支持 NVIDIA 显卡。第一次加载要 30 秒左右，属于正常现象。显存不够时，在「设备」里改成 CPU，不过速度会变慢。报错详情可以在「关于」页的日志里看到。"] = "Only NVIDIA GPUs are supported. The first load takes about 30 seconds, which is normal. If you run out of VRAM, set Device to CPU, but it will be slower. Error details are in the log on the About page.",
         ["卸载后怎么删配置"] = "Removing settings after uninstalling",
         ["配置、常用语和日志都在 %LOCALAPPDATA%\\ViaTTS，卸载时会保留，需手动删除。"] = "Settings, phrases and logs are in %LOCALAPPDATA%\\ViaTTS. They are kept when you uninstall; delete them manually.",
         ["免责声明"] = "Disclaimer",
@@ -192,7 +192,7 @@ public static partial class Lang
         ["读取系统语音失败"] = "Failed to read system voices",
         ["系统语音失败：{0}"] = "System voice failed: {0}",
         ["未知显卡"] = "Unknown GPU",
-        ["没有检测到 Nvidia 显卡，GPT-SoVITS 会很慢，建议直接使用 Edge TTS 或系统语音。"] = "No NVIDIA GPU found. GPT-SoVITS would be very slow; use Edge TTS or System voice instead.",
+        ["没有检测到 NVIDIA 显卡，GPT-SoVITS 会很慢，建议直接使用 Edge TTS 或系统语音。"] = "No NVIDIA GPU found. GPT-SoVITS would be very slow; use Edge TTS or System voice instead.",
         ["检测到 {0}，请下载 {1}（约 9GB），解压后选择解压出来的文件夹。"] = "Found {0}. Download {1} (about 9 GB), extract it, then choose the extracted folder.",
 
         // 播放
