@@ -95,4 +95,4 @@ ISCC installer\ViaTTS.iss
 
 - 代码以 [MIT](LICENSE) 许可证开源。
 - 安装包附带的第三方组件及其许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-- 图标字样使用 [Yellowtail](https://fonts.google.com/specimen/Yellowtail)（Astigmatic，Apache License 2.0）。仓库里只有渲染好的图标图片，不包含字体文件；重新生成图标见 `design/make_icon_final.py`。
+- 图标字样使用 [Yellowtail](https://fonts.google.com/specimen/Yellowtail)（Astigmatic，Apache License 2.0）。

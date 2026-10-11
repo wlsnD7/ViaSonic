@@ -95,4 +95,4 @@ ISCC installer\ViaTTS.iss
 
 - The code is open source under the [MIT](LICENSE) license.
 - Third-party components bundled with the installer and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- The icon lettering uses [Yellowtail](https://fonts.google.com/specimen/Yellowtail) (Astigmatic, Apache License 2.0). The repository only contains the rendered icon image, not the font file. To regenerate the icon, see `design/make_icon_final.py`.
+- The icon lettering uses [Yellowtail](https://fonts.google.com/specimen/Yellowtail) (Astigmatic, Apache License 2.0). 
