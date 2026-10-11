@@ -7,12 +7,11 @@
 Text to speech for games and voice chat, played through a virtual microphone.
 
 [![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/wlsnD7/ViaTTS/total)](https://github.com/wlsnD7/ViaTTS/releases)
 [![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet)
 
-[Download](https://github.com/wlsnD7/ViaTTS/releases/latest) · [In-game setup](#in-game-setup) · [Hotkeys](#default-hotkeys) · [Development](#development)
+[Install](#install) · [In-game setup](#in-game-setup) · [Hotkeys](#default-hotkeys) · [Development](#development)
 
 [简体中文](README.md) | English
 

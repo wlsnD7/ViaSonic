@@ -7,12 +7,11 @@
 游戏或语音软件内的文本转语音，通过虚拟麦克风播放生成的语音。
 
 [![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/wlsnD7/ViaTTS/total)](https://github.com/wlsnD7/ViaTTS/releases)
 [![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet)
 
-[下载](https://github.com/wlsnD7/ViaTTS/releases/latest) · [游戏内设置](#游戏内设置) · [快捷键](#默认快捷键) · [开发](#开发)
+[安装](#安装) · [游戏内设置](#游戏内设置) · [快捷键](#默认快捷键) · [开发](#开发)
 
 简体中文 | [English](README.en.md)
 
