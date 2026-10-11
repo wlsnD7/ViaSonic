@@ -76,7 +76,6 @@ public static partial class Lang
         ["按键说话"] = "Push to talk",
         ["软件内「按键说话」语音播放期间会自动按住这个键，播完松开。"] = "This key is held down while speech plays and released after, for apps that use push to talk.",
         ["按键"] = "Key",
-        ["如 v、mouse4"] = "e.g. v, mouse4",
         ["提前按下 (ms)"] = "Press early (ms)",
         ["按键说话会等待一段时间再开始播放。"] = "With push to talk, playback starts after this delay.",
 

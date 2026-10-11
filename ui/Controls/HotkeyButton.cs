@@ -7,6 +7,7 @@ namespace ViaTTS.Controls;
 /// <summary>
 /// 点击后按下按键录入：组合键、单个键，或单独按一下 Alt / Ctrl / Shift。Esc 取消，Backspace 清除。
 /// 录入期间暂停全局快捷键，否则已注册的组合会被系统吞掉。
+/// SingleKey（按键说话用）：只录一个键，不组合；还能在按钮上按鼠标中键 / 侧键录成 mouse3 / mouse4 / mouse5。
 /// </summary>
 public sealed class HotkeyButton : Button
 {
@@ -17,6 +18,8 @@ public sealed class HotkeyButton : Button
     private readonly TextBlock _text = new();
 
     public event Action<string>? HotkeyChanged;
+
+    public bool SingleKey { get; set; }
 
     public HotkeyButton()
     {
@@ -31,6 +34,8 @@ public sealed class HotkeyButton : Button
         PreviewKeyDown += OnKey;
         PreviewKeyUp += OnKeyUp;
         LostFocus += (_, _) => Finish(null);
+        // Button 自己会处理指针事件，要收到已处理的事件才能拿到中键和侧键
+        AddHandler(PointerPressedEvent, new PointerEventHandler(OnPointer), true);
         Show();
     }
 
@@ -58,6 +63,14 @@ public sealed class HotkeyButton : Button
         if (!_capturing) return;
         e.Handled = true;
         int vk = (int)e.Key;
+        if (SingleKey)
+        {
+            if (vk == 0x1B) Finish(null);
+            else if (vk == 0x08) Finish("");
+            else if (HotkeyText.VkName.TryGetValue(vk, out var key)) Finish(key);
+            else Show(T("不支持该键"));
+            return;
+        }
         var mods = HotkeyText.PressedModifiers();
         if (HotkeyText.ModifierVks.Contains(vk))
         {
@@ -79,11 +92,22 @@ public sealed class HotkeyButton : Button
         }
     }
 
+    private void OnPointer(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_capturing || !SingleKey) return;
+        var p = e.GetCurrentPoint(this).Properties;
+        var name = p.IsMiddleButtonPressed ? "mouse3" : p.IsXButton1Pressed ? "mouse4" : p.IsXButton2Pressed ? "mouse5" : null;
+        if (name == null) return;
+        e.Handled = true;
+        Finish(name);
+    }
+
     /// <summary>修饰键全部松开、期间没按过别的键：录为「单独按一下这个修饰键」。</summary>
     private void OnKeyUp(object sender, KeyRoutedEventArgs e)
     {
         if (!_capturing) return;
         e.Handled = true;
+        if (SingleKey) return;
         if (_mainPressed || _modsSeen.Count == 0 || !HotkeyText.ModifierVks.Contains((int)e.Key)) return;
         if (HotkeyText.PressedModifiers().Count > 0) return; // 还有修饰键没松开
         var seen = _modsSeen.ToList();

@@ -11,7 +11,11 @@ public sealed partial class AudioPage : Page
     private readonly Debouncer _save = new();
     private bool _init = true;
 
-    public AudioPage() => InitializeComponent();
+    public AudioPage()
+    {
+        InitializeComponent();
+        PttKey.HotkeyChanged += v => A.Set("ptt_key", v);
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -25,7 +29,7 @@ public sealed partial class AudioPage : Page
         PlayMode.SelectedItem = PlayMode.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == A.Str("play_mode"));
         LeadSilence.Value = A.Num("lead_silence_ms");
         PttDelay.Value = A.Num("ptt_delay_ms");
-        PttKey.Text = A.Str("ptt_key");
+        PttKey.Value = A.Str("ptt_key");
         A.ConfigReplaced += OnConfigReplaced;
         _init = false;
         await LoadDevices();
@@ -33,7 +37,7 @@ public sealed partial class AudioPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e) => A.ConfigReplaced -= OnConfigReplaced;
 
-    private void OnConfigReplaced() => PttKey.Text = A.Str("ptt_key");
+    private void OnConfigReplaced() => PttKey.Value = A.Str("ptt_key");
 
     private async Task LoadDevices()
     {
@@ -95,11 +99,5 @@ public sealed partial class AudioPage : Page
     {
         if (_init || double.IsNaN(args.NewValue)) return;
         A.Set((string)sender.Tag, (int)Math.Clamp(args.NewValue, sender.Minimum, sender.Maximum));
-    }
-
-    private void Ptt_LostFocus(object sender, RoutedEventArgs e)
-    {
-        var v = PttKey.Text.Trim().ToLowerInvariant();
-        if (v != A.Str("ptt_key")) A.Set("ptt_key", v);
     }
 }

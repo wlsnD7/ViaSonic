@@ -86,7 +86,7 @@
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE962;" /></tk:SettingsExpander.HeaderIcon>
                 <tk:SettingsExpander.Items>
                     <tk:SettingsCard Header="{l:T Text='按键'}">
-                        <TextBox x:Name="PttKey" MinWidth="160" PlaceholderText="{l:T Text='如 v、mouse4'}" LostFocus="Ptt_LostFocus" />
+                        <c:HotkeyButton x:Name="PttKey" SingleKey="True" />
                     </tk:SettingsCard>
                     <tk:SettingsCard>
                         <tk:SettingsCard.Header>
