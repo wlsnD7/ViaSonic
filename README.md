@@ -32,7 +32,7 @@
 | 系统语音 | Windows自带，离线。 |
 | GPT-SoVITS（可选） | 可添加任意GPT-SoVITS模型（GPT权重 + SoVITS权重 + 参考音频），版本自动识别。需要Nvidia显卡和GPT-SoVITS整合包。 |
 
-GPT-SoVITS整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 Nvidia显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约9GB）。需要使用时，在软件主页「GPT-SoVITS目录」指定整合包位置（或放在ViaTTS旁边的`GPT-SoVITS`文件夹，会自动找到），在「模型」里点击加号添加模型。
+GPT-SoVITS整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 Nvidia显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约9GB）。需要使用时，在软件主页「GPT-SoVITS目录」指定整合包位置，在「模型」里点击加号添加模型。
 
 ## 游戏内设置
 
