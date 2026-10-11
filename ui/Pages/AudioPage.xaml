@@ -3,30 +3,31 @@
     x:Class="ViaTTS.Pages.AudioPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ViaTTS.Markup"
     xmlns:tk="using:CommunityToolkit.WinUI.Controls"
     xmlns:c="using:ViaTTS.Controls">
 
     <ScrollViewer Style="{StaticResource PageScroll}">
         <StackPanel Style="{StaticResource PageStack}">
-            <TextBlock Text="音频" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="{l:T Text='音频'}" Style="{StaticResource PageTitle}" />
 
-            <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="未检测到 VB-Cable" Margin="0,0,0,8">
+            <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='未检测到 VB-Cable'}" Margin="0,0,0,8">
                 <InfoBar.ActionButton>
-                    <HyperlinkButton Content="下载" NavigateUri="https://vb-audio.com/Cable/" />
+                    <HyperlinkButton Content="{l:T Text='下载'}" NavigateUri="https://vb-audio.com/Cable/" />
                 </InfoBar.ActionButton>
             </InfoBar>
 
             <tk:SettingsExpander IsExpanded="True">
                 <tk:SettingsExpander.Header>
-                    <c:InfoHeader Text="虚拟麦克风" Tip="通过VB-Cable播放语音，需在软件里把麦克风设置为 CABLE Output。" />
+                    <c:InfoHeader Text="{l:T Text='虚拟麦克风'}" Tip="{l:T Text='通过VB-Cable播放语音，需在软件里把麦克风设置为 CABLE Output。'}" />
                 </tk:SettingsExpander.Header>
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE720;" /></tk:SettingsExpander.HeaderIcon>
-                <ToggleSwitch x:Name="MicOn" Toggled="Toggle_Changed" Tag="mic_enabled" />
+                <ToggleSwitch x:Name="MicOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="mic_enabled" />
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard Header="设备">
+                    <tk:SettingsCard Header="{l:T Text='设备'}">
                         <ComboBox x:Name="MicDevice" MinWidth="320" SelectionChanged="Device_Changed" Tag="mic_device" />
                     </tk:SettingsCard>
-                    <tk:SettingsCard Header="音量">
+                    <tk:SettingsCard Header="{l:T Text='音量'}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <TextBlock x:Name="MicVolText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
                             <Slider x:Name="MicVol" Width="220" Minimum="0" Maximum="150" StepFrequency="5" ValueChanged="Volume_Changed" Tag="mic_volume" />
@@ -35,14 +36,14 @@
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
-            <tk:SettingsExpander Header="监听" IsExpanded="True">
+            <tk:SettingsExpander Header="{l:T Text='监听'}" IsExpanded="True">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE7F6;" /></tk:SettingsExpander.HeaderIcon>
-                <ToggleSwitch x:Name="MonOn" Toggled="Toggle_Changed" Tag="monitor_enabled" />
+                <ToggleSwitch x:Name="MonOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="monitor_enabled" />
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard Header="设备">
+                    <tk:SettingsCard Header="{l:T Text='设备'}">
                         <ComboBox x:Name="MonDevice" MinWidth="320" SelectionChanged="Device_Changed" Tag="monitor_device" />
                     </tk:SettingsCard>
-                    <tk:SettingsCard Header="音量">
+                    <tk:SettingsCard Header="{l:T Text='音量'}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <TextBlock x:Name="MonVolText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
                             <Slider x:Name="MonVol" Width="220" Minimum="0" Maximum="150" StepFrequency="5" ValueChanged="Volume_Changed" Tag="monitor_volume" />
@@ -51,27 +52,27 @@
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
-            <tk:SettingsCard Header="刷新设备">
+            <tk:SettingsCard Header="{l:T Text='刷新设备'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE72C;" /></tk:SettingsCard.HeaderIcon>
-                <Button Content="刷新" Click="Refresh_Click" />
+                <Button Content="{l:T Text='刷新'}" Click="Refresh_Click" />
             </tk:SettingsCard>
 
-            <TextBlock Text="播放" Style="{StaticResource SectionHeader}" />
+            <TextBlock Text="{l:T Text='播放'}" Style="{StaticResource SectionHeader}" />
 
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="连续发送" Tip="打断：立刻播放新语音；排队＝播放完上一条再播新语音。" />
+                    <c:InfoHeader Text="{l:T Text='连续发送'}" Tip="{l:T Text='打断：立刻播放新语音；排队＝播放完上一条再播新语音。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8B1;" /></tk:SettingsCard.HeaderIcon>
                 <ComboBox x:Name="PlayMode" MinWidth="200" SelectionChanged="PlayMode_Changed">
-                    <ComboBoxItem Content="打断" Tag="interrupt" />
-                    <ComboBoxItem Content="排队" Tag="queue" />
+                    <ComboBoxItem Content="{l:T Text='打断'}" Tag="interrupt" />
+                    <ComboBoxItem Content="{l:T Text='排队'}" Tag="queue" />
                 </ComboBox>
             </tk:SettingsCard>
 
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="前置静音 (ms)" Tip="在语音开头添加一段静音，软件内「语音激活」检测声音需要一点时间。" />
+                    <c:InfoHeader Text="{l:T Text='前置静音 (ms)'}" Tip="{l:T Text='在语音开头添加一段静音，软件内「语音激活」检测声音需要一点时间。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE916;" /></tk:SettingsCard.HeaderIcon>
                 <NumberBox x:Name="LeadSilence" Minimum="0" Maximum="1000" SmallChange="20" LargeChange="100"
@@ -80,16 +81,16 @@
 
             <tk:SettingsExpander IsExpanded="True">
                 <tk:SettingsExpander.Header>
-                    <c:InfoHeader Text="按键说话" Tip="软件内「按键说话」语音播放期间会自动按住这个键，播完松开。" />
+                    <c:InfoHeader Text="{l:T Text='按键说话'}" Tip="{l:T Text='软件内「按键说话」语音播放期间会自动按住这个键，播完松开。'}" />
                 </tk:SettingsExpander.Header>
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE962;" /></tk:SettingsExpander.HeaderIcon>
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard Header="按键">
-                        <TextBox x:Name="PttKey" MinWidth="160" PlaceholderText="如 v、mouse4" LostFocus="Ptt_LostFocus" />
+                    <tk:SettingsCard Header="{l:T Text='按键'}">
+                        <TextBox x:Name="PttKey" MinWidth="160" PlaceholderText="{l:T Text='如 v、mouse4'}" LostFocus="Ptt_LostFocus" />
                     </tk:SettingsCard>
                     <tk:SettingsCard>
                         <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="提前按下 (ms)" Tip="按键说话会等待一段时间再开始播放。" />
+                            <c:InfoHeader Text="{l:T Text='提前按下 (ms)'}" Tip="{l:T Text='按键说话会等待一段时间再开始播放。'}" />
                         </tk:SettingsCard.Header>
                         <NumberBox x:Name="PttDelay" Minimum="0" Maximum="1000" SmallChange="50" LargeChange="100"
                                    SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="Number_Changed" Tag="ptt_delay_ms" />

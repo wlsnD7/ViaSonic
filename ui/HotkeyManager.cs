@@ -9,10 +9,13 @@ namespace ViaTTS;
 /// 单独按一下 Alt / Ctrl / Shift 时用低级键盘钩子检测（按下后中间没按别的键就松开），只在有这类绑定时才安装，不拦截按键。
 /// 在独立线程跑消息循环，回调也在该线程里触发。
 /// </summary>
+/// <summary>快捷键错误：Message 是已经翻译好的原因；ConflictWith 不为空时表示和这个绑定重复，显示时再生成文字。</summary>
+public record HotkeyError(string Message, string? ConflictWith = null);
+
 public sealed partial class HotkeyManager : IDisposable
 {
     private readonly Action<string> _onHotkey;
-    private readonly ConcurrentQueue<(Dictionary<string, string> Bindings, TaskCompletionSource<Dictionary<string, string>> Done)> _ops = new();
+    private readonly ConcurrentQueue<(Dictionary<string, string> Bindings, TaskCompletionSource<Dictionary<string, HotkeyError>> Done)> _ops = new();
     private readonly Dictionary<int, string> _ids = [];
     private readonly Dictionary<string, string> _taps = []; // 修饰键 → 绑定名
     private readonly ManualResetEventSlim _ready = new();
@@ -26,21 +29,21 @@ public sealed partial class HotkeyManager : IDisposable
         _ready.Wait(5000);
     }
 
-    /// <summary>替换全部绑定，返回 {名称: 错误信息}。</summary>
-    public Dictionary<string, string> SetBindings(Dictionary<string, string> bindings)
+    /// <summary>替换全部绑定，返回 {名称: 错误}。</summary>
+    public Dictionary<string, HotkeyError> SetBindings(Dictionary<string, string> bindings)
     {
-        var tcs = new TaskCompletionSource<Dictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tcs = new TaskCompletionSource<Dictionary<string, HotkeyError>>(TaskCreationOptions.RunContinuationsAsynchronously);
         _ops.Enqueue((bindings, tcs));
         Native.PostThreadMessage(_threadId, Native.WM_APP, IntPtr.Zero, IntPtr.Zero);
         return tcs.Task.Wait(5000) ? tcs.Task.Result : [];
     }
 
-    private Dictionary<string, string> Apply(Dictionary<string, string> bindings)
+    private Dictionary<string, HotkeyError> Apply(Dictionary<string, string> bindings)
     {
         foreach (var id in _ids.Keys) Native.UnregisterHotKey(IntPtr.Zero, id);
         _ids.Clear();
         _taps.Clear();
-        var errors = new Dictionary<string, string>();
+        var errors = new Dictionary<string, HotkeyError>();
         var used = new Dictionary<string, string>();
         int nextId = 1;
         foreach (var (name, text) in bindings)
@@ -49,17 +52,17 @@ public sealed partial class HotkeyManager : IDisposable
             try
             {
                 var (mods, vk, norm) = HotkeyText.Parse(text);
-                if (used.TryGetValue(norm, out var other)) { errors[name] = $"与「{other}」重复"; continue; }
+                if (used.TryGetValue(norm, out var other)) { errors[name] = new HotkeyError("", other); continue; }
                 if (vk == 0) _taps[norm] = name;
                 else if (!Native.RegisterHotKey(IntPtr.Zero, nextId, mods | Native.MOD_NOREPEAT, vk))
                 {
-                    errors[name] = "已被占用";
+                    errors[name] = new HotkeyError(T("已被占用"));
                     continue;
                 }
                 else _ids[nextId++] = name;
                 used[norm] = name;
             }
-            catch (HotkeyException e) { errors[name] = e.Message; }
+            catch (HotkeyException e) { errors[name] = new HotkeyError(e.Message); }
         }
         UpdateHook();
         return errors;
@@ -130,7 +133,7 @@ public sealed partial class HotkeyManager : IDisposable
         if (_taps.Count > 0 && _hook == IntPtr.Zero)
         {
             _hook = SetWindowsHookEx(WH_KEYBOARD_LL, _hookProc, GetModuleHandle(null), 0);
-            if (_hook == IntPtr.Zero) Log.Error($"安装键盘钩子失败（{Marshal.GetLastWin32Error()}），单独修饰键的快捷键不可用");
+            if (_hook == IntPtr.Zero) Log.Error(T("安装键盘钩子失败（{0}），单独修饰键的快捷键不可用", Marshal.GetLastWin32Error()));
         }
         else if (_taps.Count == 0 && _hook != IntPtr.Zero)
         {

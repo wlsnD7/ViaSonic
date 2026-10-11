@@ -1,6 +1,7 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using ViaTTS.Pages;
 using WinRT.Interop;
 
@@ -87,6 +88,27 @@ public sealed partial class MainWindow : Window
     }
 
     private int _errorSeq = -1;
+
+    private static readonly Dictionary<string, string> NavNames = new()
+    {
+        ["home"] = "主页", // 翻译键
+        ["phrases"] = "常用语", // 翻译键
+        ["audio"] = "音频", // 翻译键
+        ["hotkeys"] = "设置", // 翻译键
+        ["about"] = "关于", // 翻译键
+    };
+
+    /// <summary>切换语言后：导航文字换成新语言，当前页面重新创建一次。</summary>
+    public void ApplyLanguage()
+    {
+        foreach (var item in Nav.MenuItems.Concat(Nav.FooterMenuItems).OfType<NavigationViewItem>())
+            if (item.Tag is string tag && NavNames.TryGetValue(tag, out var zh)) item.Content = T(zh);
+        if (ContentFrame.CurrentSourcePageType is { } page)
+        {
+            ContentFrame.Navigate(page, null, new SuppressNavigationTransitionInfo());
+            ContentFrame.BackStack.Clear();
+        }
+    }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {

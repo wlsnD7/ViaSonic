@@ -19,7 +19,7 @@ public partial class App : Application
     public JsonObject State { get; private set; } = new();
     /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
     public UpdateCheck.Release? NewRelease { get; set; }
-    public Dictionary<string, string> HotkeyErrors { get; private set; } = [];
+    public Dictionary<string, HotkeyError> HotkeyErrors { get; private set; } = [];
     public DispatcherQueue UI { get; private set; } = null!;
     public MainWindow Main { get; private set; } = null!;
     public OverlayWindow? Overlay { get; private set; }
@@ -41,10 +41,10 @@ public partial class App : Application
 
     public static readonly Dictionary<string, string> HotkeyLabels = new()
     {
-        ["input"] = "打开/关闭输入框",
-        ["focus"] = "聚焦输入框",
-        ["stop"] = "停止",
-        ["repeat"] = "重复上一句",
+        ["input"] = "打开/关闭输入框", // 翻译键
+        ["focus"] = "聚焦输入框", // 翻译键
+        ["stop"] = "停止", // 翻译键
+        ["repeat"] = "重复上一句", // 翻译键
     };
 
     public App()
@@ -53,7 +53,7 @@ public partial class App : Application
         UnhandledException += (_, e) =>
         {
             e.Handled = true;
-            Log.Error("未处理的异常", e.Exception);
+            Log.Error(T("未处理的异常"), e.Exception);
             Main?.ShowError(e.Exception.Message);
         };
     }
@@ -66,13 +66,13 @@ public partial class App : Application
             // 已经在运行（可能在托盘里）：让它把主窗口调出来
             var other = TrayIcon.FindWindowW(TrayIcon.WindowClass, null);
             if (other != IntPtr.Zero) TrayIcon.PostMessageW(other, TrayIcon.WM_SHOW_MAIN, IntPtr.Zero, IntPtr.Zero);
-            else Native.MessageBox(IntPtr.Zero, "ViaTTS 已经在运行了。", "ViaTTS", 0x40);
+            else Native.MessageBox(IntPtr.Zero, T("ViaTTS 已经在运行了。"), "ViaTTS", 0x40);
             Exit();
             return;
         }
         UI = DispatcherQueue.GetForCurrentThread();
-        Log.Info("ViaTTS 启动");
         Config = ConfigStore.Load();
+        Log.Info(T("ViaTTS 启动")); // 读完配置才知道界面语言
         _snapshot = Config.DeepClone().AsObject();
         _save = new Debouncer(300);
 
@@ -94,6 +94,14 @@ public partial class App : Application
         _tray = new TrayIcon();
         _tray.OpenRequested += () => UI.TryEnqueue(ShowMain);
         _tray.ExitRequested += () => UI.TryEnqueue(ExitApp);
+        Lang.Changed += () =>
+        {
+            ApplyHotkeys();   // 重新生成快捷键错误（里面的「已被占用」等文字）
+            Speaker.Gsv.RefreshError(Config); // 主页还显示着的模型错误
+            RefreshState();   // 状态文字、引擎名
+            // 推迟到当前事件（例如设置页下拉框的 SelectionChanged）处理完之后再重载页面
+            UI.TryEnqueue(Main.ApplyLanguage);
+        };
         Main.OnReady();
         Speaker.OnEngineChanged();
         _ = CheckUpdateAsync();
@@ -103,7 +111,7 @@ public partial class App : Application
     {
         NewRelease = await UpdateCheck.NewerAsync(Version);
         if (NewRelease == null) return;
-        Log.Info($"发现新版本 {NewRelease.Tag}");
+        Log.Info(T("发现新版本 {0}", NewRelease.Tag));
         StateChanged?.Invoke();
     }
 
@@ -181,6 +189,9 @@ public partial class App : Application
                 ApplyHotkeys();
                 Speaker.Preload();
                 break;
+            case "language":
+                Lang.Set(Str("language"));
+                break;
             case "hotkeys" or "hotkeys_paused":
                 ApplyHotkeys();
                 break;
@@ -227,24 +238,26 @@ public partial class App : Application
             foreach (var p in Phrases)
                 b["phrase:" + p!["id"]!.GetValue<string>()] = p["hotkey"]?.GetValue<string>() ?? "";
         }
-        var errors = _hotkeys.SetBindings(b);
-        HotkeyErrors = errors.ToDictionary(kv => DescribeBinding(kv.Key), kv => kv.Value);
+        HotkeyErrors = _hotkeys.SetBindings(b);
         HotkeyErrorsChanged?.Invoke();
     }
 
-    private string DescribeBinding(string name)
+    public string DescribeBinding(string name)
     {
-        if (HotkeyLabels.TryGetValue(name, out var l)) return l;
+        if (HotkeyLabels.TryGetValue(name, out var l)) return T(l);
         if (name.StartsWith("phrase:"))
         {
             var id = name[7..];
             var p = Phrases.FirstOrDefault(x => x!["id"]!.GetValue<string>() == id);
             var t = p?["text"]?.GetValue<string>() ?? "";
-            if (t.Length == 0) t = Path.GetFileName(p?["audio"]?.GetValue<string>() ?? "") is { Length: > 0 } f ? f : "未命名";
-            return $"常用语「{(t.Length > 12 ? t[..12] + "…" : t)}」";
+            if (t.Length == 0) t = Path.GetFileName(p?["audio"]?.GetValue<string>() ?? "") is { Length: > 0 } f ? f : T("未命名");
+            return T("常用语「{0}」", t.Length > 12 ? t[..12] + "…" : t);
         }
         return name;
     }
+
+    public string DescribeError(string name, HotkeyError e) =>
+        T("{0}：{1}", DescribeBinding(name), e.ConflictWith != null ? T("与「{0}」重复", DescribeBinding(e.ConflictWith)) : e.Message);
 
     private void OnHotkeyThread(string name)
     {
@@ -285,7 +298,7 @@ public partial class App : Application
         if (!_trayHintShown)
         {
             _trayHintShown = true;
-            _tray?.ShowBalloon("", "ViaTTS在后台运行");
+            _tray?.ShowBalloon("", T("ViaTTS在后台运行"));
         }
     }
 
@@ -302,6 +315,6 @@ public partial class App : Application
         Overlay?.Close();
         _tray?.Dispose();
         Speaker.Dispose();
-        Log.Info("ViaTTS 退出");
+        Log.Info(T("ViaTTS 退出"));
     }
 }

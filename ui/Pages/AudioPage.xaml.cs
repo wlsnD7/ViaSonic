@@ -42,14 +42,14 @@ public sealed partial class AudioPage : Page
             var devices = await Task.Run(Audio.Devices.OutputNames);
             var cable = devices.FirstOrDefault(n => n.StartsWith("CABLE Input", StringComparison.OrdinalIgnoreCase)) ?? "";
             _init = true;
-            FillDevices(MicDevice, devices, A.Str("mic_device"), string.IsNullOrEmpty(cable) ? "自动" : $"自动（{cable}）");
-            FillDevices(MonDevice, devices, A.Str("monitor_device"), "默认");
+            FillDevices(MicDevice, devices, A.Str("mic_device"), string.IsNullOrEmpty(cable) ? T("自动") : T("自动（{0}）", cable));
+            FillDevices(MonDevice, devices, A.Str("monitor_device"), T("默认"));
             _init = false;
             CableBar.IsOpen = string.IsNullOrEmpty(cable);
         }
         catch (Exception ex)
         {
-            A.Main.ShowError("读取设备失败：" + ex.Message);
+            A.Main.ShowError(T("读取设备失败：{0}", ex.Message));
         }
     }
 

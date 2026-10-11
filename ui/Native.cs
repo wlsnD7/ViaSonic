@@ -118,7 +118,7 @@ internal static partial class Native
 
     public static string ClassOf(IntPtr hwnd)
     {
-        if (hwnd == IntPtr.Zero) return "（无）";
+        if (hwnd == IntPtr.Zero) return T("（无）");
         var sb = new System.Text.StringBuilder(128);
         GetClassNameW(hwnd, sb, sb.Capacity);
         return $"{sb}@{hwnd:X}";

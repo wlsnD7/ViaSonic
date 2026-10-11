@@ -48,7 +48,7 @@ public sealed class OverlayWindow : Window
 
         Content = new Grid { Children = { _box } };
         SystemBackdrop = new DesktopAcrylicBackdrop();
-        Title = "ViaTTS 输入";
+        Title = T("ViaTTS 输入");
 
         _hwnd = WindowNative.GetWindowHandle(this);
         var p = OverlappedPresenter.CreateForToolWindow();

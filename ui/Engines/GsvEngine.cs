@@ -66,10 +66,20 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
 
     private static string? CheckModel(JsonObject? m)
     {
-        if (m == null) return "还没有模型，点「模型」右边的 + 添加";
-        var names = new (string Key, string Name)[] { ("gpt", "GPT 权重"), ("sovits", "SoVITS 权重"), ("ref", "参考音频") };
-        var missing = names.Where(x => !File.Exists(m[x.Key]?.GetValue<string>() ?? "")).Select(x => x.Name).ToList();
-        return missing.Count == 0 ? null : $"「{m["name"]}」缺少{string.Join("、", missing)}";
+        if (m == null) return T("还没有模型，点「模型」右边的 + 添加");
+        var names = new (string Key, string Name)[] { ("gpt", "GPT 权重"), ("sovits", "SoVITS 权重"), ("ref", "参考音频") }; // 翻译键
+        var missing = names.Where(x => !File.Exists(m[x.Key]?.GetValue<string>() ?? "")).Select(x => T(x.Name)).ToList();
+        return missing.Count == 0 ? null : T("「{0}」缺少{1}", m["name"], string.Join(T("、"), missing));
+    }
+
+    /// <summary>切换语言后，把还显示着的「找不到整合包 / 模型文件不全」重新生成一遍。只检查文件，不加载。</summary>
+    public void RefreshError(JsonObject c)
+    {
+        if (Loading || ErrorKind is not ("gsv_missing" or "model_missing")) return;
+        if (FindHome(c["gsv_home"]?.GetValue<string>() ?? "") == null)
+            SetState(false, false, T("找不到 GPT-SoVITS"), "gsv_missing");
+        else if (CheckModel(CurrentModel(c)) is { } bad)
+            SetState(Ready, false, bad, "model_missing");
     }
 
     private void SetState(bool ready, bool loading, string error = "", string kind = "")
@@ -88,7 +98,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         var home = FindHome(c["gsv_home"]?.GetValue<string>() ?? "");
         if (home == null)
         {
-            SetState(false, false, "找不到 GPT-SoVITS", "gsv_missing");
+            SetState(false, false, T("找不到 GPT-SoVITS"), "gsv_missing");
             return;
         }
         var model = CurrentModel(c);
@@ -101,7 +111,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         var device = c["gsv_device"]?.GetValue<string>() ?? "cuda";
         if (_proc != null && (_home != home || _device != device)) StopProcess(); // 换了整合包或设备，重启服务
         SetState(Ready, true);
-        var body = new JsonObject { ["model"] = model!.DeepClone() };
+        var body = new JsonObject { ["model"] = model!.DeepClone(), ["lang"] = Lang.Current };
         _ = Task.Run(async () =>
         {
             try
@@ -112,8 +122,8 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             }
             catch (Exception e)
             {
-                Log.Error("GPT-SoVITS 启动失败", e);
-                SetState(false, false, "GPT-SoVITS 启动失败：" + e.Message);
+                Log.Error(T("GPT-SoVITS 启动失败"), e);
+                SetState(false, false, T("GPT-SoVITS 启动失败：{0}", e.Message));
             }
         });
     }
@@ -134,7 +144,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
     private async Task StartProcessAsync(string home, string device)
     {
         var script = AppPaths.ScriptDir == null ? null : Path.Combine(AppPaths.ScriptDir, "gsv_server.py");
-        if (script == null || !File.Exists(script)) throw new InvalidOperationException("找不到 gsv_server.py");
+        if (script == null || !File.Exists(script)) throw new InvalidOperationException(T("找不到 gsv_server.py"));
         int port = FreePort();
         bool debug = Environment.GetCommandLineArgs().Contains("--debug");
         var psi = new ProcessStartInfo(Path.Combine(home, "runtime", debug ? "python.exe" : "pythonw.exe"))
@@ -144,21 +154,22 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             CreateNoWindow = !debug,
         };
         foreach (var a in new[] { "-I", script, "--port", port.ToString(), "--home", home, "--device", device,
-                                  "--parent-pid", Environment.ProcessId.ToString(), "--log", Path.Combine(AppPaths.LogDir, "gsv.log") })
+                                  "--parent-pid", Environment.ProcessId.ToString(), "--log", Path.Combine(AppPaths.LogDir, "gsv.log"),
+                                  "--lang", Lang.Current })
             psi.ArgumentList.Add(a);
         psi.Environment["PYTHONIOENCODING"] = "utf-8";
-        _proc = Process.Start(psi) ?? throw new InvalidOperationException("无法启动 Python");
+        _proc = Process.Start(psi) ?? throw new InvalidOperationException(T("无法启动 Python"));
         _home = home;
         _device = device;
         _logSeq = 0;
         _http.CancelPendingRequests();
         _base = $"http://127.0.0.1:{port}/";
-        Log.Info($"启动 GPT-SoVITS 服务：{home}");
+        Log.Info(T("启动 GPT-SoVITS 服务：{0}", home));
 
         var deadline = DateTime.UtcNow.AddSeconds(30);
         while (DateTime.UtcNow < deadline)
         {
-            if (_proc.HasExited) throw new InvalidOperationException($"Python 退出（{_proc.ExitCode}），见 logs/gsv.log");
+            if (_proc.HasExited) throw new InvalidOperationException(T("Python 退出（{0}），见 logs/gsv.log", _proc.ExitCode));
             try
             {
                 using var r = await _http.GetAsync(_base + "status");
@@ -168,7 +179,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             catch (TaskCanceledException) { }
             await Task.Delay(300);
         }
-        throw new TimeoutException("GPT-SoVITS 服务启动超时");
+        throw new TimeoutException(T("GPT-SoVITS 服务启动超时"));
     }
 
     private string _base = "";
@@ -190,20 +201,20 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         while (_proc is { HasExited: false })
         {
             await PullLogsAsync();
-            var s = JsonNode.Parse(await _http.GetStringAsync(_base + "status"))!;
+            var s = JsonNode.Parse(await _http.GetStringAsync(_base + $"status?lang={Lang.Current}"))!;
             bool loading = s["loading"]!.GetValue<bool>();
             SetState(s["ready"]!.GetValue<bool>(), loading, s["error"]!.GetValue<string>(), s["kind"]!.GetValue<string>());
             if (!loading) return;
             await Task.Delay(500);
         }
-        SetState(false, false, "GPT-SoVITS 服务已退出，见 logs/gsv.log");
+        SetState(false, false, T("GPT-SoVITS 服务已退出，见 logs/gsv.log"));
     }
 
     private async Task PullLogsAsync()
     {
         try
         {
-            var rows = JsonNode.Parse(await _http.GetStringAsync(_base + $"logs?after={_logSeq}"))!.AsArray();
+            var rows = JsonNode.Parse(await _http.GetStringAsync(_base + $"logs?after={_logSeq}&lang={Lang.Current}"))!.AsArray();
             foreach (var r in rows)
             {
                 Log.Raw(r!["text"]!.GetValue<string>());
@@ -216,20 +227,21 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
     // ------------------------------------------------------------------ 合成
     public async Task<Clip> SynthAsync(string text, JsonObject c, CancellationToken token)
     {
-        if (!Ready || _proc is not { HasExited: false }) throw new TtsException("GPT-SoVITS 未就绪");
+        if (!Ready || _proc is not { HasExited: false }) throw new TtsException(T("GPT-SoVITS 未就绪"));
         var body = new JsonObject
         {
             ["text"] = text,
             ["model"] = CurrentModel(c)?.DeepClone(),
             ["speed"] = App.ToDouble(c["gsv_speed"]),
             ["text_lang"] = c["gsv_text_lang"]?.GetValue<string>() ?? "zh",
+            ["lang"] = Lang.Current,
         };
         using var r = await PostAsync("synth", body, token);
         if (!r.IsSuccessStatusCode)
         {
             var err = JsonNode.Parse(await r.Content.ReadAsStringAsync(token));
             await PullLogsAsync();
-            throw new TtsException(err?["error"]?.GetValue<string>() ?? "合成失败", err?["kind"]?.GetValue<string>() ?? "");
+            throw new TtsException(err?["error"]?.GetValue<string>() ?? T("合成失败"), err?["kind"]?.GetValue<string>() ?? "");
         }
         var wav = await r.Content.ReadAsByteArrayAsync(token);
         _ = PullLogsAsync();

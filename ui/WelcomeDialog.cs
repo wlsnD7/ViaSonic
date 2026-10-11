@@ -18,24 +18,24 @@ public sealed class WelcomeDialog : ContentDialog
     public WelcomeDialog(XamlRoot root)
     {
         XamlRoot = root;
-        Title = "欢迎使用 ViaTTS";
-        PrimaryButtonText = "开始使用";
+        Title = T("欢迎使用 ViaTTS");
+        PrimaryButtonText = T("开始使用");
         DefaultButton = ContentDialogButton.Primary;
 
         var cable = Audio.Devices.VirtualCable();
         var cableCard = new SettingsCard
         {
-            Header = "虚拟麦克风",
-            Description = cable.Length > 0 ? $"已安装（{cable}）" : "未安装，游戏里的人听不到声音",
+            Header = T("虚拟麦克风"),
+            Description = cable.Length > 0 ? T("已安装（{0}）", cable) : T("未安装，游戏里的人听不到声音"),
             HeaderIcon = new FontIcon { Glyph = "" },
         };
         if (cable.Length == 0)
-            cableCard.Content = new HyperlinkButton { Content = "下载 VB-Cable", NavigateUri = new Uri(CableUrl) };
+            cableCard.Content = new HyperlinkButton { Content = T("下载 VB-Cable"), NavigateUri = new Uri(CableUrl) };
 
         _gsvActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         _gsvCard = new SettingsCard
         {
-            Header = "GPT-SoVITS（可选）",
+            Header = T("GPT-SoVITS（可选）"),
             HeaderIcon = new FontIcon { Glyph = "" },
             Content = _gsvActions,
         };
@@ -44,7 +44,7 @@ public sealed class WelcomeDialog : ContentDialog
         var panel = new StackPanel { Spacing = 8, MinWidth = 520 };
         panel.Children.Add(new TextBlock
         {
-            Text = "默认使用 Edge TTS，可以直接使用。",
+            Text = T("默认使用 Edge TTS，可以直接使用。"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 8),
         });
@@ -58,17 +58,17 @@ public sealed class WelcomeDialog : ContentDialog
         _gsvActions.Children.Clear();
         if (home != null && error == null)
         {
-            _gsvCard.Description = $"已找到（{home}）";
+            _gsvCard.Description = T("已找到（{0}）", home);
             return;
         }
         var advice = GsvDownload.Recommend();
-        _gsvCard.Description = error ?? "未找到。" + advice.Text;
+        _gsvCard.Description = error ?? T("未找到。") + advice.Text;
         if (advice.File != null)
         {
-            _gsvActions.Children.Add(new HyperlinkButton { Content = "下载", NavigateUri = new Uri(advice.Url) });
+            _gsvActions.Children.Add(new HyperlinkButton { Content = T("下载"), NavigateUri = new Uri(advice.Url) });
             _gsvActions.Children.Add(new HyperlinkButton { Content = "7-Zip", NavigateUri = new Uri(GsvDownload.SevenZipUrl) });
         }
-        var pick = new Button { Content = "选择文件夹" };
+        var pick = new Button { Content = T("选择文件夹") };
         pick.Click += async (_, _) =>
         {
             var picker = new FolderPicker { SuggestedStartLocation = PickerLocationId.ComputerFolder };
@@ -81,7 +81,7 @@ public sealed class WelcomeDialog : ContentDialog
                 A.Set("gsv_home", folder.Path);
                 UpdateGsv(folder.Path);
             }
-            else UpdateGsv(null, "这个文件夹不是 GPT-SoVITS 整合包，请选择解压后的根目录。");
+            else UpdateGsv(null, T("这个文件夹不是 GPT-SoVITS 整合包，请选择解压后的根目录。"));
         };
         _gsvActions.Children.Add(pick);
     }

@@ -14,7 +14,18 @@
 
 [下载](https://github.com/wlsnD7/ViaTTS/releases/latest) · [游戏内设置](#游戏内设置) · [快捷键](#默认快捷键) · [开发](#开发)
 
-<img src="docs/main.png" width="720" alt="主界面">
+简体中文 | [English](README.en.md)
+
+<table>
+  <tr>
+    <td><img src="docs/zh/home.png" width="400" alt="主页"></td>
+    <td><img src="docs/zh/phrases.png" width="400" alt="常用语"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/zh/audio.png" width="400" alt="音频"></td>
+    <td><img src="docs/zh/settings.png" width="400" alt="设置"></td>
+  </tr>
+</table>
 
 </div>
 
@@ -62,6 +73,7 @@ ViaTTS/
 ├─ ui/              界面与音频（C#/WinUI 3）：Edge TTS、系统语音、播放、快捷键、配置
 ├─ gsv_server.py    GPT-SoVITS合成服务
 ├─ installer/       Inno Setup安装脚本
+├─ tools/           开发脚本（翻译检查）
 ├─ app/             dotnet publish输出
 └─ dist/            安装包
 ```

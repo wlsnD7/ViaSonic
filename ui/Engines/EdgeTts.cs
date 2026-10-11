@@ -32,18 +32,18 @@ public sealed class EdgeTts : ITtsEngine
 {
     public static readonly (string Id, string Name)[] Voices =
     [
-        ("zh-CN-YunxiNeural", "云希 · 男"),
-        ("zh-CN-YunjianNeural", "云健 · 男"),
-        ("zh-CN-YunyangNeural", "云扬 · 男"),
-        ("zh-CN-YunxiaNeural", "云夏 · 童声"),
-        ("zh-CN-XiaoxiaoNeural", "晓晓 · 女"),
-        ("zh-CN-XiaoyiNeural", "晓伊 · 女"),
-        ("zh-CN-liaoning-XiaobeiNeural", "晓北 · 东北话"),
-        ("zh-CN-shaanxi-XiaoniNeural", "晓妮 · 陕西话"),
-        ("zh-TW-HsiaoChenNeural", "曉臻 · 台湾"),
-        ("zh-HK-WanLungNeural", "雲龍 · 粤语"),
-        ("en-US-GuyNeural", "Guy · 英语"),
-        ("ja-JP-KeitaNeural", "圭太 · 日语"),
+        ("zh-CN-YunxiNeural", "云希 · 男"), // 翻译键
+        ("zh-CN-YunjianNeural", "云健 · 男"), // 翻译键
+        ("zh-CN-YunyangNeural", "云扬 · 男"), // 翻译键
+        ("zh-CN-YunxiaNeural", "云夏 · 童声"), // 翻译键
+        ("zh-CN-XiaoxiaoNeural", "晓晓 · 女"), // 翻译键
+        ("zh-CN-XiaoyiNeural", "晓伊 · 女"), // 翻译键
+        ("zh-CN-liaoning-XiaobeiNeural", "晓北 · 东北话"), // 翻译键
+        ("zh-CN-shaanxi-XiaoniNeural", "晓妮 · 陕西话"), // 翻译键
+        ("zh-TW-HsiaoChenNeural", "曉臻 · 台湾"), // 翻译键
+        ("zh-HK-WanLungNeural", "雲龍 · 粤语"), // 翻译键
+        ("en-US-GuyNeural", "Guy · 英语"), // 翻译键
+        ("ja-JP-KeitaNeural", "圭太 · 日语"), // 翻译键
     ];
 
     private const string TrustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
@@ -126,9 +126,9 @@ public sealed class EdgeTts : ITtsEngine
                 && DateTimeOffset.TryParse(d.FirstOrDefault(), out var server))
             {
                 _clockSkew += (server - DateTimeOffset.UtcNow).TotalSeconds;
-                throw new TtsException("时间偏差", "skew");
+                throw new TtsException(T("时间偏差"), "skew");
             }
-            throw new TtsException($"Edge TTS 连接失败：{e.Message}");
+            throw new TtsException(T("Edge TTS 连接失败：{0}", e.Message));
         }
 
         async Task Send(string s) => await ws.SendAsync(Encoding.UTF8.GetBytes(s), WebSocketMessageType.Text, true, ct);
@@ -172,7 +172,7 @@ public sealed class EdgeTts : ITtsEngine
         }
         done:
         try { await ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None); } catch { }
-        if (audio.Length == 0) throw new TtsException("Edge TTS 没有生成声音，所选音色可能读不了这种语言");
+        if (audio.Length == 0) throw new TtsException(T("Edge TTS 没有生成声音，所选音色可能读不了这种语言"));
         return AudioDecode.FromCompressed(audio.ToArray());
     }
 }

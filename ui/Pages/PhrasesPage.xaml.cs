@@ -23,7 +23,7 @@ public sealed partial class PhrasesPage : Page
 
     private void ShowErrors()
     {
-        var errs = A.HotkeyErrors.Where(kv => kv.Key.StartsWith("常用语")).Select(kv => $"{kv.Key}：{kv.Value}").ToList();
+        var errs = A.HotkeyErrors.Where(kv => kv.Key.StartsWith("phrase:")).Select(kv => A.DescribeError(kv.Key, kv.Value)).ToList();
         ErrBar.Message = string.Join("\n", errs);
         ErrBar.IsOpen = errs.Count > 0;
     }
@@ -69,7 +69,7 @@ public sealed partial class PhrasesPage : Page
 
         var hk = new HotkeyButton { Value = p["hotkey"]?.GetValue<string>() ?? "" };
         hk.HotkeyChanged += v => { p["hotkey"] = v; A.Commit("phrases"); };
-        ToolTipService.SetToolTip(hk, "Backspace 清除");
+        ToolTipService.SetToolTip(hk, T("Backspace 清除"));
 
         var bar = new Grid { ColumnSpacing = 8 };
         bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -78,9 +78,9 @@ public sealed partial class PhrasesPage : Page
         bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        left.Children.Add(IconButton("", "播放", (_, _) => A.PlayPhrase(p)));
-        left.Children.Add(IconButton("", "上移", (_, _) => Move(index, -1), index > 0));
-        left.Children.Add(IconButton("", "下移", (_, _) => Move(index, 1), index < count - 1));
+        left.Children.Add(IconButton("", T("播放"), (_, _) => A.PlayPhrase(p)));
+        left.Children.Add(IconButton("", T("上移"), (_, _) => Move(index, -1), index > 0));
+        left.Children.Add(IconButton("", T("下移"), (_, _) => Move(index, 1), index < count - 1));
         Grid.SetColumn(left, 0);
         bar.Children.Add(left);
         var mid = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
@@ -89,14 +89,14 @@ public sealed partial class PhrasesPage : Page
         Grid.SetColumn(mid, 1);
         bar.Children.Add(mid);
 
-        var del = IconButton("", "删除", async (_, _) =>
+        var del = IconButton("", T("删除"), async (_, _) =>
         {
             var dlg = new ContentDialog
             {
-                Title = "删除？",
+                Title = T("删除？"),
                 Content = string.IsNullOrWhiteSpace(text.Text) ? null : text.Text,
-                PrimaryButtonText = "删除",
-                CloseButtonText = "取消",
+                PrimaryButtonText = T("删除"),
+                CloseButtonText = T("取消"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot,
             };
@@ -128,14 +128,14 @@ public sealed partial class PhrasesPage : Page
         inner.Children.Add(new FontIcon { Glyph = "", FontSize = 14 });
         inner.Children.Add(label);
         pick.Content = inner;
-        var clear = IconButton("", "移除音频", (_, _) => { });
+        var clear = IconButton("", T("移除音频"), (_, _) => { });
 
         void Refresh()
         {
             var path = p["audio"]?.GetValue<string>() ?? "";
             bool has = path.Length > 0;
-            label.Text = has ? Path.GetFileName(path) + (File.Exists(path) ? "" : "（文件不存在）") : "音频";
-            ToolTipService.SetToolTip(pick, has ? path : "选择音频文件，代替朗读文字");
+            label.Text = has ? Path.GetFileName(path) + (File.Exists(path) ? "" : T("（文件不存在）")) : T("音频");
+            ToolTipService.SetToolTip(pick, has ? path : T("选择音频文件，代替朗读文字"));
             clear.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
         }
 

@@ -36,4 +36,7 @@
   <ItemGroup>
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="ViaTTS.Lang" Static="true" />
+  </ItemGroup>
 </Project>

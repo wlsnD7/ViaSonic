@@ -8,7 +8,7 @@ namespace ViaTTS.Engines;
 public sealed class SystemTts : ITtsEngine
 {
     public string Key => "sapi";
-    public string Label => "系统语音";
+    public string Label => T("系统语音");
     public bool Ready => true;
     public bool Loading => false;
     public string Error => "";
@@ -25,7 +25,7 @@ public sealed class SystemTts : ITtsEngine
         }
         catch (Exception e)
         {
-            Log.Error("读取系统语音失败", e);
+            Log.Error(T("读取系统语音失败"), e);
             return [];
         }
     }
@@ -51,7 +51,7 @@ public sealed class SystemTts : ITtsEngine
         catch (OperationCanceledException) { throw; }
         catch (Exception e)
         {
-            throw new TtsException($"系统语音失败：{e.Message}");
+            throw new TtsException(T("系统语音失败：{0}", e.Message));
         }
     }
 }

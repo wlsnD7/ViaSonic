@@ -146,9 +146,9 @@ public sealed class TrayIcon : IDisposable
     private void ShowMenu()
     {
         var menu = CreatePopupMenu();
-        AppendMenuW(menu, 0, (IntPtr)MenuOpen, "打开 ViaTTS");
+        AppendMenuW(menu, 0, (IntPtr)MenuOpen, T("打开 ViaTTS"));
         AppendMenuW(menu, 0x800 /* MF_SEPARATOR */, IntPtr.Zero, null);
-        AppendMenuW(menu, 0, (IntPtr)MenuExit, "退出");
+        AppendMenuW(menu, 0, (IntPtr)MenuExit, T("退出"));
         GetCursorPos(out var pt);
         SetForegroundWindow(_hwnd); // 否则点别处时菜单不会消失
         int cmd = TrackPopupMenuEx(menu, 0x0100 /* TPM_RETURNCMD */ | 0x0020 /* TPM_BOTTOMALIGN */, pt.X, pt.Y, _hwnd, IntPtr.Zero);

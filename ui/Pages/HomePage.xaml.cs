@@ -12,7 +12,7 @@ namespace ViaTTS.Pages;
 public sealed partial class HomePage : Page
 {
     private static readonly (string Key, string Name)[] Langs =
-        [("zh", "中文"), ("auto", "自动识别"), ("en", "英文"), ("ja", "日文"), ("yue", "粤语"), ("ko", "韩文")];
+        [("zh", "中文"), ("auto", "自动识别"), ("en", "英文"), ("ja", "日文"), ("yue", "粤语"), ("ko", "韩文")]; // 翻译键
 
     private static App A => App.Current;
     private readonly Debouncer _save = new();
@@ -24,8 +24,8 @@ public sealed partial class HomePage : Page
         InitializeComponent();
         foreach (var (_, n) in Langs)
         {
-            GsvLang.Items.Add(n);
-            ModelRefLang.Items.Add(n);
+            GsvLang.Items.Add(T(n));
+            ModelRefLang.Items.Add(T(n));
         }
     }
 
@@ -58,7 +58,7 @@ public sealed partial class HomePage : Page
         var cable = await Task.Run(Audio.Devices.VirtualCable);
         CableBar.IsOpen = A.Bool("mic_enabled") && cable.Length == 0;
         _init = true;
-        Fill(EdgeVoice, _edge, A.Str("edge_voice"), v => v.Name);
+        Fill(EdgeVoice, _edge, A.Str("edge_voice"), v => T(v.Name));
         Fill(SapiVoice, _sapi, A.Str("sapi_voice"), v => v.Name, fallback: s => s.Contains("zh-"));
         _init = false;
     }
@@ -87,13 +87,13 @@ public sealed partial class HomePage : Page
         bool loading = en?["loading"]?.GetValue<bool>() ?? false;
         bool ready = en?["ready"]?.GetValue<bool>() ?? false;
         var busy = s?["busy"]?.GetValue<string>() ?? "";
-        StatusText.Text = string.IsNullOrEmpty(busy) ? (ready ? "就绪" : loading ? "加载中" : "未加载") : busy;
+        StatusText.Text = string.IsNullOrEmpty(busy) ? (ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
         LoadButton.IsEnabled = !ready && !loading;
 
         if (A.NewRelease is { } rel)
         {
-            UpdateBar.Title = $"发现新版本 {rel.Tag}";
+            UpdateBar.Title = T("发现新版本 {0}", rel.Tag);
             UpdateLink.NavigateUri = new Uri(rel.Url);
         }
         UpdateBar.IsOpen = A.NewRelease != null;
@@ -103,15 +103,15 @@ public sealed partial class HomePage : Page
         if (kind == "gsv_missing")
         {
             var advice = GsvDownload.Recommend();
-            GsvBar.Title = "未找到 GPT-SoVITS";
-            GsvBar.Message = advice.Text + (advice.File != null ? "也可以在下方「GPT-SoVITS 目录」指定位置。" : "");
-            GsvLink.Content = "下载";
+            GsvBar.Title = T("未找到 GPT-SoVITS");
+            GsvBar.Message = advice.Text + (advice.File != null ? T("也可以在下方「GPT-SoVITS 目录」指定位置。") : "");
+            GsvLink.Content = T("下载");
             GsvLink.NavigateUri = new Uri(advice.Url);
             GsvLink.Visibility = advice.File != null ? Visibility.Visible : Visibility.Collapsed;
         }
         else if (kind == "model_missing")
         {
-            GsvBar.Title = Models.Count == 0 ? "还没有模型" : "模型文件不全";
+            GsvBar.Title = Models.Count == 0 ? T("还没有模型") : T("模型文件不全");
             GsvBar.Message = en?["error"]?.GetValue<string>() ?? "";
             GsvLink.Visibility = Visibility.Collapsed;
             ModelPanel.IsExpanded = true;
@@ -239,10 +239,10 @@ public sealed partial class HomePage : Page
         if (cur == null) return;
         var dlg = new ContentDialog
         {
-            Title = $"删除「{Field(cur, "name")}」？",
-            Content = "只移除这条配置，不会删除模型文件。",
-            PrimaryButtonText = "删除",
-            CloseButtonText = "取消",
+            Title = T("删除「{0}」？", Field(cur, "name")),
+            Content = T("只移除这条配置，不会删除模型文件。"),
+            PrimaryButtonText = T("删除"),
+            CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
         };
@@ -268,7 +268,7 @@ public sealed partial class HomePage : Page
     {
         var box = (TextBox)sender;
         var v = box.Text.Trim();
-        if ((string)box.Tag == "name" && v.Length == 0) v = "未命名";
+        if ((string)box.Tag == "name" && v.Length == 0) v = T("未命名");
         SetModelField((string)box.Tag, v);
     }
 

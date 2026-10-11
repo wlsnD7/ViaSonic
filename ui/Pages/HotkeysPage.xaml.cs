@@ -42,6 +42,7 @@ public sealed partial class HotkeysPage : Page
         Bottom.Value = App.ToDouble(o["bottom_offset"]);
         ShowErrors();
         A.HotkeyErrorsChanged += ShowErrors;
+        LangBox.SelectedItem = LangBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Lang.Current);
         _init = false;
     }
 
@@ -49,9 +50,14 @@ public sealed partial class HotkeysPage : Page
 
     private void ShowErrors()
     {
-        var errs = A.HotkeyErrors.Select(kv => $"{kv.Key}：{kv.Value}").ToList();
+        var errs = A.HotkeyErrors.Select(kv => A.DescribeError(kv.Key, kv.Value)).ToList();
         ErrBar.Message = string.Join("\n", errs);
         ErrBar.IsOpen = errs.Count > 0;
+    }
+
+    private void LangBox_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_init && LangBox.SelectedItem is ComboBoxItem { Tag: string lang }) A.Set("language", lang);
     }
 
     private void Paused_Toggled(object sender, RoutedEventArgs e)

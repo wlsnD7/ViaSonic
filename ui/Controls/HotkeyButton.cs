@@ -49,7 +49,7 @@ public sealed class HotkeyButton : Button
         _modsSeen.Clear();
         _mainPressed = false;
         App.Current.SuspendHotkeys(true);
-        Show("按下按键");
+        Show(T("按下按键"));
         Focus(FocusState.Programmatic);
     }
 
@@ -68,7 +68,7 @@ public sealed class HotkeyButton : Button
         _mainPressed = true;
         if (mods.Count == 0 && vk == 0x1B) { Finish(null); return; }
         if (mods.Count == 0 && vk == 0x08) { Finish(""); return; }
-        if (!HotkeyText.VkName.TryGetValue(vk, out var name)) { Show("不支持该键"); return; }
+        if (!HotkeyText.VkName.TryGetValue(vk, out var name)) { Show(T("不支持该键")); return; }
         try
         {
             Finish(HotkeyText.Parse(string.Join("+", mods.Append(name))).Normalized);

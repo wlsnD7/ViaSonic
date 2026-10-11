@@ -58,7 +58,7 @@ public sealed class Player
         {
             var name = Str("mic_device");
             if (name.Length == 0) name = Devices.VirtualCable();
-            if (name.Length == 0) Log.Warn("找不到虚拟麦克风（未安装 VB-Cable）");
+            if (name.Length == 0) Log.Warn(T("找不到虚拟麦克风（未安装 VB-Cable）"));
             else list.Add((name, (float)Num("mic_volume")));
         }
         if (Bool("monitor_enabled")) list.Add((Str("monitor_device"), (float)Num("monitor_volume")));
@@ -96,7 +96,7 @@ public sealed class Player
                 Task.WaitAll([.. tasks]);
                 if (ptt.Length > 0) job.Cts.Token.WaitHandle.WaitOne(100);
             }
-            catch (Exception e) { Log.Error("播放失败", e); }
+            catch (Exception e) { Log.Error(T("播放失败"), e); }
             finally
             {
                 if (ptt.Length > 0) Ptt.Press(ptt, false);
@@ -126,7 +126,7 @@ public sealed class Player
         }
         catch (Exception e)
         {
-            Log.Error($"播放到「{dev.FriendlyName}」失败：{e.Message}");
+            Log.Error(T("播放到「{0}」失败：{1}", dev.FriendlyName, e.Message));
         }
     }
 

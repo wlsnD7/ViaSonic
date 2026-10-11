@@ -39,7 +39,7 @@ public sealed class Speaker : IDisposable
             if (Gsv.Error.Length > 0 && Gsv.ErrorKind.Length == 0) Failed?.Invoke(Gsv.Error);
         };
         Player = new Player(cfg);
-        Player.PlayingChanged += p => SetBusy(p ? "播放中" : "");
+        Player.PlayingChanged += p => SetBusy(p ? "播放中" : ""); // 翻译键
         _ = Task.Run(WorkerAsync);
     }
 
@@ -58,7 +58,7 @@ public sealed class Speaker : IDisposable
         get
         {
             var e = Current;
-            var s = e.Ready ? "就绪" : e.Loading ? "加载中" : "未加载";
+            var s = e.Ready ? T("就绪") : e.Loading ? T("加载中") : T("未加载");
             return $"{e.Label} · {s}";
         }
     }
@@ -112,7 +112,7 @@ public sealed class Speaker : IDisposable
                 if (_files.TryGetValue(path, out var hit) && hit.Mtime == mtime) clip = hit.Clip;
                 else
                 {
-                    if (!File.Exists(path)) throw new FileNotFoundException("文件不存在", path);
+                    if (!File.Exists(path)) throw new FileNotFoundException(T("文件不存在"), path);
                     clip = AudioDecode.FromFile(path);
                     if (_files.Count > 32) _files.Clear();
                     _files[path] = (mtime, clip);
@@ -123,7 +123,7 @@ public sealed class Speaker : IDisposable
         }
         catch (Exception e)
         {
-            Failed?.Invoke($"无法播放音频：{e.Message}");
+            Failed?.Invoke(T("无法播放音频：{0}", e.Message));
         }
     });
 
@@ -150,24 +150,24 @@ public sealed class Speaker : IDisposable
             lock (_cache) _cache.TryGetValue(key, out clip);
             if (clip == null)
             {
-                if (!eng.Ready && eng.Loading && job.Play) SetBusy("等待加载");
+                if (!eng.Ready && eng.Loading && job.Play) SetBusy("等待加载"); // 翻译键
                 while (!eng.Ready && eng.Loading) await Task.Delay(200);
                 if (!eng.Ready)
                 {
-                    if (job.Play) { SetBusy(""); Failed?.Invoke(eng.Error.Length > 0 ? eng.Error : $"{eng.Label} 未就绪"); }
+                    if (job.Play) { SetBusy(""); Failed?.Invoke(eng.Error.Length > 0 ? eng.Error : T("{0} 未就绪", eng.Label)); }
                     continue;
                 }
                 try
                 {
-                    if (job.Play) SetBusy("合成中");
+                    if (job.Play) SetBusy("合成中"); // 翻译键
                     var t0 = DateTime.UtcNow;
                     clip = await eng.SynthAsync(job.Text, cfg, CancellationToken.None);
-                    Log.Info($"合成 {(DateTime.UtcNow - t0).TotalSeconds:0.00}s：{(job.Text.Length > 40 ? job.Text[..40] : job.Text)}");
+                    Log.Info(T("合成 {0:0.00}s：{1}", (DateTime.UtcNow - t0).TotalSeconds, job.Text.Length > 40 ? job.Text[..40] : job.Text));
                 }
                 catch (Exception e)
                 {
                     if (job.Play) SetBusy("");
-                    Log.Error($"合成失败：{e.Message}");
+                    Log.Error(T("合成失败：{0}", e.Message));
                     if (job.Play) Failed?.Invoke(e.Message);
                     continue;
                 }

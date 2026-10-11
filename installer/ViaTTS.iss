@@ -29,9 +29,12 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
 WizardStyle=modern
+ShowLanguageDialog=no
 CloseApplications=yes
 
 [Languages]
+; 按系统界面语言自动选择；都不匹配时用第一个（英文）
+Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "zh"; MessagesFile: "ChineseSimplified.isl"
 
 [Tasks]

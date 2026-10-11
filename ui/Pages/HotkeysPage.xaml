@@ -3,83 +3,92 @@
     x:Class="ViaTTS.Pages.HotkeysPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ViaTTS.Markup"
     xmlns:tk="using:CommunityToolkit.WinUI.Controls"
     xmlns:c="using:ViaTTS.Controls">
 
     <ScrollViewer Style="{StaticResource PageScroll}">
         <StackPanel Style="{StaticResource PageStack}">
-            <TextBlock Text="设置" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="{l:T Text='设置'}" Style="{StaticResource PageTitle}" />
 
-            <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="快捷键冲突" Margin="0,0,0,8" />
+            <tk:SettingsCard Header="{l:T Text='语言'}">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE774;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="LangBox" MinWidth="160" SelectionChanged="LangBox_Changed">
+                    <ComboBoxItem Content="简体中文" Tag="zh" />
+                    <ComboBoxItem Content="English" Tag="en" />
+                </ComboBox>
+            </tk:SettingsCard>
 
-            <tk:SettingsCard Header="打开/关闭输入框">
+            <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='快捷键冲突'}" Margin="0,0,0,8" />
+
+            <tk:SettingsCard Header="{l:T Text='打开/关闭输入框'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE70F;" /></tk:SettingsCard.HeaderIcon>
                 <c:HotkeyButton x:Name="HkInput" Tag="input" />
             </tk:SettingsCard>
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="聚焦输入框" Tip="按快捷键聚焦于输入框，只在输入框开启时启用。" />
+                    <c:InfoHeader Text="{l:T Text='聚焦输入框'}" Tip="{l:T Text='按快捷键聚焦于输入框，只在输入框开启时启用。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8AC;" /></tk:SettingsCard.HeaderIcon>
                 <c:HotkeyButton x:Name="HkFocus" Tag="focus" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="停止">
+            <tk:SettingsCard Header="{l:T Text='停止'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE71A;" /></tk:SettingsCard.HeaderIcon>
                 <c:HotkeyButton x:Name="HkStop" Tag="stop" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="重复上一句">
+            <tk:SettingsCard Header="{l:T Text='重复上一句'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8EE;" /></tk:SettingsCard.HeaderIcon>
                 <c:HotkeyButton x:Name="HkRepeat" Tag="repeat" />
             </tk:SettingsCard>
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="暂停快捷键" Tip="暂时停用除「打开/关闭输入框」「聚焦输入框」以外的所有快捷键。" />
+                    <c:InfoHeader Text="{l:T Text='暂停快捷键'}" Tip="{l:T Text='暂时停用除「打开/关闭输入框」「聚焦输入框」以外的所有快捷键。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE769;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="Paused" Toggled="Paused_Toggled" />
+                <ToggleSwitch x:Name="Paused" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Paused_Toggled" />
             </tk:SettingsCard>
 
-            <TextBlock Text="输入框" Style="{StaticResource SectionHeader}" />
+            <TextBlock Text="{l:T Text='输入框'}" Style="{StaticResource SectionHeader}" />
 
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="播完后收起" Tip="开启：语音播完后输入框自动收起。关闭：输入框持久存在，再按一次快捷键收起。" />
+                    <c:InfoHeader Text="{l:T Text='播完后收起'}" Tip="{l:T Text='开启：语音播完后输入框自动收起。关闭：输入框持久存在，再按一次快捷键收起。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE73F;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="HideAfter" Toggled="Overlay_Toggled" Tag="hide_after_send" />
+                <ToggleSwitch x:Name="HideAfter" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="hide_after_send" />
             </tk:SettingsCard>
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
-                    <c:InfoHeader Text="归还焦点" Tip="发送语音后，以及输入框收起时，自动切回呼出前的窗口。" />
+                    <c:InfoHeader Text="{l:T Text='归还焦点'}" Tip="{l:T Text='发送语音后，以及输入框收起时，自动切回呼出前的窗口。'}" />
                 </tk:SettingsCard.Header>
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7FC;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="RestoreFocus" Toggled="Overlay_Toggled" Tag="restore_focus" />
+                <ToggleSwitch x:Name="RestoreFocus" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="restore_focus" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="不透明度">
+            <tk:SettingsCard Header="{l:T Text='不透明度'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock x:Name="OpacityText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
                     <Slider x:Name="OpacitySlider" Width="220" Minimum="20" Maximum="100" StepFrequency="5" ValueChanged="Opacity_Changed" />
                 </StackPanel>
             </tk:SettingsCard>
-            <tk:SettingsCard Header="宽度">
+            <tk:SettingsCard Header="{l:T Text='宽度'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE740;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock x:Name="WidthText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
                     <Slider x:Name="WidthSlider" Width="220" Minimum="10" Maximum="90" StepFrequency="1" ValueChanged="Width_Changed" />
                 </StackPanel>
             </tk:SettingsCard>
-            <tk:SettingsCard Header="底部距离">
+            <tk:SettingsCard Header="{l:T Text='底部距离'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE74B;" /></tk:SettingsCard.HeaderIcon>
                 <NumberBox x:Name="Bottom" Minimum="0" Maximum="2000" SmallChange="20" LargeChange="100"
                            SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="Bottom_Changed" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="预览">
+            <tk:SettingsCard Header="{l:T Text='预览'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7B3;" /></tk:SettingsCard.HeaderIcon>
-                <Button Content="显示" Click="Preview_Click" />
+                <Button Content="{l:T Text='显示'}" Click="Preview_Click" />
             </tk:SettingsCard>
 
-            <InfoBar Severity="Informational" IsOpen="True" IsClosable="False" Margin="0,16,0,0" Title="游戏请使用无边框窗口模式" />
+            <InfoBar Severity="Informational" IsOpen="True" IsClosable="False" Margin="0,16,0,0" Title="{l:T Text='游戏请使用无边框窗口模式'}" />
         </StackPanel>
     </ScrollViewer>
 </Page>

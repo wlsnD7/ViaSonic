@@ -33,7 +33,7 @@ public static class HotkeyText
     public static (int Mods, int Vk, string Normalized) Parse(string? text)
     {
         var parts = (text ?? "").Replace(" ", "").ToLowerInvariant().Split('+', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) throw new HotkeyException("快捷键为空");
+        if (parts.Length == 0) throw new HotkeyException(T("快捷键为空"));
         int mods = 0;
         string? key = null;
         foreach (var raw in parts)
@@ -43,17 +43,17 @@ public static class HotkeyText
             if (m.Name != null) mods |= m.Flag;
             else if (Vk.ContainsKey(p))
             {
-                if (key != null) throw new HotkeyException("只能有一个主键");
+                if (key != null) throw new HotkeyException(T("只能有一个主键"));
                 key = p;
             }
-            else throw new HotkeyException($"无法识别：{p}");
+            else throw new HotkeyException(T("无法识别：{0}", p));
         }
         if (key == null)
         {
             // 单独按一下修饰键：Vk 为 0，由 HotkeyManager 的键盘钩子处理
             var only = Mods.Where(x => (mods & x.Flag) != 0).Select(x => x.Name).ToList();
-            if (only.Count > 1) throw new HotkeyException("只能单独用一个修饰键");
-            if (only[0] == "win") throw new HotkeyException("Win 键单独按会打开开始菜单，不能使用");
+            if (only.Count > 1) throw new HotkeyException(T("只能单独用一个修饰键"));
+            if (only[0] == "win") throw new HotkeyException(T("Win 键单独按会打开开始菜单，不能使用"));
             return (0, 0, only[0]);
         }
         var names = Mods.Where(x => (mods & x.Flag) != 0).Select(x => x.Name).Append(key);
@@ -71,7 +71,7 @@ public static class HotkeyText
     }
 
     public static string Display(string? text) =>
-        string.IsNullOrEmpty(text) ? "未设置" : string.Join(" + ", text.Split('+').Select(Pretty));
+        string.IsNullOrEmpty(text) ? T("未设置") : string.Join(" + ", text.Split('+').Select(Pretty));
 
     private static string Pretty(string p) => p switch
     {

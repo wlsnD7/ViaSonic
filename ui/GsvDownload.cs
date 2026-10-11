@@ -35,11 +35,11 @@ public static class GsvDownload
         var gpus = Gpus();
         var nvidia = gpus.FirstOrDefault(g => g.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase));
         if (nvidia == null)
-            return new Advice(gpus.FirstOrDefault() ?? "未知显卡", null, ListUrl,
-                "没有检测到 Nvidia 显卡，GPT-SoVITS 会很慢，建议直接使用 Edge TTS 或系统语音。");
+            return new Advice(gpus.FirstOrDefault() ?? T("未知显卡"), null, ListUrl,
+                T("没有检测到 Nvidia 显卡，GPT-SoVITS 会很慢，建议直接使用 Edge TTS 或系统语音。"));
         bool rtx50 = System.Text.RegularExpressions.Regex.IsMatch(nvidia, @"RTX\s*50\d\d", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         var file = rtx50 ? "GPT-SoVITS-v2pro-20250604-nvidia50.7z" : "GPT-SoVITS-v2pro-20250604.7z";
         return new Advice(nvidia, file, Base + file,
-            $"检测到 {nvidia}，请下载 {file}（约 9GB），用 7-Zip 解压后选择解压出来的文件夹。");
+            T("检测到 {0}，请下载 {1}（约 9GB），用 7-Zip 解压后选择解压出来的文件夹。", nvidia, file));
     }
 }

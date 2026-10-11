@@ -37,7 +37,7 @@ public static partial class Ptt
         var t = (text ?? "").Trim().ToLowerInvariant();
         if (t.Length == 0) return "";
         if (t is "mouse3" or "mouse4" or "mouse5" || HotkeyText.Vk.ContainsKey(t)) return t;
-        throw new HotkeyException($"无法识别的按键：{text}");
+        throw new HotkeyException(T("无法识别的按键：{0}", text));
     }
 
     public static void Press(string name, bool down)

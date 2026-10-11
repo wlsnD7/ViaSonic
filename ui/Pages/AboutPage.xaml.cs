@@ -15,7 +15,7 @@ public sealed partial class AboutPage : Page
     public AboutPage()
     {
         InitializeComponent();
-        AppCard.Description = $"版本 {App.Version}";
+        AppCard.Description = T("版本 {0}", App.Version);
         _timer.Tick += async (_, _) => await PollAsync();
     }
 

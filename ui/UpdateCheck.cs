@@ -26,7 +26,7 @@ public static class UpdateCheck
         }
         catch (Exception e)
         {
-            Log.Info($"检查更新失败：{e.Message}");
+            Log.Info(T("检查更新失败：{0}", e.Message));
         }
         return null;
     }

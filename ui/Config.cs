@@ -21,10 +21,10 @@ public static class ConfigStore
         ["audio"] = "",
     };
 
-    public static JsonObject NewModel(string name = "新模型") => new()
+    public static JsonObject NewModel(string? name = null) => new()
     {
         ["id"] = NewId(),
-        ["name"] = name,
+        ["name"] = name ?? T("新模型"),
         ["gpt"] = "", ["sovits"] = "", ["ref"] = "", ["ref_text"] = "", ["ref_lang"] = "zh",
     };
 
@@ -62,6 +62,7 @@ public static class ConfigStore
         },
         ["phrases"] = new JsonArray(NewPhrase()),
         ["welcome_shown"] = false,
+        ["language"] = "",
     };
 
     public static JsonObject Load()
@@ -76,7 +77,7 @@ public static class ConfigStore
             }
             catch (Exception e)
             {
-                Log.Warn($"配置文件损坏，已重置：{path}（{e.Message}）");
+                Log.Warn(T("配置文件损坏，已重置：{0}（{1}）", path, e.Message));
                 try { File.Move(path, path + ".broken", true); } catch { }
             }
         }
@@ -93,6 +94,18 @@ public static class ConfigStore
             }
         }
 
+        if (string.IsNullOrEmpty(cfg["language"]?.GetValue<string>()))
+        {
+            var lang = Lang.SystemDefault();
+            cfg["language"] = lang;
+            // 全新安装且是英文时，默认音色和合成语言也用英文；老配置升级只补语言，不动已有设置
+            if (raw == null && lang == "en")
+            {
+                cfg["edge_voice"] = "en-US-GuyNeural";
+                cfg["gsv_text_lang"] = "en";
+            }
+        }
+        Lang.Init(cfg["language"]!.GetValue<string>());
         if (cfg["gsv_models"] is not JsonArray) cfg["gsv_models"] = new JsonArray();
         var models = cfg["gsv_models"]!.AsArray();
         var cur = cfg["gsv_model"]?.GetValue<string>();
@@ -117,7 +130,7 @@ public static class ConfigStore
         }
         catch (Exception e)
         {
-            Log.Error("保存配置失败", e);
+            Log.Error(T("保存配置失败"), e);
         }
     }
 }

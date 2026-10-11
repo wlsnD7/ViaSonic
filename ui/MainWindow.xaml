@@ -3,6 +3,7 @@
     x:Class="ViaTTS.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ViaTTS.Markup"
     Title="ViaTTS">
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="BaseAlt" />
@@ -33,21 +34,21 @@
             CompactModeThresholdWidth="0"
             SelectionChanged="Nav_SelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="主页" Tag="home">
+                <NavigationViewItem Content="{l:T Text='主页'}" Tag="home">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="常用语" Tag="phrases">
+                <NavigationViewItem Content="{l:T Text='常用语'}" Tag="phrases">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE8BD;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="音频" Tag="audio">
+                <NavigationViewItem Content="{l:T Text='音频'}" Tag="audio">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE767;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="设置" Tag="hotkeys">
+                <NavigationViewItem Content="{l:T Text='设置'}" Tag="hotkeys">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem Content="关于" Tag="about">
+                <NavigationViewItem Content="{l:T Text='关于'}" Tag="about">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE946;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>

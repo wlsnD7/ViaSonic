@@ -44,6 +44,38 @@ if sys.stdout is None:  # pythonw 下没有控制台，GPT-SoVITS 的 print 会�
 if sys.stderr is None:
     sys.stderr = _Null()
 
+_lang = "zh"
+_EN = {
+    "未选择模型": "No model selected",
+    "GPT 权重": "GPT weights",
+    "SoVITS 权重": "SoVITS weights",
+    "参考音频": "Reference audio",
+    "模型": "model",
+    "、": ", ",
+    "「%s」缺少%s": "\"%s\" is missing: %s",
+    "加载 GPT-SoVITS 失败：%s": "Failed to load GPT-SoVITS: %s",
+    "切换模型失败：%s": "Failed to switch model: %s",
+    "加载 GPT-SoVITS：%s": "Loading GPT-SoVITS: %s",
+    "切换模型：%s": "Switching model: %s",
+    "就绪：%s": "Ready: %s",
+    "加载失败": "Load failed",
+    "GPT-SoVITS 未就绪": "GPT-SoVITS is not ready",
+    "请求失败": "Request failed",
+    "GPT-SoVITS 服务已启动，端口 %d": "GPT-SoVITS service started on port %d",
+}
+
+
+def _set_lang(lang):
+    """界面每次请求都带上当前语言，之后的错误和日志都用它。"""
+    global _lang
+    if lang in ("zh", "en"):
+        _lang = lang
+
+
+def _t(zh):
+    return _EN.get(zh, zh) if _lang == "en" else zh
+
+
 log = logging.getLogger("gsv")
 _seq = itertools.count(1)
 _logs = collections.deque(maxlen=500)
@@ -85,11 +117,11 @@ class Engine:
     @staticmethod
     def check(m):
         if not m:
-            raise EngineError("未选择模型", "model_missing")
-        names = {"gpt": "GPT 权重", "sovits": "SoVITS 权重", "ref": "参考音频"}
-        missing = [names[k] for k in ("gpt", "sovits", "ref") if not m.get(k) or not os.path.isfile(m[k])]
+            raise EngineError(_t("未选择模型"), "model_missing")
+        names = {"gpt": "GPT 权重", "sovits": "SoVITS 权重", "ref": "参考音频"}  # 翻译键
+        missing = [_t(names[k]) for k in ("gpt", "sovits", "ref") if not m.get(k) or not os.path.isfile(m[k])]
         if missing:
-            raise EngineError("「%s」缺少%s" % (m.get("name", "模型"), "、".join(missing)), "model_missing")
+            raise EngineError(_t("「%s」缺少%s") % (m.get("name") or _t("模型"), _t("、").join(missing)), "model_missing")
 
     def _init_tts(self, m):
         for sub in ("", "GPT_SoVITS", os.path.join("GPT_SoVITS", "eres2net")):
@@ -110,7 +142,7 @@ class Engine:
                 # 权重版本（v2 / v2Pro / v4 …）由 GPT-SoVITS 加载时从文件里自动识别
                 return TTS(c)
             except Exception as e:
-                raise EngineError("加载 GPT-SoVITS 失败：%s\n%s" % (e, out.getvalue()[-2000:]))
+                raise EngineError((_t("加载 GPT-SoVITS 失败：%s") + "\n%s") % (e, out.getvalue()[-2000:]))
 
     def _switch(self, m):
         with _quiet() as out:
@@ -121,7 +153,7 @@ class Engine:
                     self.tts.init_t2s_weights(m["gpt"])
             except Exception as e:
                 self.loaded = None
-                raise EngineError("切换模型失败：%s\n%s" % (e, out.getvalue()[-2000:]))
+                raise EngineError((_t("切换模型失败：%s") + "\n%s") % (e, out.getvalue()[-2000:]))
 
     def load(self, m):
         """加载引擎（首次）或切换到模型 m。在后台线程里调用。"""
@@ -130,29 +162,29 @@ class Engine:
             self.check(m)
             with self.lock:
                 if self.tts is None:
-                    log.info("加载 GPT-SoVITS：%s", m.get("name"))
+                    log.info(_t("加载 GPT-SoVITS：%s"), m.get("name"))
                     tts = self._init_tts(m)
                     self.loaded = (m["gpt"], m["sovits"])
                     self._run(tts, m, "预热。", 1.0, "zh")  # 首次推理要分配显存，跑完才算就绪
                     self.tts = tts
                 elif self.loaded != (m["gpt"], m["sovits"]):
-                    log.info("切换模型：%s", m.get("name"))
+                    log.info(_t("切换模型：%s"), m.get("name"))
                     self._switch(m)
                     self.loaded = (m["gpt"], m["sovits"])
             self.error, self.kind = "", ""
-            log.info("就绪：%s", m.get("name"))
+            log.info(_t("就绪：%s"), m.get("name"))
         except EngineError as e:
             self.error, self.kind = str(e).splitlines()[0], e.kind
             (log.warning if e.kind else log.error)(str(e))
         except Exception as e:
             self.error, self.kind = str(e).splitlines()[0], ""
-            log.exception("加载失败")
+            log.exception(_t("加载失败"))
         finally:
             self.loading = False
 
     def synth(self, m, text, speed, text_lang):
         if self.tts is None:
-            raise EngineError("GPT-SoVITS 未就绪")
+            raise EngineError(_t("GPT-SoVITS 未就绪"))
         self.check(m)
         with self.lock:
             if self.loaded != (m["gpt"], m["sovits"]):
@@ -206,6 +238,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlparse(self.path)
+        _set_lang(parse_qs(url.query).get("lang", [""])[0])
         if url.path == "/status":
             self._json({"ready": engine.tts is not None, "loading": engine.loading,
                         "error": engine.error, "kind": engine.kind})
@@ -218,6 +251,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             body = self._body()
+            _set_lang(body.get("lang", ""))
             if self.path == "/load":
                 if not engine.loading:
                     engine.loading = True
@@ -237,7 +271,7 @@ class Handler(BaseHTTPRequestHandler):
         except EngineError as e:
             self._json({"error": str(e).splitlines()[0], "kind": e.kind}, 400)
         except Exception as e:
-            log.exception("请求失败")
+            log.exception(_t("请求失败"))
             self._json({"error": str(e).splitlines()[0], "kind": ""}, 500)
 
 
@@ -258,7 +292,9 @@ def main():
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--parent-pid", type=int, default=0)
     ap.add_argument("--log", default="")
+    ap.add_argument("--lang", default="zh")
     args = ap.parse_args()
+    _set_lang(args.lang)
 
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", "%H:%M:%S")
     root = logging.getLogger()
@@ -275,7 +311,7 @@ def main():
         threading.Thread(target=watch_parent, args=(args.parent_pid,), daemon=True).start()
     engine = Engine(os.path.abspath(args.home), args.device)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    log.info("GPT-SoVITS 服务已启动，端口 %d", args.port)
+    log.info(_t("GPT-SoVITS 服务已启动，端口 %d"), args.port)
     server.serve_forever()
 
 
