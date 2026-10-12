@@ -8,7 +8,7 @@ namespace ViaTTS;
 /// <summary>合成调度：单线程合成队列（避免 GPU 并发）、常用语预生成缓存、播放。</summary>
 public sealed class Speaker : IDisposable
 {
-    private sealed record Job(int Gen, string Text, bool Cache, bool Play);
+    private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "");
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
@@ -80,13 +80,14 @@ public sealed class Speaker : IDisposable
     }
 
     // ------------------------------------------------------------------ 朗读
-    public void Speak(string? text, bool cache = false)
+    /// <summary>tag：常用语的 id，用来在常用语页高亮正在朗读的那一条。</summary>
+    public void Speak(string? text, bool cache = false, string tag = "")
     {
         text = text?.Trim() ?? "";
         if (text.Length == 0) return;
         LastText = text;
         if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen); // 丢掉还没合成的旧句子
-        _jobs.Writer.TryWrite(new Job(_gen, text, cache, true));
+        _jobs.Writer.TryWrite(new Job(_gen, text, cache, true, tag));
     }
 
     public void Repeat()
@@ -94,14 +95,22 @@ public sealed class Speaker : IDisposable
         if (LastText.Length > 0) Speak(LastText, cache: true);
     }
 
+    /// <summary>停止全部：语音和音效。</summary>
     public void Stop()
     {
         Interlocked.Increment(ref _gen);
         Player.Stop();
     }
 
-    /// <summary>常用语的自定义音频，同样走虚拟麦克风。</summary>
-    public void PlayFile(string path) => _ = Task.Run(() =>
+    /// <summary>只停止语音（包括还没合成完的）。</summary>
+    public void StopSpeech()
+    {
+        Interlocked.Increment(ref _gen);
+        Player.StopSpeech();
+    }
+
+    /// <summary>常用语的音频文件，和语音叠加播放。</summary>
+    public void PlaySound(string id, string path) => _ = Task.Run(() =>
     {
         try
         {
@@ -118,8 +127,7 @@ public sealed class Speaker : IDisposable
                     _files[path] = (mtime, clip);
                 }
             }
-            if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen);
-            Player.Play(clip);
+            Player.PlaySound(id, clip);
         }
         catch (Exception e)
         {
@@ -185,14 +193,14 @@ public sealed class Speaker : IDisposable
                     }
                 }
             }
-            if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip);
+            if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);
             else if (job.Play) SetBusy("");
         }
     }
 
     public void Dispose()
     {
-        Player.Stop();
+        Player.Dispose();
         Gsv.Dispose();
     }
 }

@@ -6,7 +6,7 @@
     <RootNamespace>ViaTTS</RootNamespace>
     <AssemblyName>ViaTTS</AssemblyName>
     <!-- 版本号只改这里，安装包从 exe 里读取 -->
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

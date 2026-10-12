@@ -4,7 +4,7 @@
 
 # ViaTTS
 
-游戏或语音软件内的文本转语音，通过虚拟麦克风播放生成的语音。
+游戏或语音软件内的文本转语音，接入麦克风以及播放音效，通过虚拟麦克风输出声音。
 
 [![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
 [![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
@@ -18,7 +18,7 @@
 <table>
   <tr>
     <td><img src="docs/zh/home.png" width="400" alt="主页"></td>
-    <td><img src="docs/zh/phrases.png" width="400" alt="常用语"></td>
+    <td><img src="docs/zh/phrases.png" width="400" alt="常用语与音效"></td>
   </tr>
   <tr>
     <td><img src="docs/zh/audio.png" width="400" alt="音频"></td>
@@ -49,8 +49,9 @@ GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.
 1. 安装 [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)，未安装时软件会提示。
 2. 在游戏或语音软件（Discord、KOOK、Oopz 等）里把**麦克风设置为 `CABLE Output`**。
 3. 「音频」页默认自动输出到 `CABLE Input`，同时在耳机里监听。
-4. 如果游戏用「按键说话」，在「音频」页的「按键说话」里点「按键」按钮，再按下游戏里的说话键（键盘单键，或鼠标中键、侧键）。朗读期间会自动按住这个键。
-5. 游戏请用**无边框窗口**模式，全屏下弹出输入框会让游戏最小化。
+4. 同时接入麦克风和文本生成的语音，需在「音频」页打开「麦克风直通」并选择你的麦克风。
+5. 如果游戏用「按键说话」，在「音频」页的「按键说话」里点「按键」按钮，再按下游戏里的说话键（键盘单键，或鼠标中键、侧键）。朗读期间会自动按住这个键。
+6. 游戏请用**无边框窗口**模式，全屏下弹出输入框会让游戏最小化。
 
 ## 默认快捷键
 

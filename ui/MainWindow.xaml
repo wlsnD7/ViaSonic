@@ -37,7 +37,7 @@
                 <NavigationViewItem Content="{l:T Text='主页'}" Tag="home">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{l:T Text='常用语'}" Tag="phrases">
+                <NavigationViewItem Content="{l:T Text='常用语与音效'}" Tag="phrases">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE8BD;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="{l:T Text='音频'}" Tag="audio">

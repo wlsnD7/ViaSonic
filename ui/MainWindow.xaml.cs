@@ -99,7 +99,7 @@ public sealed partial class MainWindow : Window
     private static readonly Dictionary<string, string> NavNames = new()
     {
         ["home"] = "主页", // 翻译键
-        ["phrases"] = "常用语", // 翻译键
+        ["phrases"] = "常用语与音效", // 翻译键
         ["audio"] = "音频", // 翻译键
         ["hotkeys"] = "设置", // 翻译键
         ["about"] = "关于", // 翻译键

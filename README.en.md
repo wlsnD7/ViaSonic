@@ -4,7 +4,7 @@
 
 # ViaTTS
 
-Text to speech for games and voice chat, played through a virtual microphone.
+Text to speech for games and voice chat, with mic passthrough and sound effects, output through a virtual microphone.
 
 [![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
 [![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
@@ -18,7 +18,7 @@ Text to speech for games and voice chat, played through a virtual microphone.
 <table>
   <tr>
     <td><img src="docs/en/home.png" width="400" alt="Home"></td>
-    <td><img src="docs/en/phrases.png" width="400" alt="Phrases"></td>
+    <td><img src="docs/en/phrases.png" width="400" alt="Phrases & sounds"></td>
   </tr>
   <tr>
     <td><img src="docs/en/audio.png" width="400" alt="Audio"></td>
@@ -49,8 +49,9 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 1. Install [VB-Audio Virtual Cable](https://vb-audio.com/Cable/). The app tells you if it's missing.
 2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**.
 3. The Audio page outputs to `CABLE Input` by default, and also plays to your headphones so you can hear it.
-4. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays.
-5. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
+4. To send your microphone along with the speech, turn on Mic passthrough on the Audio page and choose your microphone.
+5. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays.
+6. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
 
 ## Default hotkeys
 

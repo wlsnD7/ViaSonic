@@ -36,6 +36,28 @@
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
+            <tk:SettingsExpander IsExpanded="True">
+                <tk:SettingsExpander.Header>
+                    <c:InfoHeader Text="{l:T Text='麦克风直通'}" Tip="{l:T Text='把麦克风的声音接入虚拟麦克风。'}" />
+                </tk:SettingsExpander.Header>
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE1D6;" /></tk:SettingsExpander.HeaderIcon>
+                <ToggleSwitch x:Name="PassOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="mic_passthrough" />
+                <tk:SettingsExpander.ItemsHeader>
+                    <InfoBar x:Name="PassBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='需要先打开虚拟麦克风'}" CornerRadius="0" BorderThickness="0" />
+                </tk:SettingsExpander.ItemsHeader>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="{l:T Text='设备'}">
+                        <ComboBox x:Name="PassDevice" MinWidth="320" SelectionChanged="Device_Changed" Tag="passthrough_device" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='音量'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="PassVolText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                            <Slider x:Name="PassVol" Width="220" Minimum="0" Maximum="150" StepFrequency="5" ValueChanged="Volume_Changed" Tag="passthrough_volume" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
             <tk:SettingsExpander Header="{l:T Text='监听'}" IsExpanded="True">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE7F6;" /></tk:SettingsExpander.HeaderIcon>
                 <ToggleSwitch x:Name="MonOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="monitor_enabled" />

@@ -22,6 +22,10 @@ public sealed partial class AudioPage : Page
         _init = true;
         MicOn.IsOn = A.Bool("mic_enabled");
         MonOn.IsOn = A.Bool("monitor_enabled");
+        PassOn.IsOn = A.Bool("mic_passthrough");
+        PassVol.Value = Math.Round(A.Num("passthrough_volume") * 100);
+        PassVolText.Text = $"{PassVol.Value:0}%";
+        UpdatePassBar();
         MicVol.Value = Math.Round(A.Num("mic_volume") * 100);
         MonVol.Value = Math.Round(A.Num("monitor_volume") * 100);
         MicVolText.Text = $"{MicVol.Value:0}%";
@@ -44,10 +48,12 @@ public sealed partial class AudioPage : Page
         try
         {
             var devices = await Task.Run(Audio.Devices.OutputNames);
+            var inputs = await Task.Run(Audio.Devices.InputNames);
             var cable = devices.FirstOrDefault(n => n.StartsWith("CABLE Input", StringComparison.OrdinalIgnoreCase)) ?? "";
             _init = true;
             FillDevices(MicDevice, devices, A.Str("mic_device"), string.IsNullOrEmpty(cable) ? T("自动") : T("自动（{0}）", cable));
             FillDevices(MonDevice, devices, A.Str("monitor_device"), T("默认"));
+            FillDevices(PassDevice, inputs, A.Str("passthrough_device"), T("默认"));
             _init = false;
             CableBar.IsOpen = string.IsNullOrEmpty(cable);
         }
@@ -70,7 +76,10 @@ public sealed partial class AudioPage : Page
         if (_init) return;
         var t = (ToggleSwitch)sender;
         A.Set((string)t.Tag, t.IsOn);
+        UpdatePassBar();
     }
+
+    private void UpdatePassBar() => PassBar.IsOpen = PassOn.IsOn && !MicOn.IsOn;
 
     private void Device_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -82,7 +91,7 @@ public sealed partial class AudioPage : Page
     private void Volume_Changed(object sender, RangeBaseValueChangedEventArgs e)
     {
         var s = (Slider)sender;
-        var label = s == MicVol ? MicVolText : MonVolText;
+        var label = s == MicVol ? MicVolText : s == MonVol ? MonVolText : PassVolText;
         if (label == null) return;
         label.Text = $"{e.NewValue:0}%";
         if (!_init) _save.Run(() => A.Set((string)s.Tag, Math.Round(s.Value / 100.0, 2)));

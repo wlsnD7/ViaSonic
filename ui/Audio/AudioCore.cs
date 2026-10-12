@@ -87,6 +87,26 @@ public static class Devices
         return en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).Select(d => d.FriendlyName).ToList();
     }
 
+    /// <summary>录音设备，排除 VB-Cable 自己的 CABLE Output（直通它会形成回环）。</summary>
+    public static List<string> InputNames()
+    {
+        using var en = new MMDeviceEnumerator();
+        return en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Select(d => d.FriendlyName).Where(n => !IsCable(n)).ToList();
+    }
+
+    public static bool IsCable(string name) => name.StartsWith("CABLE", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>按名称找录音设备；名称为空时返回系统默认录音设备。</summary>
+    public static MMDevice? FindInput(MMDeviceEnumerator en, string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return en.HasDefaultAudioEndpoint(DataFlow.Capture, Role.Console)
+                ? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console) : null;
+        var all = en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
+        return all.FirstOrDefault(d => d.FriendlyName == name)
+               ?? all.FirstOrDefault(d => d.FriendlyName.StartsWith(name) || name.StartsWith(d.FriendlyName));
+    }
+
     public static string VirtualCable()
     {
         var names = OutputNames();

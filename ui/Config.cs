@@ -19,6 +19,9 @@ public static class ConfigStore
         ["text"] = "",
         ["hotkey"] = "",
         ["audio"] = "",
+        ["name"] = "",
+        ["volume"] = 1.0,
+        ["loop"] = false,
     };
 
     public static JsonObject NewModel(string? name = null) => new()
@@ -50,6 +53,10 @@ public static class ConfigStore
         ["monitor_enabled"] = true,
         ["monitor_device"] = "",
         ["monitor_volume"] = 0.6,
+        ["mic_passthrough"] = false,
+        ["passthrough_device"] = "",
+        ["passthrough_volume"] = 1.0,
+        ["sound_volume"] = 1.0,
         ["play_mode"] = "interrupt",
         ["lead_silence_ms"] = 120,
         ["ptt_key"] = "",
@@ -112,8 +119,14 @@ public static class ConfigStore
         if (!models.Any(m => m?["id"]?.GetValue<string>() == cur))
             cfg["gsv_model"] = models.Count > 0 ? models[0]!["id"]!.GetValue<string>() : "";
         foreach (var p in cfg["phrases"]!.AsArray().OfType<JsonObject>())
-            foreach (var key in new[] { "id", "text", "hotkey", "audio" })
+        {
+            // 1.0 的音频常用语没有名称：原来的文字当名称
+            if (p["name"] == null && !string.IsNullOrEmpty(p["audio"]?.GetValue<string>())) p["name"] = p["text"]?.DeepClone();
+            foreach (var key in new[] { "id", "text", "hotkey", "audio", "name" })
                 p[key] ??= key == "id" ? NewId() : "";
+            p["volume"] ??= 1.0;
+            p["loop"] ??= false;
+        }
 
         Save(cfg);
         return cfg;

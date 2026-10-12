@@ -7,7 +7,6 @@ public static partial class Lang
     {
         // 导航
         ["主页"] = "Home",
-        ["常用语"] = "Phrases",
         ["音频"] = "Audio",
         ["设置"] = "Settings",
         ["关于"] = "About",
@@ -58,12 +57,17 @@ public static partial class Lang
 
         // 常用语
         ["添加"] = "Add",
-        ["暂无常用语"] = "No phrases yet",
+        ["常用语与音效"] = "Phrases & sounds",
+        ["添加常用语或音频文件"] = "Add a phrase or audio file",
 
         // 音频
         ["未检测到 VB-Cable"] = "VB-Cable not found",
         ["通过VB-Cable播放语音，需在软件里把麦克风设置为 CABLE Output。"] = "Plays speech through VB-Cable. Set the microphone in your game or voice app to CABLE Output.",
         ["监听"] = "Monitor",
+        ["麦克风直通"] = "Mic passthrough",
+        ["把麦克风的声音接入虚拟麦克风。"] = "Sends your microphone into the virtual microphone.",
+        ["需要先打开虚拟麦克风"] = "Turn on the virtual microphone first",
+        ["无法打开麦克风「{0}」：{1}"] = "Couldn't open microphone \"{0}\": {1}",
         ["刷新设备"] = "Refresh devices",
         ["刷新"] = "Refresh",
         ["播放"] = "Play",  // 音频页分组标题和常用语页按钮提示共用这个键
@@ -223,9 +227,14 @@ public static partial class Lang
         ["上移"] = "Move up",
         ["下移"] = "Move down",
         ["删除？"] = "Delete?",
-        ["移除音频"] = "Remove audio",
         ["（文件不存在）"] = " (missing)",
-        ["选择音频文件，代替朗读文字"] = "Choose an audio file to play instead of the text",
+        ["文字"] = "Text",
+        ["停止全部"] = "Stop all",
+        ["音频音量"] = "Audio volume",
+        ["循环"] = "Loop",
+        ["更多"] = "More",
+        ["更换文件"] = "Change file",
+        ["不支持的文件：{0}"] = "Unsupported file: {0}",
 
         // 应用、托盘、欢迎页
         ["未处理的异常"] = "Unhandled exception",

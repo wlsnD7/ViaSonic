@@ -177,6 +177,7 @@ public partial class App : Application
     {
         _snapshot = Config.DeepClone().AsObject();
         _save!.Run(() => ConfigStore.Save(Config));
+        Speaker.Player.OnConfig();
         switch (key)
         {
             case "engine":
@@ -201,12 +202,14 @@ public partial class App : Application
 
     public static JsonObject NewPhrase() => ConfigStore.NewPhrase();
 
-    /// <summary>有自定义音频就播放音频，否则朗读文字。</summary>
+    /// <summary>音频条目：播放音频，正在播放时再按一次就停止；文字条目：朗读文字。</summary>
     public void PlayPhrase(JsonNode p)
     {
+        var id = p["id"]!.GetValue<string>();
         var audio = p["audio"]?.GetValue<string>() ?? "";
-        if (audio.Length > 0) Speaker.PlayFile(audio);
-        else Speaker.Speak(p["text"]?.GetValue<string>() ?? "", cache: true);
+        if (audio.Length == 0) Speaker.Speak(p["text"]?.GetValue<string>() ?? "", cache: true, tag: id);
+        else if (Speaker.Player.IsActive(id)) Speaker.Player.StopSound(id);
+        else Speaker.PlaySound(id, audio);
     }
 
     // ------------------------------------------------------------------ 快捷键
@@ -249,8 +252,9 @@ public partial class App : Application
         {
             var id = name[7..];
             var p = Phrases.FirstOrDefault(x => x!["id"]!.GetValue<string>() == id);
-            var t = p?["text"]?.GetValue<string>() ?? "";
-            if (t.Length == 0) t = Path.GetFileName(p?["audio"]?.GetValue<string>() ?? "") is { Length: > 0 } f ? f : T("未命名");
+            var audio = p?["audio"]?.GetValue<string>() ?? "";
+            var t = audio.Length > 0 ? p?["name"]?.GetValue<string>() ?? "" : p?["text"]?.GetValue<string>() ?? "";
+            if (t.Length == 0) t = Path.GetFileName(audio) is { Length: > 0 } f ? f : T("未命名");
             return T("常用语「{0}」", t.Length > 12 ? t[..12] + "…" : t);
         }
         return name;
