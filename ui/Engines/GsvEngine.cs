@@ -198,10 +198,23 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
 
     private async Task PollUntilSettledAsync()
     {
+        var lastOk = DateTime.UtcNow;
         while (_proc is { HasExited: false })
         {
             await PullLogsAsync();
-            var s = JsonNode.Parse(await _http.GetStringAsync(_base + $"status?lang={Lang.Current}"))!;
+            JsonNode s;
+            try
+            {
+                s = JsonNode.Parse(await _http.GetStringAsync(_base + $"status?lang={Lang.Current}"))!;
+                lastOk = DateTime.UtcNow;
+            }
+            catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+            {
+                // 首次加载模型时服务很忙，偶尔查不到状态；进程还在就继续等，连续一分钟查不到才算失败
+                if (DateTime.UtcNow - lastOk > TimeSpan.FromSeconds(60)) throw;
+                await Task.Delay(1000);
+                continue;
+            }
             bool loading = s["loading"]!.GetValue<bool>();
             SetState(s["ready"]!.GetValue<bool>(), loading, s["error"]!.GetValue<string>(), s["kind"]!.GetValue<string>());
             if (!loading) return;

@@ -35,7 +35,7 @@ public sealed partial class HotkeysPage : Page
         var o = A.Sub("overlay");
         HideAfter.IsOn = o["hide_after_send"]?.GetValue<bool>() ?? true;
         RestoreFocus.IsOn = o["restore_focus"]?.GetValue<bool>() ?? true;
-        OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? App.ToDouble(op) : 0.8) * 100);
+        OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? App.ToDouble(op) : 0.75) * 100);
         OpacityText.Text = $"{OpacitySlider.Value:0}%";
         WidthSlider.Value = Math.Round(App.ToDouble(o["width_ratio"]) * 100);
         WidthText.Text = $"{WidthSlider.Value:0}%";

@@ -174,6 +174,7 @@ public static partial class Lang
 
         // 引擎与合成
         ["时间偏差"] = "Clock skew",
+        ["Edge TTS 被微软服务器拒绝（403），请检查 ViaTTS 是否有新版本"] = "Edge TTS was refused by Microsoft's server (403). Check whether a newer ViaTTS is available.",
         ["Edge TTS 连接失败：{0}"] = "Edge TTS connection failed: {0}",
         ["Edge TTS 没有生成声音，所选音色可能读不了这种语言"] = "Edge TTS returned no audio. The voice may not support this language.",
         ["找不到 GPT-SoVITS"] = "GPT-SoVITS not found",

@@ -132,7 +132,7 @@ public sealed class OverlayWindow : Window
         if (!_visible || _lingering) _box.Text = ""; // 只是把焦点拉回来时保留已经打的字
         StopLinger();
         _visible = true;
-        Native.SetWindowOpacity(_hwnd, o["opacity"] is { } op ? App.ToDouble(op) : 0.8);
+        Native.SetWindowOpacity(_hwnd, o["opacity"] is { } op ? App.ToDouble(op) : 0.75);
         AppWindow.Show(true);
         Activate();
         Native.ForceForeground(_hwnd);

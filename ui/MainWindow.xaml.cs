@@ -60,16 +60,23 @@ public sealed partial class MainWindow : Window
 
     public void OnReady()
     {
-        if (Content is FrameworkElement root && !App.Current.Bool("welcome_shown"))
+        if (Content is FrameworkElement root)
         {
-            async void ShowWelcome()
+            // 每次启动都弹出输入框；第一次启动先显示欢迎页，关掉后再弹
+            bool started = false;
+            async void OnStart()
             {
-                if (App.Current.Bool("welcome_shown")) return;
-                App.Current.Set("welcome_shown", true);
-                await new WelcomeDialog(root.XamlRoot).ShowAsync();
+                if (started) return;
+                started = true;
+                if (!App.Current.Bool("welcome_shown"))
+                {
+                    App.Current.Set("welcome_shown", true);
+                    await new WelcomeDialog(root.XamlRoot).ShowAsync();
+                }
+                App.Current.Overlay?.Show(IntPtr.Zero);
             }
-            if (root.IsLoaded) DispatcherQueue.TryEnqueue(ShowWelcome);
-            else root.Loaded += (_, _) => ShowWelcome();
+            if (root.IsLoaded) DispatcherQueue.TryEnqueue(OnStart);
+            else root.Loaded += (_, _) => OnStart();
         }
         Nav.SelectedItem = Nav.MenuItems[0];
         App.Current.StateChanged += CheckErrors;

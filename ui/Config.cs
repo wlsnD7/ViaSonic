@@ -58,7 +58,7 @@ public static class ConfigStore
         ["hotkeys_paused"] = false,
         ["overlay"] = new JsonObject
         {
-            ["opacity"] = 0.8, ["width_ratio"] = 0.22, ["bottom_offset"] = 160, ["hide_after_send"] = true, ["restore_focus"] = false,
+            ["opacity"] = 0.75, ["width_ratio"] = 0.22, ["bottom_offset"] = 80, ["hide_after_send"] = false, ["restore_focus"] = false,
         },
         ["phrases"] = new JsonArray(NewPhrase()),
         ["welcome_shown"] = false,

@@ -49,7 +49,8 @@ public sealed class EdgeTts : ITtsEngine
     private const string TrustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
     private const string ChromiumFull = "143.0.3650.75";
     private const string ChromiumMajor = "143";
-    private const string WssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1";
+    // 2026 年 10 月起旧地址 speech.platform.bing.com 拒绝合成（403），Edge 改用这个地址，令牌作为 Ocp-Apim-Subscription-Key 传
+    private const string WssUrl = "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1";
     private static double _clockSkew;
 
     public string Key => "edge";
@@ -91,7 +92,15 @@ public sealed class EdgeTts : ITtsEngine
         }
         catch (TtsException e) when (e.Kind == "skew")
         {
-            return await SynthOnceAsync(text, c, token); // 系统时间不准时按服务器时间修正后重试一次
+            try
+            {
+                return await SynthOnceAsync(text, c, token); // 系统时间不准时按服务器时间修正后重试一次
+            }
+            catch (TtsException again) when (again.Kind == "skew")
+            {
+                // 修正时间后仍被拒绝，不是时间问题，多半是微软改了接口
+                throw new TtsException(T("Edge TTS 被微软服务器拒绝（403），请检查 ViaTTS 是否有新版本"));
+            }
         }
     }
 
@@ -114,7 +123,7 @@ public sealed class EdgeTts : ITtsEngine
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
         var ct = timeout.Token;
-        var url = $"{WssUrl}?TrustedClientToken={TrustedClientToken}&ConnectionId={Id()}&Sec-MS-GEC={SecMsGec()}&Sec-MS-GEC-Version=1-{ChromiumFull}";
+        var url = $"{WssUrl}?Ocp-Apim-Subscription-Key={TrustedClientToken}&ConnectionId={Id()}&Sec-MS-GEC={SecMsGec()}&Sec-MS-GEC-Version=1-{ChromiumFull}";
         try
         {
             await ws.ConnectAsync(new Uri(url), ct);
