@@ -59,6 +59,23 @@ public static class AudioDecode
         return Read(r);
     }
 
+    /// <summary>只读文件头得到时长，不解码。</summary>
+    public static TimeSpan Duration(string path)
+    {
+        if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                using var w = new WaveFileReader(path);
+                return w.TotalTime;
+            }
+            catch { }
+        }
+        EnsureMf();
+        using var r = new MediaFoundationReader(path);
+        return r.TotalTime;
+    }
+
     private static Clip Read(WaveStream stream)
     {
         var sp = stream.ToSampleProvider();

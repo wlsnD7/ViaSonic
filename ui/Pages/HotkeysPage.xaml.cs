@@ -14,7 +14,7 @@ public sealed partial class HotkeysPage : Page
     public HotkeysPage()
     {
         InitializeComponent();
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat })
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt })
         {
             var name = (string)b.Tag;
             b.HotkeyChanged += v =>
@@ -29,7 +29,7 @@ public sealed partial class HotkeysPage : Page
     {
         _init = true;
         var hk = A.Sub("hotkeys");
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat })
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt })
             b.Value = hk[(string)b.Tag]?.GetValue<string>() ?? "";
         Paused.IsOn = A.Bool("hotkeys_paused");
         var o = A.Sub("overlay");
@@ -39,14 +39,36 @@ public sealed partial class HotkeysPage : Page
         OpacityText.Text = $"{OpacitySlider.Value:0}%";
         WidthSlider.Value = Math.Round(App.ToDouble(o["width_ratio"]) * 100);
         WidthText.Text = $"{WidthSlider.Value:0}%";
-        Bottom.Value = App.ToDouble(o["bottom_offset"]);
+        LoadPosition();
         ShowErrors();
         A.HotkeyErrorsChanged += ShowErrors;
+        if (A.Overlay != null) A.Overlay.Moved += OnOverlayMoved;
         LangBox.SelectedItem = LangBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Lang.Current);
         _init = false;
     }
 
-    protected override void OnNavigatedFrom(NavigationEventArgs e) => A.HotkeyErrorsChanged -= ShowErrors;
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        A.HotkeyErrorsChanged -= ShowErrors;
+        if (A.Overlay != null) A.Overlay.Moved -= OnOverlayMoved;
+    }
+
+    private void LoadPosition()
+    {
+        var o = A.Sub("overlay");
+        XSlider.Value = Math.Round((o["x_ratio"] is { } x ? App.ToDouble(x) : 0.5) * 100);
+        XText.Text = $"{XSlider.Value:0}%";
+        Bottom.Value = App.ToDouble(o["bottom_offset"]);
+    }
+
+    /// <summary>拖动输入框后刷新水平位置和底部距离。</summary>
+    private void OnOverlayMoved()
+    {
+        bool init = _init;
+        _init = true;
+        LoadPosition();
+        _init = init;
+    }
 
     private void ShowErrors()
     {
@@ -97,6 +119,27 @@ public sealed partial class HotkeysPage : Page
             A.Sub("overlay")["width_ratio"] = Math.Round(WidthSlider.Value / 100.0, 2);
             A.Commit("overlay");
         });
+    }
+
+    private void X_Changed(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (XText == null) return;
+        XText.Text = $"{e.NewValue:0}%";
+        if (_init) return;
+        _save.Run(() =>
+        {
+            A.Sub("overlay")["x_ratio"] = Math.Round(XSlider.Value / 100.0, 3);
+            A.Commit("overlay");
+        });
+    }
+
+    private void ResetPosition_Click(object sender, RoutedEventArgs e)
+    {
+        var o = A.Sub("overlay");
+        o["x_ratio"] = 0.5;
+        o["bottom_offset"] = 80;
+        A.Commit("overlay");
+        OnOverlayMoved();
     }
 
     private void Bottom_Changed(NumberBox sender, NumberBoxValueChangedEventArgs args)

@@ -27,6 +27,8 @@ public partial class App : Application
     public event Action? StateChanged;
     public event Action? HotkeyErrorsChanged;
     public event Action? ConfigReplaced;
+    /// <summary>用快捷键开关了按键说话（音频页刷新开关）。</summary>
+    public event Action? PttToggled;
 
     private HotkeyManager? _hotkeys;
     private TrayIcon? _tray;
@@ -45,6 +47,7 @@ public partial class App : Application
         ["focus"] = "聚焦输入框", // 翻译键
         ["stop"] = "停止", // 翻译键
         ["repeat"] = "重复上一句", // 翻译键
+        ["ptt"] = "打开/关闭按键说话", // 翻译键
     };
 
     public App()
@@ -196,19 +199,28 @@ public partial class App : Application
             case "hotkeys" or "hotkeys_paused":
                 ApplyHotkeys();
                 break;
+            case "overlay":
+                Overlay?.OnConfig();
+                break;
         }
         if (key is "engine") RefreshState();
     }
 
     public static JsonObject NewPhrase() => ConfigStore.NewPhrase();
 
-    /// <summary>音频条目：播放音频，正在播放时再按一次就停止；文字条目：朗读文字。</summary>
+    /// <summary>
+    /// 音频条目、开了循环的文字条目：像音效一样播放，正在播放时再按一次就停止；
+    /// 其他文字条目：朗读文字。
+    /// </summary>
     public void PlayPhrase(JsonNode p)
     {
         var id = p["id"]!.GetValue<string>();
         var audio = p["audio"]?.GetValue<string>() ?? "";
-        if (audio.Length == 0) Speaker.Speak(p["text"]?.GetValue<string>() ?? "", cache: true, tag: id);
-        else if (Speaker.Player.IsActive(id)) Speaker.Player.StopSound(id);
+        var text = p["text"]?.GetValue<string>() ?? "";
+        bool loop = p["loop"]?.GetValue<bool>() ?? false;
+        if (audio.Length == 0 && !loop) Speaker.Speak(text, cache: true, tag: id);
+        else if (Speaker.Player.IsSound(id)) Speaker.Player.StopSound(id);
+        else if (audio.Length == 0) Speaker.SpeakAsSound(id, text);
         else Speaker.PlaySound(id, audio);
     }
 
@@ -238,6 +250,7 @@ public partial class App : Application
         {
             b["stop"] = hk["stop"]?.GetValue<string>() ?? "";
             b["repeat"] = hk["repeat"]?.GetValue<string>() ?? "";
+            b["ptt"] = hk["ptt"]?.GetValue<string>() ?? "";
             foreach (var p in Phrases)
                 b["phrase:" + p!["id"]!.GetValue<string>()] = p["hotkey"]?.GetValue<string>() ?? "";
         }
@@ -277,6 +290,7 @@ public partial class App : Application
             case "focus": Overlay?.FocusIfVisible(prev); break;
             case "stop": Speaker.Stop(); break;
             case "repeat": Speaker.Repeat(); break;
+            case "ptt": Set("ptt_enabled", !Bool("ptt_enabled")); PttToggled?.Invoke(); break;
             default:
                 if (name.StartsWith("phrase:"))
                 {

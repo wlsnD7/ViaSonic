@@ -8,7 +8,8 @@ namespace ViaTTS;
 /// <summary>合成调度：单线程合成队列（避免 GPU 并发）、常用语预生成缓存、播放。</summary>
 public sealed class Speaker : IDisposable
 {
-    private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "");
+    /// <summary>Sound：合成后作为音效播放（循环的文字常用语），Tag 是常用语 id。</summary>
+    private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false);
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
@@ -88,6 +89,13 @@ public sealed class Speaker : IDisposable
         LastText = text;
         if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen); // 丢掉还没合成的旧句子
         _jobs.Writer.TryWrite(new Job(_gen, text, cache, true, tag));
+    }
+
+    /// <summary>开了循环的文字常用语：合成后像音效一样叠加、循环播放，不打断也不排队。</summary>
+    public void SpeakAsSound(string id, string? text)
+    {
+        text = text?.Trim() ?? "";
+        if (text.Length > 0) _jobs.Writer.TryWrite(new Job(_gen, text, true, true, id, Sound: true));
     }
 
     public void Repeat()
@@ -193,7 +201,8 @@ public sealed class Speaker : IDisposable
                     }
                 }
             }
-            if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);
+            if (job.Play && job.Sound && job.Gen == _gen) Player.PlaySound(job.Tag, clip, speech: true);
+            else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);
             else if (job.Play) SetBusy("");
         }
     }

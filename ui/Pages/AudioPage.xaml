@@ -103,9 +103,10 @@
 
             <tk:SettingsExpander IsExpanded="True">
                 <tk:SettingsExpander.Header>
-                    <c:InfoHeader Text="{l:T Text='按键说话'}" Tip="{l:T Text='软件内「按键说话」语音播放期间会自动按住这个键，播完松开。'}" />
+                    <c:InfoHeader Text="{l:T Text='按键说话'}" Tip="{l:T Text='开启后，语音播放期间自动按住这个键，播完松开。'}" />
                 </tk:SettingsExpander.Header>
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE962;" /></tk:SettingsExpander.HeaderIcon>
+                <ToggleSwitch x:Name="PttOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="ptt_enabled" />
                 <tk:SettingsExpander.Items>
                     <tk:SettingsCard Header="{l:T Text='按键'}">
                         <c:HotkeyButton x:Name="PttKey" SingleKey="True" />

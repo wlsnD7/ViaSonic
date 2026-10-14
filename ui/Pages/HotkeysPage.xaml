@@ -40,6 +40,10 @@
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8EE;" /></tk:SettingsCard.HeaderIcon>
                 <c:HotkeyButton x:Name="HkRepeat" Tag="repeat" />
             </tk:SettingsCard>
+            <tk:SettingsCard Header="{l:T Text='打开/关闭按键说话'}">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE962;" /></tk:SettingsCard.HeaderIcon>
+                <c:HotkeyButton x:Name="HkPtt" Tag="ptt" />
+            </tk:SettingsCard>
             <tk:SettingsCard>
                 <tk:SettingsCard.Header>
                     <c:InfoHeader Text="{l:T Text='暂停快捷键'}" Tip="{l:T Text='暂时停用除「打开/关闭输入框」「聚焦输入框」以外的所有快捷键。'}" />
@@ -78,10 +82,21 @@
                     <Slider x:Name="WidthSlider" Width="220" Minimum="10" Maximum="90" StepFrequency="1" ValueChanged="Width_Changed" />
                 </StackPanel>
             </tk:SettingsCard>
+            <tk:SettingsCard Header="{l:T Text='水平位置'}">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE784;" /></tk:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="XText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                    <Slider x:Name="XSlider" Width="220" Minimum="0" Maximum="100" StepFrequency="1" ValueChanged="X_Changed" />
+                </StackPanel>
+            </tk:SettingsCard>
             <tk:SettingsCard Header="{l:T Text='底部距离'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE74B;" /></tk:SettingsCard.HeaderIcon>
                 <NumberBox x:Name="Bottom" Minimum="0" Maximum="2000" SmallChange="20" LargeChange="100"
                            SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="Bottom_Changed" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="{l:T Text='重置位置'}">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE72C;" /></tk:SettingsCard.HeaderIcon>
+                <Button Content="{l:T Text='重置'}" Click="ResetPosition_Click" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="{l:T Text='预览'}">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7B3;" /></tk:SettingsCard.HeaderIcon>

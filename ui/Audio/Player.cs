@@ -24,6 +24,7 @@ public sealed class Player
     private readonly BusPool _pool = new();
     private readonly Passthrough _pass;
     private readonly Dictionary<string, Voice> _sounds = [];
+    private readonly Dictionary<string, double> _startAt = []; // 没在播放时拖动进度条设的起点（秒）
     private Job? _current;
     private bool _playing;
 
@@ -73,12 +74,46 @@ public sealed class Player
             items[p["id"]?.GetValue<string>() ?? ""] = ((float)App.ToDouble(p["volume"]), p["loop"]?.GetValue<bool>() ?? false);
         _items = items;
         _pass.Set(Bool("mic_enabled") && Bool("mic_passthrough") ? (Str("mic_device"), Str("passthrough_device")) : null);
+        PttSwitch();
         ThreadPool.QueueUserWorkItem(_ => Targets()); // 提前找好设备，第一次播放不用等
     }
 
     public bool IsActive(string tag)
     {
         lock (_lock) return _sounds.ContainsKey(tag) || (_current != null && _current.Tag == tag && tag.Length > 0);
+    }
+
+    /// <summary>这一条正作为音效播放（音频文件或循环的文字）。</summary>
+    public bool IsSound(string id)
+    {
+        lock (_lock) return _sounds.ContainsKey(id);
+    }
+
+    /// <summary>正在播放的音效的位置和总长（秒）；没在播放时为 null。</summary>
+    public (double Pos, double Len)? Progress(string id)
+    {
+        lock (_lock)
+            return _sounds.TryGetValue(id, out var v) ? ((double)v.Position / v.Clip.SampleRate, (double)v.Clip.Samples.Length / v.Clip.SampleRate) : null;
+    }
+
+    public void Seek(string id, double seconds)
+    {
+        lock (_lock) if (_sounds.TryGetValue(id, out var v)) v.Seek((int)(seconds * v.Clip.SampleRate));
+    }
+
+    /// <summary>下次播放这一条时从哪里开始（秒），播放时用掉。</summary>
+    public void SetStart(string id, double seconds)
+    {
+        lock (_lock)
+        {
+            if (seconds > 0) _startAt[id] = seconds;
+            else _startAt.Remove(id);
+        }
+    }
+
+    public double StartOf(string id)
+    {
+        lock (_lock) return _startAt.TryGetValue(id, out var s) ? s : 0;
     }
 
     // ------------------------------------------------------------------ 语音
@@ -119,7 +154,7 @@ public sealed class Player
             Notify();
             try
             {
-                var voice = new Voice(job.Clip, (int)Num("lead_silence_ms"), () => false, () => 1f);
+                var voice = new Voice(job.Clip, (int)Num("lead_silence_ms"), () => false, () => 1f, 0);
                 if (PttDown(job.Cts.Token)) Start(voice);
                 WaitHandle.WaitAny([voice.Done, job.Cts.Token.WaitHandle]);
                 voice.Stop();
@@ -135,12 +170,18 @@ public sealed class Player
     }
 
     // ------------------------------------------------------------------ 音效
-    /// <summary>播放常用语的音频文件，和语音、其他音效叠加。同一条再次播放时先停掉旧的。音量、循环在播放中修改也立即生效。</summary>
-    public void PlaySound(string id, Clip clip)
+    /// <summary>
+    /// 播放常用语的音频文件（或循环的文字），和语音、其他音效叠加。同一条再次播放时先停掉旧的。音量、循环在播放中修改也立即生效。
+    /// speech：文字合成的语音，不受「音频音量」影响。
+    /// </summary>
+    public void PlaySound(string id, Clip clip, bool speech = false)
     {
+        int start;
+        lock (_lock) start = _startAt.Remove(id, out var sec) ? (int)(sec * clip.SampleRate) : 0;
         var voice = new Voice(clip, (int)Num("lead_silence_ms"),
             () => _items.TryGetValue(id, out var it) && it.Loop,
-            () => _soundVol * (_items.TryGetValue(id, out var it) ? it.Vol : 1f));
+            speech ? () => 1f : () => _soundVol * (_items.TryGetValue(id, out var it) ? it.Vol : 1f),
+            Math.Clamp(start, 0, clip.Samples.Length));
         lock (_lock)
         {
             if (_sounds.TryGetValue(id, out var old)) old.Stop();
@@ -242,14 +283,35 @@ public sealed class Player
             wait = _pttCount++ == 0;
             if (wait)
             {
-                try { _pttKey = Ptt.Parse(Str("ptt_key")); }
-                catch (Exception e) { Log.Warn(e.Message); _pttKey = ""; }
+                _pttKey = PttKey();
                 if (_pttKey.Length > 0) Ptt.Press(_pttKey, true);
                 else wait = false;
             }
         }
         if (wait) token.WaitHandle.WaitOne((int)Num("ptt_delay_ms"));
         return !token.IsCancellationRequested;
+    }
+
+    /// <summary>要按的键；按键说话关着时为空。</summary>
+    private string PttKey()
+    {
+        if (!Bool("ptt_enabled")) return "";
+        try { return Ptt.Parse(Str("ptt_key")); }
+        catch (Exception e) { Log.Warn(e.Message); return ""; }
+    }
+
+    /// <summary>播放途中开关按键说话：关掉立即松开，打开立即按下。</summary>
+    private void PttSwitch()
+    {
+        lock (_pttLock)
+        {
+            if (_pttCount == 0) return;
+            var key = PttKey();
+            if (key == _pttKey) return;
+            if (_pttKey.Length > 0) Ptt.Press(_pttKey, false);
+            _pttKey = key;
+            if (_pttKey.Length > 0) Ptt.Press(_pttKey, true);
+        }
     }
 
     /// <summary>最后一个声音播完 100ms 后松开。</summary>
@@ -267,12 +329,24 @@ public sealed class Player
         lock (_pttLock) if (_pttCount > 0 && _pttKey.Length > 0) Ptt.Press(_pttKey, false);
     }
 
-    /// <summary>一次播放：在每个输出设备上各有一路流，全部读完（或被停止）时 Done。</summary>
-    private sealed class Voice(Clip clip, int leadMs, Func<bool> loop, Func<float> gain)
+    /// <summary>一次播放：在每个输出设备上各有一路流，全部读完（或被停止）时 Done。start：前置静音之后从第几个采样开始。</summary>
+    private sealed class Voice(Clip clip, int leadMs, Func<bool> loop, Func<float> gain, int start)
     {
         private readonly CancellationTokenSource _cts = new();
         private readonly ManualResetEvent _done = new(false);
-        private int _pending;
+        private int _pending, _streams;
+        private int _seekGen, _seekPos;
+        private volatile int _position = -1;
+
+        /// <summary>第一路流读到的位置（采样）。</summary>
+        public int Position => _position < 0 ? Start : _position;
+
+        /// <summary>每路流在下次读取时跳到这个位置。</summary>
+        public void Seek(int pos)
+        {
+            Volatile.Write(ref _seekPos, Math.Clamp(pos, 0, clip.Samples.Length));
+            Interlocked.Increment(ref _seekGen);
+        }
 
         public WaitHandle Done => _done;
         public CancellationToken Token => _cts.Token;
@@ -294,18 +368,31 @@ public sealed class Player
             if (Interlocked.Decrement(ref _pending) <= 0) _done.Set();
         }
 
-        public ISampleProvider Stream(Func<float> deviceVol) => new Reader(this, deviceVol);
+        public ISampleProvider Stream(Func<float> deviceVol) => new Reader(this, deviceVol, Interlocked.Increment(ref _streams) == 1);
 
-        private sealed class Reader(Voice v, Func<float> deviceVol) : ISampleProvider
+        private sealed class Reader(Voice v, Func<float> deviceVol, bool primary) : ISampleProvider
         {
-            private int _pos = -v.LeadSamples;
+            private int _pos = v.LeadSamples > 0 ? -v.LeadSamples : v.Start;
+            private int _seekGen;
             public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(v.Clip.SampleRate, 1);
 
             public int Read(float[] buffer, int offset, int count)
             {
                 if (v._cts.IsCancellationRequested) return 0;
+                int gen = Volatile.Read(ref v._seekGen);
+                if (gen != _seekGen)
+                {
+                    _seekGen = gen;
+                    _pos = Volatile.Read(ref v._seekPos);
+                }
+                int n = Fill(buffer, offset, count, v.Gain() * deviceVol());
+                if (primary && _pos >= 0) v._position = _pos;
+                return n;
+            }
+
+            private int Fill(float[] buffer, int offset, int count, float g)
+            {
                 var s = v.Clip.Samples;
-                float g = v.Gain() * deviceVol();
                 int n = 0;
                 while (n < count)
                 {
@@ -315,6 +402,7 @@ public sealed class Player
                         for (int i = 0; i < z; i++) buffer[offset + n + i] = 0;
                         n += z;
                         _pos += z;
+                        if (_pos == 0) _pos = v.Start; // 前置静音之后从起点开始
                         continue;
                     }
                     if (_pos >= s.Length)
@@ -335,5 +423,6 @@ public sealed class Player
         public Func<bool> Loop => loop;
         public Func<float> Gain => gain;
         public int LeadSamples => clip.SampleRate * Math.Max(0, leadMs) / 1000;
+        public int Start => start;
     }
 }

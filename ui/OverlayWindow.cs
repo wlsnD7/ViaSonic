@@ -2,6 +2,8 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.System;
@@ -13,9 +15,10 @@ namespace ViaTTS;
 /// 快捷键呼出的半透明输入框：只有一个文本框，回车朗读。
 /// 回车后这句话留在框里显示，播完清空；只有再按快捷键，或开启「播完后收起」时播完，才会收起。
 /// </summary>
-public sealed class OverlayWindow : Window
+public sealed partial class OverlayWindow : Window
 {
     private readonly TextBox _box;
+    private readonly Grid _root;
     private readonly IntPtr _hwnd;
     private IntPtr _prev, _site, _prevWndProc;
     private bool _visible, _closing;
@@ -23,9 +26,13 @@ public sealed class OverlayWindow : Window
     private bool _awaiting;            // 刚弹出、等系统挪走焦点再允许输入
     private DateTime _lingerStart;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _lingerTimer, _awaitTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _dragTimer; // 按住把手期间跟着鼠标移动
     private Native.WndProc? _wndProc; // 持有引用，防止被 GC
 
     private static App A => App.Current;
+
+    /// <summary>拖动输入框后位置已经写进配置（设置页刷新显示）。</summary>
+    public event Action? Moved;
 
     public OverlayWindow()
     {
@@ -45,9 +52,28 @@ public sealed class OverlayWindow : Window
             _box.Resources[key] = new SolidColorBrush(Colors.Transparent);
         _box.KeyDown += OnKeyDown;
         _box.Loaded += (_, _) => HideClearButton(_box);
+        Grid.SetColumn(_box, 1);
 
-        Content = new Grid { Children = { _box } };
-        SystemBackdrop = new DesktopAcrylicBackdrop();
+        // 左侧把手：按住拖动输入框
+        var grip = new Grip
+        {
+            Width = 28,
+            Background = new SolidColorBrush(Colors.Transparent),
+            Children = { new FontIcon { Glyph = "\uE784", FontSize = 14, Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"] } },
+        };
+        ToolTipService.SetToolTip(grip, T("拖动"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(grip, T("拖动"));
+        grip.PointerPressed += OnGripPressed;
+
+        // 窗口本身全透明，只有这层背景按「不透明度」半透明，文字和光标不受影响
+        _root = new Grid
+        {
+            CornerRadius = new CornerRadius(8),
+            ColumnDefinitions = { new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition() },
+            Children = { grip, _box },
+        };
+        _root.ActualThemeChanged += (_, _) => ApplyBackground();
+        Content = _root;
         Title = T("ViaTTS 输入");
 
         _hwnd = WindowNative.GetWindowHandle(this);
@@ -56,11 +82,16 @@ public sealed class OverlayWindow : Window
         p.IsResizable = false;
         p.IsMaximizable = false;
         p.IsMinimizable = false;
-        p.SetBorderAndTitleBar(true, false);
+        p.SetBorderAndTitleBar(false, false);
         AppWindow.SetPresenter(p);
         AppWindow.IsShownInSwitchers = false;
-        int round = 2; // DWMWCP_ROUND
-        Native.DwmSetWindowAttribute(_hwnd, 33, ref round, sizeof(int));
+        Native.EnablePerPixelAlpha(_hwnd);
+        HookWndProc();
+        Native.FrameChanged(_hwnd);
+        int noBorder = unchecked((int)0xFFFFFFFE); // DWMWA_BORDER_COLOR = DWMWA_COLOR_NONE：不要 Windows 11 的 1px 系统边线
+        Native.DwmSetWindowAttribute(_hwnd, 34, ref noBorder, sizeof(int));
+        SystemBackdrop = new TransparentBackdrop();
+        ApplyBackground();
 
         A.StateChanged += OnStateChanged;
         AppWindow.Closing += (s, e) =>
@@ -115,24 +146,11 @@ public sealed class OverlayWindow : Window
     {
         if (prev != _hwnd && prev != IntPtr.Zero) _prev = prev;
         if (prev == IntPtr.Zero) _prev = IntPtr.Zero;
-        var o = A.Sub("overlay");
-        double ratio = Math.Clamp(App.ToDouble(o["width_ratio"]), 0.1, 0.95);
-        int bottom = (int)App.ToDouble(o["bottom_offset"]);
-
-        // 显示在游戏所在的屏幕上
-        var anchor = _prev != IntPtr.Zero ? Win32Interop.GetWindowIdFromWindow(_prev) : A.Main.AppWindow.Id;
-        var area = DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary);
-        var b = area.OuterBounds;
-        double scale = Native.GetDpiForWindow(_hwnd) / 96.0;
-        int w = (int)(b.Width * ratio);
-        int h = (int)(48 * scale);
-        AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(
-            b.X + (b.Width - w) / 2, b.Y + b.Height - h - (int)(bottom * scale), w, h));
-
+        Place();
         if (!_visible || _lingering) _box.Text = ""; // 只是把焦点拉回来时保留已经打的字
         StopLinger();
         _visible = true;
-        Native.SetWindowOpacity(_hwnd, o["opacity"] is { } op ? App.ToDouble(op) : 0.75);
+        ApplyBackground();
         AppWindow.Show(true);
         Activate();
         Native.ForceForeground(_hwnd);
@@ -140,8 +158,106 @@ public sealed class OverlayWindow : Window
         _box.SelectionStart = _box.Text.Length;
         _site = ContentInputSite();
         Ime.OpenNative(_site);
-        HookOuterFocus();
         BeginAwaitFocus();
+    }
+
+    /// <summary>输入框的设置改了：显示着的话立即按新设置摆放。</summary>
+    public void OnConfig()
+    {
+        ApplyBackground();
+        if (_visible) Place();
+    }
+
+    // ------------------------------------------------------------------ 位置与背景
+    /// <summary>显示在游戏所在的屏幕上：水平位置按屏幕宽度比例（输入框中心），底部距离按 DPI 缩放，不超出屏幕。</summary>
+    private void Place()
+    {
+        var o = A.Sub("overlay");
+        double ratio = Math.Clamp(App.ToDouble(o["width_ratio"]), 0.1, 0.95);
+        double xr = o["x_ratio"] is { } x ? Math.Clamp(App.ToDouble(x), 0, 1) : 0.5;
+        int bottom = (int)App.ToDouble(o["bottom_offset"]);
+        var anchor = _prev != IntPtr.Zero ? Win32Interop.GetWindowIdFromWindow(_prev) : A.Main.AppWindow.Id;
+        var b = DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary).OuterBounds;
+        double scale = Native.GetDpiForWindow(_hwnd) / 96.0;
+        int w = (int)(b.Width * ratio);
+        int h = (int)(48 * scale);
+        int left = Math.Clamp(b.X + (int)(b.Width * xr) - w / 2, b.X, b.X + b.Width - w);
+        int top = Math.Clamp(b.Y + b.Height - h - (int)(bottom * scale), b.Y, b.Y + b.Height - h);
+        AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(left, top, w, h));
+    }
+
+    private void ApplyBackground()
+    {
+        var o = A.Sub("overlay");
+        double op = o["opacity"] is { } v ? Math.Clamp(App.ToDouble(v), 0.2, 1) : 0.75;
+        byte alpha = (byte)Math.Round(op * 255);
+        bool dark = _root.ActualTheme == ElementTheme.Dark;
+        byte c = dark ? (byte)0x20 : (byte)0xF3;
+        _root.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(alpha, c, c, c));
+    }
+
+    /// <summary>
+    /// 按住把手拖动：按下时记下鼠标和窗口的屏幕坐标，之后每 10ms 跟着鼠标平移，左键松开时保存。
+    /// 不用指针捕获：窗口被点击激活时捕获会立刻丢失。
+    /// </summary>
+    private void OnGripPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(null).Properties.IsLeftButtonPressed || _dragTimer != null) return;
+        e.Handled = true;
+        Native.GetCursorPos(out var from);
+        var win = AppWindow.Position;
+        _dragTimer = DispatcherQueue.CreateTimer();
+        _dragTimer.Interval = TimeSpan.FromMilliseconds(10);
+        _dragTimer.Tick += (_, _) =>
+        {
+            Native.GetCursorPos(out var pt);
+            AppWindow.Move(new Windows.Graphics.PointInt32(win.X + pt.X - from.X, win.Y + pt.Y - from.Y));
+            if (!Native.IsDown(0x01 /* VK_LBUTTON */)) EndDrag();
+        };
+        _dragTimer.Start();
+    }
+
+    /// <summary>松开：把位置换算成水平比例（输入框中心）和底部距离保存。</summary>
+    private void EndDrag()
+    {
+        _dragTimer?.Stop();
+        _dragTimer = null;
+        var pos = AppWindow.Position;
+        var size = AppWindow.Size;
+        var b = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).OuterBounds;
+        double scale = Native.GetDpiForWindow(_hwnd) / 96.0;
+        var o = A.Sub("overlay");
+        o["x_ratio"] = Math.Round(Math.Clamp((pos.X + size.Width / 2.0 - b.X) / b.Width, 0, 1), 3);
+        o["bottom_offset"] = (int)Math.Clamp((b.Y + b.Height - pos.Y - size.Height) / scale, 0, 2000);
+        A.Commit("overlay");
+        Moved?.Invoke();
+        if (_visible && !_lingering && !_awaiting) _box.Focus(FocusState.Programmatic);
+    }
+
+    /// <summary>把手上显示移动光标（ProtectedCursor 只能在子类里设置）。</summary>
+    private sealed partial class Grip : Grid
+    {
+        public Grip() => ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeAll);
+    }
+
+    /// <summary>不画任何背景的 SystemBackdrop，配合 EnablePerPixelAlpha 让窗口透出后面的画面。</summary>
+    private sealed partial class TransparentBackdrop : SystemBackdrop
+    {
+        private static Windows.UI.Composition.Compositor? _compositor;
+
+        protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop target, XamlRoot root)
+        {
+            base.OnTargetConnected(target, root);
+            Native.EnsureSystemDispatcherQueue();
+            _compositor ??= new Windows.UI.Composition.Compositor();
+            target.SystemBackdrop = _compositor.CreateColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+        }
+
+        protected override void OnTargetDisconnected(ICompositionSupportsSystemBackdrop target)
+        {
+            base.OnTargetDisconnected(target);
+            target.SystemBackdrop = null;
+        }
     }
 
     public void Hide(bool restore)
@@ -188,12 +304,16 @@ public sealed class OverlayWindow : Window
         _box.SelectionStart = _box.Text.Length;
     }
 
-    /// <summary>接管外层窗口的 WM_SETFOCUS：系统把焦点设到外层窗口时交还给 WinUI 内容子窗口。</summary>
-    private void HookOuterFocus()
+    /// <summary>
+    /// 接管外层窗口：
+    /// WM_NCCALCSIZE 返回 0，整个窗口都是内容区（没有标题栏时系统仍会留 3px 边框，显示时还会被加回来）；
+    /// WM_SETFOCUS 时把焦点交还给 WinUI 内容子窗口。
+    /// </summary>
+    private void HookWndProc()
     {
-        if (_wndProc != null) return;
         _wndProc = (h, msg, w, l) =>
         {
+            if (msg == 0x0083 /* WM_NCCALCSIZE */ && w != IntPtr.Zero) return IntPtr.Zero;
             var r = Native.CallWindowProc(_prevWndProc, h, msg, w, l);
             if (msg == 0x0007 /* WM_SETFOCUS */ && _visible && _site != IntPtr.Zero && Native.GetFocus() == _hwnd)
             {

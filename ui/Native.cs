@@ -71,25 +71,55 @@ internal static partial class Native
     [LibraryImport("user32.dll")]
     public static partial uint GetDpiForWindow(IntPtr hWnd);
 
-    [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-    public static partial IntPtr GetWindowLongPtr(IntPtr hWnd, int index);
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DWM_BLURBEHIND { public uint dwFlags; public int fEnable; public IntPtr hRgnBlur; public int fTransitionOnMaximized; }
 
-    [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
-    public static partial IntPtr SetWindowLongPtr(IntPtr hWnd, int index, IntPtr value);
+    [LibraryImport("dwmapi.dll")]
+    private static partial int DwmEnableBlurBehindWindow(IntPtr hwnd, ref DWM_BLURBEHIND bb);
+
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr CreateRectRgn(int l, int t, int r, int b);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DeleteObject(IntPtr obj);
+
+    /// <summary>让窗口按像素透明：模糊区域设成窗口外的一个空矩形，DWM 就按内容的 alpha 合成而不模糊。</summary>
+    public static void EnablePerPixelAlpha(IntPtr hwnd)
+    {
+        var rgn = CreateRectRgn(-2, -2, -1, -1);
+        var bb = new DWM_BLURBEHIND { dwFlags = 0x1 | 0x2 /* DWM_BB_ENABLE | DWM_BB_BLURREGION */, fEnable = 1, hRgnBlur = rgn };
+        DwmEnableBlurBehindWindow(hwnd, ref bb);
+        DeleteObject(rgn);
+    }
 
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool SetLayeredWindowAttributes(IntPtr hWnd, uint colorKey, byte alpha, uint flags);
+    private static partial bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int w, int h, uint flags);
 
-    /// <summary>整个窗口（含内容）半透明。</summary>
-    public static void SetWindowOpacity(IntPtr hwnd, double opacity)
+    /// <summary>让系统重新计算窗口边框（WM_NCCALCSIZE）。</summary>
+    public static void FrameChanged(IntPtr hwnd) =>
+        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, 0x0020 | 0x0001 | 0x0002 | 0x0004 | 0x0010 /* FRAMECHANGED | NOSIZE | NOMOVE | NOZORDER | NOACTIVATE */);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DispatcherQueueOptions { public int dwSize, threadType, apartmentType; }
+
+    [LibraryImport("CoreMessaging.dll")]
+    private static partial int CreateDispatcherQueueController(DispatcherQueueOptions options, out IntPtr controller);
+
+    private static IntPtr _dqController;
+
+    /// <summary>Windows.UI.Composition 要求当前线程有 Windows.System.DispatcherQueue，WinUI 线程默认没有。</summary>
+    public static void EnsureSystemDispatcherQueue()
     {
-        const int GWL_EXSTYLE = -20;
-        const long WS_EX_LAYERED = 0x80000;
-        long ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
-        if ((ex & WS_EX_LAYERED) == 0) SetWindowLongPtr(hwnd, GWL_EXSTYLE, new IntPtr(ex | WS_EX_LAYERED));
-        SetLayeredWindowAttributes(hwnd, 0, (byte)Math.Round(Math.Clamp(opacity, 0.2, 1.0) * 255), 0x2 /* LWA_ALPHA */);
+        if (Windows.System.DispatcherQueue.GetForCurrentThread() != null || _dqController != IntPtr.Zero) return;
+        var o = new DispatcherQueueOptions { dwSize = Marshal.SizeOf<DispatcherQueueOptions>(), threadType = 2 /* DQTYPE_THREAD_CURRENT */, apartmentType = 2 /* DQTAT_COM_STA */ };
+        CreateDispatcherQueueController(o, out _dqController);
     }
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetCursorPos(out POINT p);
 
     public delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 

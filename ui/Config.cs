@@ -59,13 +59,14 @@ public static class ConfigStore
         ["sound_volume"] = 1.0,
         ["play_mode"] = "interrupt",
         ["lead_silence_ms"] = 120,
+        ["ptt_enabled"] = true,
         ["ptt_key"] = "",
         ["ptt_delay_ms"] = 150,
-        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r" },
+        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r", ["ptt"] = "" },
         ["hotkeys_paused"] = false,
         ["overlay"] = new JsonObject
         {
-            ["opacity"] = 0.75, ["width_ratio"] = 0.22, ["bottom_offset"] = 80, ["hide_after_send"] = false, ["restore_focus"] = false,
+            ["opacity"] = 0.75, ["width_ratio"] = 0.22, ["x_ratio"] = 0.5, ["bottom_offset"] = 80, ["hide_after_send"] = false, ["restore_focus"] = false,
         },
         ["phrases"] = new JsonArray(NewPhrase()),
         ["welcome_shown"] = false,

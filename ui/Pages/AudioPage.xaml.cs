@@ -34,12 +34,25 @@ public sealed partial class AudioPage : Page
         LeadSilence.Value = A.Num("lead_silence_ms");
         PttDelay.Value = A.Num("ptt_delay_ms");
         PttKey.Value = A.Str("ptt_key");
+        PttOn.IsOn = A.Bool("ptt_enabled");
         A.ConfigReplaced += OnConfigReplaced;
+        A.PttToggled += OnPttToggled;
         _init = false;
         await LoadDevices();
     }
 
-    protected override void OnNavigatedFrom(NavigationEventArgs e) => A.ConfigReplaced -= OnConfigReplaced;
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        A.ConfigReplaced -= OnConfigReplaced;
+        A.PttToggled -= OnPttToggled;
+    }
+
+    private void OnPttToggled()
+    {
+        _init = true;
+        PttOn.IsOn = A.Bool("ptt_enabled");
+        _init = false;
+    }
 
     private void OnConfigReplaced() => PttKey.Value = A.Str("ptt_key");
 

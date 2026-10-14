@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.ApplicationModel.DataTransfer;
@@ -16,7 +17,29 @@ public sealed partial class PhrasesPage : Page
     private static App A => App.Current;
     private readonly Debouncer _save = new();
     private readonly Dictionary<string, (Border Row, Button Play)> _rows = [];
+    private readonly List<Seekbar> _bars = [];
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _tick;
     private bool _init = true;
+
+    /// <summary>音频文件时长，按路径和修改时间缓存，避免每次进页面都读文件。</summary>
+    private static readonly Dictionary<string, (DateTime Mtime, double Len)> Durations = [];
+
+    /// <summary>手动展开了进度条的音频条目；只在本次运行中记住。</summary>
+    private static readonly HashSet<string> Expanded = [];
+
+    /// <summary>
+    /// 音频条目的进度条：播放中拖动跳到该位置，没在播放时拖动设下次播放的起点。
+    /// 默认收起；播放时自动展开（Auto），停止后收回。
+    /// </summary>
+    private sealed class Seekbar(string id, Slider slider, TextBlock time)
+    {
+        public string Id => id;
+        public Slider Slider => slider;
+        public TextBlock Time => time;
+        public FrameworkElement? Line;
+        public Button? Toggle;
+        public bool Dragging, Updating, Open, Auto, WasPlaying;
+    }
 
     public PhrasesPage() => InitializeComponent();
 
@@ -30,12 +53,17 @@ public sealed partial class PhrasesPage : Page
         ShowErrors();
         A.HotkeyErrorsChanged += ShowErrors;
         A.Speaker.Player.ActiveChanged += OnActiveChanged;
+        _tick = DispatcherQueue.CreateTimer();
+        _tick.Interval = TimeSpan.FromMilliseconds(200);
+        _tick.Tick += (_, _) => UpdateProgress();
+        _tick.Start();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         A.HotkeyErrorsChanged -= ShowErrors;
         A.Speaker.Player.ActiveChanged -= OnActiveChanged;
+        _tick?.Stop();
     }
 
     private void ShowErrors()
@@ -64,6 +92,7 @@ public sealed partial class PhrasesPage : Page
     {
         List.Children.Clear();
         _rows.Clear();
+        _bars.Clear();
         var phrases = A.Phrases;
         for (int i = 0; i < phrases.Count; i++)
         {
@@ -74,6 +103,118 @@ public sealed partial class PhrasesPage : Page
         }
         Empty.Visibility = phrases.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateActive();
+        UpdateProgress();
+    }
+
+    // ------------------------------------------------------------------ 进度条
+    private static string Clock(double sec)
+    {
+        var t = TimeSpan.FromSeconds(Math.Max(0, sec));
+        return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : $"{(int)t.TotalMinutes}:{t.Seconds:00}";
+    }
+
+    private void UpdateProgress()
+    {
+        var player = A.Speaker.Player;
+        foreach (var b in _bars)
+        {
+            if (b.Dragging) continue;
+            var pr = player.Progress(b.Id);
+            bool playing = pr != null;
+            if (playing != b.WasPlaying)
+            {
+                b.WasPlaying = playing;
+                if (playing && !b.Open) { b.Auto = true; SetOpen(b, true); }
+                else if (!playing && b.Auto) { b.Auto = false; SetOpen(b, false); }
+            }
+            if (pr is { } x && x.Len > 0) b.Slider.Maximum = x.Len;
+            SetBar(b, pr?.Pos ?? player.StartOf(b.Id));
+        }
+    }
+
+    private static void SetBar(Seekbar b, double pos)
+    {
+        b.Updating = true;
+        b.Slider.Value = Math.Min(pos, b.Slider.Maximum);
+        b.Updating = false;
+        b.Time.Text = $"{Clock(b.Slider.Value)} / {Clock(b.Slider.Maximum)}";
+    }
+
+    private static void SetOpen(Seekbar b, bool open)
+    {
+        b.Open = open;
+        if (b.Line != null) b.Line.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        if (b.Toggle == null) return;
+        ((FontIcon)b.Toggle.Content).Glyph = open ? "\uE70E" : "\uE70D";
+        ToolTipService.SetToolTip(b.Toggle, open ? T("收起") : T("展开"));
+        AutomationProperties.SetName(b.Toggle, open ? T("收起") : T("展开"));
+    }
+
+    /// <summary>点箭头：展开 / 收起看到的状态，之后不再随播放自动收回。</summary>
+    private static void ToggleOpen(Seekbar b)
+    {
+        b.Auto = false;
+        SetOpen(b, !b.Open);
+        if (b.Open) Expanded.Add(b.Id);
+        else Expanded.Remove(b.Id);
+    }
+
+    private static void SeekTo(Seekbar b)
+    {
+        var player = A.Speaker.Player;
+        if (player.IsSound(b.Id)) player.Seek(b.Id, b.Slider.Value);
+        else player.SetStart(b.Id, b.Slider.Value);
+    }
+
+    private Seekbar NewSeekbar(string id, string audio)
+    {
+        var slider = new Slider { Minimum = 0, Maximum = 1, StepFrequency = 0.1, IsThumbToolTipEnabled = false, IsEnabled = false };
+        AutomationProperties.SetName(slider, T("进度"));
+        var time = new TextBlock
+        {
+            Text = "0:00 / 0:00", VerticalAlignment = VerticalAlignment.Center, MinWidth = 96, TextAlignment = TextAlignment.Right,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+        };
+        var b = new Seekbar(id, slider, time);
+        slider.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => b.Dragging = true), true);
+        void EndDrag()
+        {
+            if (!b.Dragging) return;
+            b.Dragging = false;
+            SeekTo(b);
+        }
+        slider.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag()), true);
+        slider.AddHandler(PointerCaptureLostEvent, new PointerEventHandler((_, _) => EndDrag()), true);
+        slider.ValueChanged += (_, e) =>
+        {
+            if (b.Updating) return;
+            time.Text = $"{Clock(e.NewValue)} / {Clock(slider.Maximum)}";
+            if (!b.Dragging) SeekTo(b); // 键盘方向键
+        };
+        _ = LoadDuration(b, audio);
+        return b;
+    }
+
+    private async Task LoadDuration(Seekbar b, string path)
+    {
+        double len;
+        try
+        {
+            var mtime = File.GetLastWriteTimeUtc(path);
+            lock (Durations)
+                if (Durations.TryGetValue(path, out var hit) && hit.Mtime == mtime) len = hit.Len;
+                else len = -1;
+            if (len < 0)
+            {
+                len = await Task.Run(() => Audio.AudioDecode.Duration(path).TotalSeconds);
+                lock (Durations) Durations[path] = (mtime, len);
+            }
+        }
+        catch { return; } // 文件不存在或无法读取：进度条保持禁用
+        if (len <= 0) return;
+        b.Slider.Maximum = len;
+        b.Slider.IsEnabled = true;
+        if (!b.Dragging) SetBar(b, A.Speaker.Player.Progress(b.Id)?.Pos ?? A.Speaker.Player.StartOf(b.Id));
     }
 
     private static Button IconButton(string glyph, string tip, RoutedEventHandler? click = null)
@@ -99,12 +240,13 @@ public sealed partial class PhrasesPage : Page
         bool isAudio = audio.Length > 0;
 
         var grid = new Grid { ColumnSpacing = 8 };
-        foreach (var w in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, new GridLength(40), new GridLength(170), GridLength.Auto })
+        foreach (var w in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, new GridLength(40), new GridLength(170), new GridLength(40), GridLength.Auto })
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
 
         var play = IconButton("", T("播放"), (_, _) =>
         {
-            if (!isAudio && A.Speaker.Player.IsActive(id)) A.Speaker.StopSpeech();
+            var player = A.Speaker.Player;
+            if (!isAudio && !player.IsSound(id) && player.IsActive(id)) A.Speaker.StopSpeech();
             else A.PlayPhrase(p);
         });
         grid.Children.Add(At(play, 0));
@@ -137,17 +279,18 @@ public sealed partial class PhrasesPage : Page
         ToolTipService.SetToolTip(hk, T("Backspace 清除"));
         grid.Children.Add(At(hk, 3));
 
+        var loop = new ToggleButton
+        {
+            Content = new FontIcon { Glyph = "", FontSize = 14 }, Padding = new Thickness(10, 8, 10, 8),
+            IsChecked = p["loop"]?.GetValue<bool>() ?? false,
+        };
+        ToolTipService.SetToolTip(loop, T("循环"));
+        AutomationProperties.SetName(loop, T("循环"));
+        loop.Click += (_, _) => { p["loop"] = loop.IsChecked == true; A.Commit("phrase_props"); };
+        grid.Children.Add(At(loop, 4));
+
         if (isAudio)
         {
-            var loop = new ToggleButton
-            {
-                Content = new FontIcon { Glyph = "", FontSize = 14 }, Padding = new Thickness(10, 8, 10, 8),
-                IsChecked = p["loop"]?.GetValue<bool>() ?? false,
-            };
-            ToolTipService.SetToolTip(loop, T("循环"));
-            AutomationProperties.SetName(loop, T("循环"));
-            loop.Click += (_, _) => { p["loop"] = loop.IsChecked == true; A.Commit("phrase_props"); };
-            grid.Children.Add(At(loop, 4));
 
             var volText = new TextBlock { MinWidth = 40, VerticalAlignment = VerticalAlignment.Center };
             var vol = new Slider
@@ -168,9 +311,35 @@ public sealed partial class PhrasesPage : Page
             volPanel.Children.Add(vol);
             volPanel.Children.Add(volText);
             grid.Children.Add(At(volPanel, 5));
+
+            // 第二行：进度条从名称框左边一直到行尾，时间贴右
+            grid.RowDefinitions.Add(new RowDefinition());
+            grid.RowDefinitions.Add(new RowDefinition());
+            var bar = NewSeekbar(id, audio);
+            var line = new Grid { ColumnSpacing = 12 };
+            line.ColumnDefinitions.Add(new ColumnDefinition());
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(bar.Time, 1);
+            line.Children.Add(bar.Slider);
+            line.Children.Add(bar.Time);
+            Grid.SetRow(line, 1);
+            Grid.SetColumnSpan(line, 6);
+            grid.Children.Add(At(line, 2));
+            bar.Line = line;
+            bar.Toggle = IconButton("\uE70D", T("展开"), (_, _) => ToggleOpen(bar));
+            // 只显示箭头：平时没有背景和边框，鼠标移上去才有浅色底
+            bar.Toggle.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            bar.Toggle.BorderThickness = new Thickness(0);
+            foreach (var (res, brush) in new[] { ("ButtonBackgroundPointerOver", "SubtleFillColorSecondaryBrush"), ("ButtonBackgroundPressed", "SubtleFillColorTertiaryBrush") })
+                bar.Toggle.Resources[res] = Application.Current.Resources[brush];
+            foreach (var res in new[] { "ButtonBorderBrushPointerOver", "ButtonBorderBrushPressed" })
+                bar.Toggle.Resources[res] = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            grid.Children.Add(At(bar.Toggle, 6));
+            SetOpen(bar, Expanded.Contains(id));
+            _bars.Add(bar);
         }
 
-        grid.Children.Add(At(MoreButton(p, id, index, count, isAudio, text), 6));
+        grid.Children.Add(At(MoreButton(p, id, index, count, isAudio, text), 7));
 
         var row = new Border { Style = (Style)Application.Current.Resources["Card"], Padding = new Thickness(8, 6, 8, 6), Child = grid };
         _rows[id] = (row, play);

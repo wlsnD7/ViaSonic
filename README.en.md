@@ -50,7 +50,7 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**.
 3. The Audio page outputs to `CABLE Input` by default, and also plays to your headphones so you can hear it.
 4. To send your microphone along with the speech, turn on Mic passthrough on the Audio page and choose your microphone.
-5. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays.
+5. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays. Turn it on or off on the Audio page or with a hotkey.
 6. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
 
 ## Default hotkeys
@@ -61,6 +61,7 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 | Focus input box | Not set |
 | Stop | Ctrl + Alt + X |
 | Repeat last | Ctrl + Alt + R |
+| Turn push to talk on/off | Not set |
 
 Closing the main window keeps ViaTTS running in the background. Right-click the tray icon to exit.
 
