@@ -110,11 +110,26 @@ public static class AudioEncode
             if (clip.SampleRate is not (32000 or 44100 or 48000)) sp = new NAudio.Wave.SampleProviders.WdlResamplingSampleProvider(sp, 44100);
             MediaFoundationApi.Startup();
             MediaFoundationEncoder.EncodeToMp3(new NAudio.Wave.SampleProviders.SampleToWaveProvider16(sp), path, 192000);
+            StripId3(path);
         }
         else
         {
             WaveFileWriter.CreateWaveFile16(path, mono);
         }
+    }
+
+    /// <summary>
+    /// 去掉编码器写在开头的 ID3 标签（带 iTunSMPB 注释）：Windows 自带的「媒体播放器」遇到它会停在 0:00 不播放，
+    /// 去掉后各播放器都正常。
+    /// </summary>
+    private static void StripId3(string path)
+    {
+        var d = File.ReadAllBytes(path);
+        if (d.Length < 10 || d[0] != 'I' || d[1] != 'D' || d[2] != '3') return;
+        int size = (d[6] & 0x7F) << 21 | (d[7] & 0x7F) << 14 | (d[8] & 0x7F) << 7 | (d[9] & 0x7F);
+        int skip = 10 + size + ((d[5] & 0x10) != 0 ? 10 : 0); // 有页脚时再多 10 字节
+        if (skip >= d.Length) return;
+        File.WriteAllBytes(path, d[skip..]);
     }
 
     private sealed class ClipProvider(Clip clip) : ISampleProvider
