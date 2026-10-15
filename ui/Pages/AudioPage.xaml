@@ -58,6 +58,21 @@
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
+            <tk:SettingsExpander x:Name="AppPanel" IsExpanded="True">
+                <tk:SettingsExpander.Header>
+                    <c:InfoHeader Text="{l:T Text='应用声音'}" Tip="{l:T Text='把选中应用的声音接入虚拟麦克风。'}" />
+                </tk:SettingsExpander.Header>
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8D6;" /></tk:SettingsExpander.HeaderIcon>
+                <ToggleSwitch x:Name="AppOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="app_audio" />
+                <tk:SettingsExpander.ItemsHeader>
+                    <StackPanel>
+                        <InfoBar x:Name="AppBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='需要先打开虚拟麦克风'}" CornerRadius="0" BorderThickness="0" />
+                        <InfoBar x:Name="AppUnsupportedBar" Severity="Error" IsClosable="False" IsOpen="False" Title="{l:T Text='当前 Windows 版本不支持'}" CornerRadius="0" BorderThickness="0" />
+                    </StackPanel>
+                </tk:SettingsExpander.ItemsHeader>
+                <!-- 应用列表和「添加应用」在代码里生成（AudioPage.Apps.cs） -->
+            </tk:SettingsExpander>
+
             <tk:SettingsExpander Header="{l:T Text='监听'}" IsExpanded="True">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE7F6;" /></tk:SettingsExpander.HeaderIcon>
                 <ToggleSwitch x:Name="MonOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="monitor_enabled" />

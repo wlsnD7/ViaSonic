@@ -170,6 +170,207 @@
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
+            <!-- Azure 语音 -->
+            <tk:SettingsExpander x:Name="AzurePanel" Header="{l:T Text='Azure 语音'}" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE753;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="API Key" Tip="{l:T Text='在 Azure 创建「语音服务」资源后获得，每月 50 万字符免费。'}" />
+                        </tk:SettingsCard.Header>
+                        <PasswordBox x:Name="AzureKey" Width="340" Tag="azure_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='区域'}">
+                        <ComboBox x:Name="AzureRegion" Width="220" IsEditable="True" PlaceholderText="{l:T Text='如 eastasia'}"
+                                  SelectionChanged="AzureRegion_Changed" TextSubmitted="AzureRegion_Submitted" LostFocus="AzureRegion_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='语言'}">
+                        <ComboBox x:Name="AzureLang" MinWidth="260" SelectionChanged="AzureLang_Changed" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='音色'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox x:Name="AzureVoice" MinWidth="260" SelectionChanged="AzureVoice_Changed" />
+                            <Button Click="RefreshVoices_Click" Tag="azure" ToolTipService.ToolTip="{l:T Text='刷新音色'}" AutomationProperties.Name="{l:T Text='刷新音色'}">
+                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            </Button>
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='风格'}">
+                        <ComboBox x:Name="AzureStyle" MinWidth="160" SelectionChanged="AzureStyle_Changed" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='语速'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="AzureRateText" VerticalAlignment="Center" MinWidth="48" TextAlignment="Right" />
+                            <Slider x:Name="AzureRate" Width="220" Minimum="-50" Maximum="100" StepFrequency="5" Tag="azure_rate" ValueChanged="Rate_Changed" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- Fish Audio -->
+            <tk:SettingsExpander x:Name="FishPanel" Header="Fish Audio" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE753;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="API Key">
+                        <PasswordBox x:Name="FishKey" Width="340" Tag="fish_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='列表里是你创建的音色。也可以粘贴音色 ID：fish.audio 音色页网址的最后一段。'}" />
+                        </tk:SettingsCard.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox x:Name="FishVoice" Width="260" IsEditable="True" Tag="fish_voice"
+                                      SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                            <Button Click="RefreshVoices_Click" Tag="fish" ToolTipService.ToolTip="{l:T Text='刷新音色'}" AutomationProperties.Name="{l:T Text='刷新音色'}">
+                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            </Button>
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='语速'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="FishSpeedText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                            <Slider x:Name="FishSpeed" Width="220" Minimum="0.5" Maximum="2" StepFrequency="0.05" Tag="fish_speed" ValueChanged="Rate_Changed" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- 豆包语音 -->
+            <tk:SettingsExpander x:Name="DoubaoPanel" Header="{l:T Text='豆包语音'}" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE753;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="API Key" Tip="{l:T Text='在豆包语音控制台的「API Key 管理」获取。'}" />
+                        </tk:SettingsCard.Header>
+                        <PasswordBox x:Name="DoubaoKey" Width="340" Tag="doubao_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='模型'}">
+                        <ComboBox x:Name="DoubaoModel" MinWidth="260" Tag="doubao_model" SelectionChanged="Choice_Changed">
+                            <ComboBoxItem Content="{l:T Text='豆包语音合成 2.0'}" Tag="2.0" />
+                            <ComboBoxItem Content="{l:T Text='豆包语音合成 1.0'}" Tag="1.0" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='也可以直接填音色 ID。'}" />
+                        </tk:SettingsCard.Header>
+                        <ComboBox x:Name="DoubaoVoice" Width="260" IsEditable="True" Tag="doubao_voice"
+                                  SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='语速'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="DoubaoRateText" VerticalAlignment="Center" MinWidth="48" TextAlignment="Right" />
+                            <Slider x:Name="DoubaoRate" Width="220" Minimum="-50" Maximum="100" StepFrequency="5" Tag="doubao_rate" ValueChanged="Rate_Changed" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- 阿里云百炼 -->
+            <tk:SettingsExpander x:Name="BailianPanel" Header="{l:T Text='阿里云百炼'}" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE753;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="API Key">
+                        <PasswordBox x:Name="BailianKey" Width="340" Tag="bailian_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='地域'}">
+                        <ComboBox x:Name="BailianRegion" MinWidth="160" Tag="bailian_region" SelectionChanged="Choice_Changed">
+                            <ComboBoxItem Content="{l:T Text='中国大陆'}" Tag="cn" />
+                            <ComboBoxItem Content="{l:T Text='国际'}" Tag="intl" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='模型'}">
+                        <ComboBox x:Name="BailianModel" MinWidth="160" Tag="bailian_model" SelectionChanged="Choice_Changed">
+                            <ComboBoxItem Content="Qwen3-TTS" Tag="qwen" />
+                            <ComboBoxItem Content="CosyVoice" Tag="cosy" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='也可以直接填音色 ID，例如复刻的音色。'}" />
+                        </tk:SettingsCard.Header>
+                        <ComboBox x:Name="BailianVoice" Width="260" IsEditable="True" Tag="bailian_voice"
+                                  SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="BailianSpeedCard" Header="{l:T Text='语速'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="BailianSpeedText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                            <Slider x:Name="BailianSpeed" Width="220" Minimum="0.5" Maximum="2" StepFrequency="0.05" Tag="bailian_speed" ValueChanged="Rate_Changed" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- MiniMax -->
+            <tk:SettingsExpander x:Name="MiniMaxPanel" Header="MiniMax" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE753;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="API Key">
+                        <PasswordBox x:Name="MiniMaxKey" Width="340" Tag="minimax_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='地域'}">
+                        <ComboBox x:Name="MiniMaxRegion" MinWidth="160" Tag="minimax_region" SelectionChanged="Choice_Changed">
+                            <ComboBoxItem Content="{l:T Text='中国大陆'}" Tag="cn" />
+                            <ComboBoxItem Content="{l:T Text='国际'}" Tag="intl" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='模型'}">
+                        <ComboBox x:Name="MiniMaxModel" MinWidth="200" Tag="minimax_model" SelectionChanged="Choice_Changed" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='列表里包含你复刻的音色。'}" />
+                        </tk:SettingsCard.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox x:Name="MiniMaxVoice" MinWidth="260" Tag="minimax_voice" SelectionChanged="Choice_Changed" />
+                            <Button Click="RefreshVoices_Click" Tag="minimax" ToolTipService.ToolTip="{l:T Text='刷新音色'}" AutomationProperties.Name="{l:T Text='刷新音色'}">
+                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            </Button>
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="{l:T Text='语速'}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock x:Name="MiniMaxSpeedText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                            <Slider x:Name="MiniMaxSpeed" Width="220" Minimum="0.5" Maximum="2" StepFrequency="0.05" Tag="minimax_speed" ValueChanged="Rate_Changed" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- 自定义接口 -->
+            <tk:SettingsExpander x:Name="CustomPanel" Header="{l:T Text='自定义接口'}" IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE968;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="{l:T Text='请求方式'}">
+                        <ComboBox x:Name="CustomMethod" MinWidth="120" Tag="custom_method" SelectionChanged="Choice_Changed">
+                            <ComboBoxItem Content="GET" Tag="GET" />
+                            <ComboBoxItem Content="POST" Tag="POST" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader x:Name="CustomUrlHeader" Text="{l:T Text='地址'}" />
+                        </tk:SettingsCard.Header>
+                        <TextBox x:Name="CustomUrl" Width="340" Tag="custom_url" TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard>
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='请求头'}" Tip="{l:T Text='每行一个，例如 Authorization: Bearer xxx'}" />
+                        </tk:SettingsCard.Header>
+                        <TextBox x:Name="CustomHeaders" Width="340" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Tag="custom_headers"
+                                 TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="CustomBodyCard">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader x:Name="CustomBodyHeader" Text="{l:T Text='请求体'}" />
+                        </tk:SettingsCard.Header>
+                        <TextBox x:Name="CustomBody" Width="340" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Tag="custom_body"
+                                 TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
             <TextBlock Text="{l:T Text='试听'}" Style="{StaticResource SectionHeader}" />
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="12">

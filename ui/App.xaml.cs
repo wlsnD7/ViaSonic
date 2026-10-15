@@ -127,6 +127,7 @@ public partial class App : Application
             {
                 ["key"] = key, ["label"] = e.Label, ["ready"] = e.Ready, ["loading"] = e.Loading,
                 ["error"] = e.Error, ["error_kind"] = e.ErrorKind,
+                ["missing"] = e is Engines.OnlineEngine o ? o.Missing(Config) : "",
             });
         State = new JsonObject
         {
@@ -203,7 +204,8 @@ public partial class App : Application
                 Overlay?.OnConfig();
                 break;
         }
-        if (key is "engine") RefreshState();
+        // 填了 Key 或地址后引擎变成可用，主页状态要跟着变
+        if (key is "engine" or "azure_region" or "custom_url" || key.EndsWith("_key")) RefreshState();
     }
 
     public static JsonObject NewPhrase() => ConfigStore.NewPhrase();

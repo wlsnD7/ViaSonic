@@ -31,7 +31,12 @@ public sealed class Speaker : IDisposable
     public Speaker(Func<JsonObject> cfg)
     {
         _cfg = cfg;
-        Engines = new() { ["gsv"] = Gsv, ["edge"] = new EdgeTts(), ["sapi"] = new SystemTts() };
+        Engines = new()
+        {
+            ["gsv"] = Gsv, ["edge"] = new EdgeTts(), ["sapi"] = new SystemTts(),
+            ["azure"] = new AzureTts(cfg), ["fish"] = new FishAudio(cfg), ["doubao"] = new Doubao(cfg),
+            ["bailian"] = new Bailian(cfg), ["minimax"] = new MiniMax(cfg), ["custom"] = new CustomApi(cfg),
+        };
         Gsv.Changed += () =>
         {
             Changed?.Invoke();
@@ -59,7 +64,7 @@ public sealed class Speaker : IDisposable
         get
         {
             var e = Current;
-            var s = e.Ready ? T("就绪") : e.Loading ? T("加载中") : T("未加载");
+            var s = e is OnlineEngine { Ready: false } o ? o.Missing(C) : e.Ready ? T("就绪") : e.Loading ? T("加载中") : T("未加载");
             return $"{e.Label} · {s}";
         }
     }
@@ -146,6 +151,7 @@ public sealed class Speaker : IDisposable
     /// <summary>引擎就绪后把文字常用语先合成好，按快捷键时直接播放。</summary>
     public void Preload()
     {
+        if (Current is OnlineEngine { Paid: true }) return; // 收费服务第一次用到时再合成
         foreach (var p in C["phrases"]!.AsArray().OfType<JsonObject>())
         {
             var t = p["text"]?.GetValue<string>()?.Trim() ?? "";

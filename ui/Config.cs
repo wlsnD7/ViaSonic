@@ -47,6 +47,35 @@ public static class ConfigStore
         ["edge_rate"] = 0,
         ["sapi_voice"] = "",
         ["sapi_rate"] = 0,
+        // 联网服务：*_key 和 custom_headers 用 DPAPI 加密保存（Secrets）
+        ["azure_key"] = "",
+        ["azure_region"] = "",
+        ["azure_lang"] = "zh-CN",
+        ["azure_voice"] = "zh-CN-XiaoxiaoNeural",
+        ["azure_style"] = "",
+        ["azure_rate"] = 0,
+        ["fish_key"] = "",
+        ["fish_voice"] = "",
+        ["fish_voice_name"] = "",
+        ["fish_speed"] = 1.0,
+        ["doubao_key"] = "",
+        ["doubao_model"] = "2.0",
+        ["doubao_voice"] = "zh_female_vv_uranus_bigtts",
+        ["doubao_rate"] = 0,
+        ["bailian_key"] = "",
+        ["bailian_region"] = "cn",
+        ["bailian_model"] = "qwen",
+        ["bailian_voice"] = "Cherry",
+        ["bailian_speed"] = 1.0,
+        ["minimax_key"] = "",
+        ["minimax_region"] = "cn",
+        ["minimax_model"] = "speech-2.8-hd",
+        ["minimax_voice"] = "male-qn-qingse",
+        ["minimax_speed"] = 1.0,
+        ["custom_method"] = "GET",
+        ["custom_url"] = "",
+        ["custom_headers"] = "",
+        ["custom_body"] = "",
         ["mic_enabled"] = true,
         ["mic_device"] = "",
         ["mic_volume"] = 1.0,
@@ -56,6 +85,8 @@ public static class ConfigStore
         ["mic_passthrough"] = false,
         ["passthrough_device"] = "",
         ["passthrough_volume"] = 1.0,
+        ["app_audio"] = false,
+        ["app_audio_apps"] = new JsonArray(), // {exe, path, name, volume}
         ["sound_volume"] = 1.0,
         ["play_mode"] = "interrupt",
         ["lead_silence_ms"] = 120,
@@ -111,6 +142,10 @@ public static class ConfigStore
             {
                 cfg["edge_voice"] = "en-US-GuyNeural";
                 cfg["gsv_text_lang"] = "en";
+                cfg["azure_lang"] = "en-US";
+                cfg["azure_voice"] = "en-US-AvaMultilingualNeural";
+                cfg["bailian_region"] = "intl";
+                cfg["minimax_region"] = "intl";
             }
         }
         Lang.Init(cfg["language"]!.GetValue<string>());

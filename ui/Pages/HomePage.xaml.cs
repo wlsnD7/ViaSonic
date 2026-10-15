@@ -48,6 +48,7 @@ public sealed partial class HomePage : Page
         EdgeRateText.Text = $"{EdgeRate.Value:+0;-0;0}%";
         SapiRate.Value = A.Num("sapi_rate");
         SapiRateText.Text = $"{SapiRate.Value:+0;-0;0}";
+        InitOnline();
         FillModels();
         ShowEngineOptions();
         UpdateStatus();
@@ -62,6 +63,7 @@ public sealed partial class HomePage : Page
         Fill(EdgeVoice, _edge, A.Str("edge_voice"), v => T(v.Name));
         Fill(SapiVoice, _sapi, A.Str("sapi_voice"), v => v.Name, fallback: s => s.Contains("zh-"));
         _init = false;
+        LoadVoices(A.Str("engine"));
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e) => A.StateChanged -= UpdateStatus;
@@ -88,9 +90,10 @@ public sealed partial class HomePage : Page
         bool loading = en?["loading"]?.GetValue<bool>() ?? false;
         bool ready = en?["ready"]?.GetValue<bool>() ?? false;
         var busy = s?["busy"]?.GetValue<string>() ?? "";
-        StatusText.Text = string.IsNullOrEmpty(busy) ? (ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
+        var missing = en?["missing"]?.GetValue<string>() ?? ""; // 联网服务还没填 Key 等
+        StatusText.Text = string.IsNullOrEmpty(busy) ? (missing.Length > 0 ? missing : ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
-        LoadButton.IsEnabled = !ready && !loading;
+        LoadButton.IsEnabled = !ready && !loading && missing.Length == 0;
 
         if (A.NewRelease is { } rel)
         {
@@ -127,6 +130,12 @@ public sealed partial class HomePage : Page
         GsvPanel.Visibility = ModelPanel.Visibility = key == "gsv" ? Visibility.Visible : Visibility.Collapsed;
         EdgePanel.Visibility = key == "edge" ? Visibility.Visible : Visibility.Collapsed;
         SapiPanel.Visibility = key == "sapi" ? Visibility.Visible : Visibility.Collapsed;
+        AzurePanel.Visibility = key == "azure" ? Visibility.Visible : Visibility.Collapsed;
+        FishPanel.Visibility = key == "fish" ? Visibility.Visible : Visibility.Collapsed;
+        DoubaoPanel.Visibility = key == "doubao" ? Visibility.Visible : Visibility.Collapsed;
+        BailianPanel.Visibility = key == "bailian" ? Visibility.Visible : Visibility.Collapsed;
+        MiniMaxPanel.Visibility = key == "minimax" ? Visibility.Visible : Visibility.Collapsed;
+        CustomPanel.Visibility = key == "custom" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Engine_Changed(object sender, SelectionChangedEventArgs e)
@@ -134,6 +143,7 @@ public sealed partial class HomePage : Page
         if (_init || EngineBox.SelectedItem is not ComboBoxItem { Tag: string key }) return;
         A.Set("engine", key);
         ShowEngineOptions();
+        LoadVoices(key);
     }
 
     private void Load_Click(object sender, RoutedEventArgs e) => A.Speaker.LoadEngine();

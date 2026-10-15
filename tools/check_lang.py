@@ -1,5 +1,7 @@
 """检查界面翻译：缺少英文的条目、没被用到的条目、重复的条目，以及还没包进 T() 的中文。
 
+行尾带「// 音色名」的是预置音色数据（中英文名写在同一行），跳过。
+
 用法：python -I tools/check_lang.py（在仓库根目录运行），全部为 0 时退出码为 0。
 """
 import pathlib
@@ -58,6 +60,8 @@ def main():
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             if p.suffix == ".cs":
                 code = strip_cs(line)
+                if "// 音色名" in line:  # 预置音色数据，英文名写在同一行，不进翻译表
+                    continue
                 if "// 翻译键" in line:
                     used.update(unesc(k) for k in re.findall(STR, code) if HAN.search(k))
                     continue

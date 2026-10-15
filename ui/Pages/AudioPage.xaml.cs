@@ -37,6 +37,7 @@ public sealed partial class AudioPage : Page
         PttOn.IsOn = A.Bool("ptt_enabled");
         A.ConfigReplaced += OnConfigReplaced;
         A.PttToggled += OnPttToggled;
+        InitApps();
         _init = false;
         await LoadDevices();
     }
@@ -45,6 +46,7 @@ public sealed partial class AudioPage : Page
     {
         A.ConfigReplaced -= OnConfigReplaced;
         A.PttToggled -= OnPttToggled;
+        LeaveApps();
     }
 
     private void OnPttToggled()
@@ -90,6 +92,7 @@ public sealed partial class AudioPage : Page
         var t = (ToggleSwitch)sender;
         A.Set((string)t.Tag, t.IsOn);
         UpdatePassBar();
+        UpdateAppBars();
     }
 
     private void UpdatePassBar() => PassBar.IsOpen = PassOn.IsOn && !MicOn.IsOn;

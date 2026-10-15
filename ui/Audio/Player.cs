@@ -23,6 +23,7 @@ public sealed class Player
     private readonly object _lock = new();
     private readonly BusPool _pool = new();
     private readonly Passthrough _pass;
+    private readonly AppAudio _apps;
     private readonly Dictionary<string, Voice> _sounds = [];
     private readonly Dictionary<string, double> _startAt = []; // 没在播放时拖动进度条设的起点（秒）
     private Job? _current;
@@ -51,6 +52,7 @@ public sealed class Player
     {
         _cfg = cfg;
         _pass = new Passthrough(_pool);
+        _apps = new AppAudio(_pool);
         _watcher = new DeviceWatcher(DevicesChanged);
         _en.RegisterEndpointNotificationCallback(_watcher);
         OnConfig();
@@ -74,9 +76,16 @@ public sealed class Player
             items[p["id"]?.GetValue<string>() ?? ""] = ((float)App.ToDouble(p["volume"]), p["loop"]?.GetValue<bool>() ?? false);
         _items = items;
         _pass.Set(Bool("mic_enabled") && Bool("mic_passthrough") ? (Str("mic_device"), Str("passthrough_device")) : null);
+        var apps = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        foreach (var a in C["app_audio_apps"]?.AsArray().OfType<JsonObject>() ?? [])
+            if (a["exe"]?.GetValue<string>() is { Length: > 0 } exe) apps[exe] = (float)App.ToDouble(a["volume"]);
+        _apps.Set(Bool("mic_enabled") && Bool("app_audio") ? Str("mic_device") : null, apps);
         PttSwitch();
         ThreadPool.QueueUserWorkItem(_ => Targets()); // 提前找好设备，第一次播放不用等
     }
+
+    /// <summary>应用声音的电平（0~1），见 AppAudio.TakeLevel。</summary>
+    public float AppLevel(string exe) => _apps.TakeLevel(exe);
 
     public bool IsActive(string tag)
     {
@@ -325,6 +334,7 @@ public sealed class Player
     {
         Stop();
         _pass.Dispose();
+        _apps.Dispose();
         _pool.CloseAll();
         lock (_pttLock) if (_pttCount > 0 && _pttKey.Length > 0) Ptt.Press(_pttKey, false);
     }

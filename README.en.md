@@ -41,6 +41,14 @@ Text to speech for games and voice chat, with mic passthrough and sound effects,
 | Edge TTS | Free, needs internet, many voices. |
 | System voice | Built into Windows, works offline. |
 | GPT-SoVITS (optional) | Add any GPT-SoVITS model (GPT weights + SoVITS weights + reference audio); the version is detected automatically. Needs an NVIDIA GPU and the GPT-SoVITS package. |
+| Azure Speech | Microsoft's official speech service. More voices than Edge, with speaking styles. Needs an API key; 500K characters free per month. |
+| Fish Audio | Lots of community character voices. Needs an API key. |
+| Doubao Speech | Volcengine's speech synthesis. Needs an API key. |
+| Alibaba Model Studio | Qwen3-TTS and CosyVoice. Needs an API key. |
+| MiniMax | Supports cloned voices. Needs an API key. |
+| Custom API | Connects to any HTTP API that returns audio, such as GPT-SoVITS, IndexTTS or CosyVoice running locally. |
+
+API keys are stored encrypted on this PC and can only be read by the current Windows user. With paid online engines, phrases are synthesized the first time you use them and cached after that.
 
 Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main): choose `GPT-SoVITS-v2pro-20250604-nvidia50.7z` for RTX 50 series, or `GPT-SoVITS-v2pro-20250604.7z` for other NVIDIA GPUs (about 9 GB). To use it, set the package location in GPT-SoVITS folder on the Home page, then click + next to Model to add a model.
 
@@ -50,8 +58,9 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**.
 3. The Audio page outputs to `CABLE Input` by default, and also plays to your headphones so you can hear it.
 4. To send your microphone along with the speech, turn on Mic passthrough on the Audio page and choose your microphone.
-5. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays. Turn it on or off on the Audio page or with a hotkey.
-6. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
+5. To let teammates hear music or video, turn on App audio on the Audio page and add those apps.
+6. If the game uses push to talk, go to Push to talk on the Audio page, click the Key button, then press the game's talk key (a single keyboard key, or the middle or side mouse button). The key is held down while speech plays. Turn it on or off on the Audio page or with a hotkey.
+7. Run the game in **borderless windowed** mode. In fullscreen, opening the input box minimizes the game.
 
 ## Default hotkeys
 
