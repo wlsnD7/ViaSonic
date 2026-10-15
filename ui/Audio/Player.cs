@@ -84,6 +84,12 @@ public sealed class Player
         ThreadPool.QueueUserWorkItem(_ => Targets()); // 提前找好设备，第一次播放不用等
     }
 
+    /// <summary>有没有在播放（语音或音效）。</summary>
+    public bool Playing
+    {
+        get { lock (_lock) return _playing; }
+    }
+
     /// <summary>应用声音的电平（0~1），见 AppAudio.TakeLevel。</summary>
     public float AppLevel(string exe) => _apps.TakeLevel(exe);
 

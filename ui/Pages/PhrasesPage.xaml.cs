@@ -346,6 +346,32 @@ public sealed partial class PhrasesPage : Page
         return row;
     }
 
+    /// <summary>用当前引擎合成这条文字常用语，存成 wav / mp3。</summary>
+    private async Task ExportPhrase(JsonObject p, string text)
+    {
+        text = text.Trim();
+        if (text.Length == 0) return;
+        var name = p["name"]?.GetValue<string>() is { Length: > 0 } n ? n : text.Length > 20 ? text[..20] : text;
+        foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
+        var picker = new Windows.Storage.Pickers.FileSavePicker { SuggestedFileName = name };
+        picker.FileTypeChoices.Add(T("WAV 音频"), [".wav"]);
+        picker.FileTypeChoices.Add(T("MP3 音频"), [".mp3"]);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, A.Main.Hwnd);
+        var file = await picker.PickSaveFileAsync();
+        if (file == null) return;
+        try
+        {
+            var clip = await A.Speaker.SynthAsync(text);
+            await Task.Run(() => Audio.AudioEncode.Save(clip, file.Path));
+        }
+        catch (Exception e)
+        {
+            try { if (File.Exists(file.Path) && new FileInfo(file.Path).Length == 0) File.Delete(file.Path); } catch { }
+            Log.Error(T("导出失败：{0}", e.Message));
+            A.Main.ShowError(T("导出失败：{0}", e.Message));
+        }
+    }
+
     private Button MoreButton(JsonObject p, string id, int index, int count, bool isAudio, TextBox text)
     {
         var menu = new MenuFlyout();
@@ -358,6 +384,11 @@ public sealed partial class PhrasesPage : Page
         }
         Item(T("上移"), "", (_, _) => Move(index, -1), index > 0);
         Item(T("下移"), "", (_, _) => Move(index, 1), index < count - 1);
+        if (!isAudio)
+        {
+            var export = Item(T("导出音频"), "", async (_, _) => await ExportPhrase(p, text.Text));
+            menu.Opening += (_, _) => export.IsEnabled = text.Text.Trim().Length > 0; // 文字为空时不能导出
+        }
         if (isAudio)
             Item(T("更换文件"), "", async (_, _) =>
             {

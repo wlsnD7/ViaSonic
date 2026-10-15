@@ -242,6 +242,10 @@ public static partial class Lang
         ["收起"] = "Collapse",
         ["更多"] = "More",
         ["更换文件"] = "Change file",
+        ["导出音频"] = "Export audio",
+        ["WAV 音频"] = "WAV audio",
+        ["MP3 音频"] = "MP3 audio",
+        ["导出失败：{0}"] = "Export failed: {0}",
         ["不支持的文件：{0}"] = "Unsupported file: {0}",
 
         // 应用、托盘、欢迎页

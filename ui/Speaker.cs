@@ -9,7 +9,9 @@ namespace ViaTTS;
 public sealed class Speaker : IDisposable
 {
     /// <summary>Sound：合成后作为音效播放（循环的文字常用语），Tag 是常用语 id。</summary>
-    private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false);
+    /// <summary>Export：只合成不播放，结果交给导出（不受打断影响）。</summary>
+    private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false,
+                              TaskCompletionSource<Clip>? Export = null);
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
@@ -103,6 +105,14 @@ public sealed class Speaker : IDisposable
         if (text.Length > 0) _jobs.Writer.TryWrite(new Job(_gen, text, true, true, id, Sound: true));
     }
 
+    /// <summary>用当前引擎合成（有缓存直接用），给常用语导出音频。</summary>
+    public Task<Clip> SynthAsync(string text)
+    {
+        var tcs = new TaskCompletionSource<Clip>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _jobs.Writer.TryWrite(new Job(-1, text.Trim(), true, false, Export: tcs));
+        return tcs.Task;
+    }
+
     public void Repeat()
     {
         if (LastText.Length > 0) Speak(LastText, cache: true);
@@ -170,27 +180,32 @@ public sealed class Speaker : IDisposable
             var key = eng.CacheKey(cfg) + "|" + job.Text;
             Clip? clip;
             lock (_cache) _cache.TryGetValue(key, out clip);
+            bool show = job.Play || job.Export != null; // 状态栏显示等待 / 合成中
             if (clip == null)
             {
-                if (!eng.Ready && eng.Loading && job.Play) SetBusy("等待加载"); // 翻译键
+                if (!eng.Ready && eng.Loading && show) SetBusy("等待加载"); // 翻译键
                 while (!eng.Ready && eng.Loading) await Task.Delay(200);
                 if (!eng.Ready)
                 {
-                    if (job.Play) { SetBusy(""); Failed?.Invoke(eng.Error.Length > 0 ? eng.Error : T("{0} 未就绪", eng.Label)); }
+                    var why = eng.Error.Length > 0 ? eng.Error : T("{0} 未就绪", eng.Label);
+                    if (show) SetBusy("");
+                    if (job.Export != null) job.Export.TrySetException(new TtsException(why));
+                    else if (job.Play) Failed?.Invoke(why);
                     continue;
                 }
                 try
                 {
-                    if (job.Play) SetBusy("合成中"); // 翻译键
+                    if (show) SetBusy("合成中"); // 翻译键
                     var t0 = DateTime.UtcNow;
                     clip = await eng.SynthAsync(job.Text, cfg, CancellationToken.None);
                     Log.Info(T("合成 {0:0.00}s：{1}", (DateTime.UtcNow - t0).TotalSeconds, job.Text.Length > 40 ? job.Text[..40] : job.Text));
                 }
                 catch (Exception e)
                 {
-                    if (job.Play) SetBusy("");
+                    if (show) SetBusy("");
                     Log.Error(T("合成失败：{0}", e.Message));
-                    if (job.Play) Failed?.Invoke(e.Message);
+                    if (job.Export != null) job.Export.TrySetException(e);
+                    else if (job.Play) Failed?.Invoke(e.Message);
                     continue;
                 }
                 if (job.Cache)
@@ -206,6 +221,13 @@ public sealed class Speaker : IDisposable
                         }
                     }
                 }
+            }
+            if (job.Export != null)
+            {
+                if (Player.Playing) SetBusy("播放中"); // 翻译键
+                else SetBusy("");
+                job.Export.TrySetResult(clip);
+                continue;
             }
             if (job.Play && job.Sound && job.Gen == _gen) Player.PlaySound(job.Tag, clip, speech: true);
             else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);

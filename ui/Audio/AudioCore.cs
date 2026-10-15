@@ -96,6 +96,43 @@ public static class AudioDecode
     }
 }
 
+/// <summary>把合成好的音频存成文件（常用语导出）。</summary>
+public static class AudioEncode
+{
+    /// <summary>按扩展名存成 .wav（16 位 PCM）或 .mp3（Windows 自带的 Media Foundation 编码器，192kbps）。</summary>
+    public static void Save(Clip clip, string path)
+    {
+        var mono = new ClipProvider(clip);
+        if (path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+        {
+            // MP3 编码器只接受 32k/44.1k/48k 的 16 位 PCM
+            ISampleProvider sp = mono;
+            if (clip.SampleRate is not (32000 or 44100 or 48000)) sp = new NAudio.Wave.SampleProviders.WdlResamplingSampleProvider(sp, 44100);
+            MediaFoundationApi.Startup();
+            MediaFoundationEncoder.EncodeToMp3(new NAudio.Wave.SampleProviders.SampleToWaveProvider16(sp), path, 192000);
+        }
+        else
+        {
+            WaveFileWriter.CreateWaveFile16(path, mono);
+        }
+    }
+
+    private sealed class ClipProvider(Clip clip) : ISampleProvider
+    {
+        private int _pos;
+        public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(clip.SampleRate, 1);
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            int n = Math.Min(count, clip.Samples.Length - _pos);
+            // 和播放一样：buffer 可能是 WaveBuffer 别名，不用 Array.Copy
+            for (int i = 0; i < n; i++) buffer[offset + i] = clip.Samples[_pos + i];
+            _pos += n;
+            return n;
+        }
+    }
+}
+
 public static class Devices
 {
     public static List<string> OutputNames()
