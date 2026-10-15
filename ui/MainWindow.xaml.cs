@@ -75,7 +75,7 @@ public sealed partial class MainWindow : Window
                 }
                 App.Current.Overlay?.Show(IntPtr.Zero);
             }
-            if (root.IsLoaded) DispatcherQueue.TryEnqueue(OnStart);
+            if (root.IsLoaded) App.Current.Post(OnStart);
             else root.Loaded += (_, _) => OnStart();
         }
         Nav.SelectedItem = Nav.MenuItems[0];
@@ -132,7 +132,7 @@ public sealed partial class MainWindow : Window
         ErrorBar.IsOpen = true;
         _errorTimer?.Stop();
         _errorTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-        _errorTimer.Tick += (_, _) => { ErrorBar.IsOpen = false; _errorTimer.Stop(); };
+        _errorTimer.Tick += (_, _) => App.Guard(() => { ErrorBar.IsOpen = false; _errorTimer?.Stop(); });
         _errorTimer.Start();
     }
 }

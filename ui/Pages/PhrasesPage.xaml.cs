@@ -55,7 +55,7 @@ public sealed partial class PhrasesPage : Page
         A.Speaker.Player.ActiveChanged += OnActiveChanged;
         _tick = DispatcherQueue.CreateTimer();
         _tick.Interval = TimeSpan.FromMilliseconds(200);
-        _tick.Tick += (_, _) => UpdateProgress();
+        _tick.Tick += (_, _) => App.Guard(UpdateProgress);
         _tick.Start();
     }
 
@@ -73,14 +73,19 @@ public sealed partial class PhrasesPage : Page
         ErrBar.IsOpen = errs.Count > 0;
     }
 
-    private void OnActiveChanged() => A.UI.TryEnqueue(UpdateActive);
+    private void OnActiveChanged() => A.Post(UpdateActive);
 
     /// <summary>正在播放的那一条高亮，播放按钮变成停止。</summary>
+    private readonly Dictionary<string, bool> _shownActive = [];
+
     private void UpdateActive()
     {
         foreach (var (id, (row, play)) in _rows)
         {
             bool on = A.Speaker.Player.IsActive(id);
+            // 只在状态变了时更新：提示框正显示时反复替换 ToolTip 可能让 WinUI 出错
+            if (_shownActive.TryGetValue(id, out var was) && was == on) continue;
+            _shownActive[id] = on;
             row.BorderBrush = (Brush)Application.Current.Resources[on ? "AccentFillColorDefaultBrush" : "CardStrokeColorDefaultBrush"];
             ((FontIcon)play.Content).Glyph = on ? "" : "";
             ToolTipService.SetToolTip(play, on ? T("停止") : T("播放"));
@@ -92,6 +97,7 @@ public sealed partial class PhrasesPage : Page
     {
         List.Children.Clear();
         _rows.Clear();
+        _shownActive.Clear();
         _bars.Clear();
         var phrases = A.Phrases;
         for (int i = 0; i < phrases.Count; i++)

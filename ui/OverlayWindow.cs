@@ -51,7 +51,16 @@ public sealed partial class OverlayWindow : Window
         foreach (var key in new[] { "TextControlBorderBrushFocused", "TextControlBorderBrushPointerOver", "TextControlBorderBrush" })
             _box.Resources[key] = new SolidColorBrush(Colors.Transparent);
         _box.KeyDown += OnKeyDown;
-        _box.Loaded += (_, _) => HideClearButton(_box);
+        _box.Loaded += (_, _) =>
+        {
+            HideClearButton(_box);
+            _scroll = FindScroll(_box);
+        };
+        // 输入法拼写中的文字不会让单行文本框滚动，超出宽度后新打的字看不到：光标在末尾时滚到最右
+        _box.TextChanged += (_, _) => ScrollToEnd();
+        _box.SelectionChanged += (_, _) => ScrollToEnd();
+        _box.TextCompositionChanged += (_, _) => ScrollToEnd();
+        _box.TextCompositionEnded += (_, _) => ScrollToEnd();
         Grid.SetColumn(_box, 1);
 
         // 左侧把手：按住拖动输入框
@@ -99,6 +108,34 @@ public sealed partial class OverlayWindow : Window
             // 主程序退出前只隐藏，避免被用户 Alt+F4 关掉后再也呼不出来
             if (!_closing) { e.Cancel = true; Hide(true); }
         };
+    }
+
+    private ScrollViewer? _scroll;
+    private bool _scrollPending;
+
+    private static ScrollViewer? FindScroll(DependencyObject root)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is ScrollViewer { Name: "ContentElement" } sv) return sv;
+            if (FindScroll(child) is { } found) return found;
+        }
+        return null;
+    }
+
+    /// <summary>等这次输入排版完，光标在末尾时把文本框滚到最右边。</summary>
+    private void ScrollToEnd()
+    {
+        if (_scroll == null || _scrollPending) return;
+        _scrollPending = true;
+        A.Post(() =>
+        {
+            _scrollPending = false;
+            if (_scroll == null || _box.SelectionStart + _box.SelectionLength < _box.Text.Length) return;
+            _scroll.UpdateLayout();
+            _scroll.ChangeView(_scroll.ScrollableWidth, null, null, true);
+        });
     }
 
     /// <summary>TextBox 模板自带的"×"清除按钮由视觉状态控制显隐，这里把它压成 0 宽且不可点。</summary>
@@ -208,12 +245,12 @@ public sealed partial class OverlayWindow : Window
         var win = AppWindow.Position;
         _dragTimer = DispatcherQueue.CreateTimer();
         _dragTimer.Interval = TimeSpan.FromMilliseconds(10);
-        _dragTimer.Tick += (_, _) =>
+        _dragTimer.Tick += (_, _) => App.Guard(() =>
         {
             Native.GetCursorPos(out var pt);
             AppWindow.Move(new Windows.Graphics.PointInt32(win.X + pt.X - from.X, win.Y + pt.Y - from.Y));
             if (!Native.IsDown(0x01 /* VK_LBUTTON */)) EndDrag();
-        };
+        });
         _dragTimer.Start();
     }
 
@@ -288,7 +325,7 @@ public sealed partial class OverlayWindow : Window
         _awaitTimer = DispatcherQueue.CreateTimer();
         _awaitTimer.Interval = TimeSpan.FromMilliseconds(1200);
         _awaitTimer.IsRepeating = false;
-        _awaitTimer.Tick += (_, _) => EndAwaitFocus();
+        _awaitTimer.Tick += (_, _) => App.Guard(EndAwaitFocus);
         _awaitTimer.Start();
     }
 
@@ -318,7 +355,7 @@ public sealed partial class OverlayWindow : Window
             if (msg == 0x0007 /* WM_SETFOCUS */ && _visible && _site != IntPtr.Zero && Native.GetFocus() == _hwnd)
             {
                 Native.SetFocus(_site);
-                if (_awaiting) DispatcherQueue.TryEnqueue(EndAwaitFocus);
+                if (_awaiting) A.Post(EndAwaitFocus);
             }
             return r;
         };
@@ -361,11 +398,11 @@ public sealed partial class OverlayWindow : Window
         _lingerTimer = DispatcherQueue.CreateTimer();
         _lingerTimer.Interval = TimeSpan.FromSeconds(4);
         _lingerTimer.IsRepeating = true;
-        _lingerTimer.Tick += (_, _) =>
+        _lingerTimer.Tick += (_, _) => App.Guard(() =>
         {
             // 4 秒内都没开始合成（比如引擎没就绪），或者超过 2 分钟，都直接结束
             if (!_sawBusy || DateTime.UtcNow - _lingerStart > TimeSpan.FromMinutes(2)) EndLinger();
-        };
+        });
         _lingerStart = DateTime.UtcNow;
         _lingerTimer.Start();
         A.Speaker.Speak(text);

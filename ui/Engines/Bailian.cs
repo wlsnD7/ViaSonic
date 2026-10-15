@@ -43,7 +43,7 @@ public sealed class Bailian(Func<JsonObject> cfg) : OnlineEngine(cfg)
         {
             var j = JsonNode.Parse(await r.Content.ReadAsStringAsync(token))!;
             url = j["output"]?["audio"]?["url"]?.GetValue<string>() ?? "";
-            if (url.Length == 0) throw new TtsException(T("{0} 没有返回音频", Label));
+            if (url.Length == 0) throw new TtsException(T("{0} 没有生成声音，所选音色可能读不了这种语言", Label));
         }
         using var get = new HttpRequestMessage(HttpMethod.Get, url);
         using var audio = await SendAsync(get, token);
@@ -104,7 +104,7 @@ public sealed class Bailian(Func<JsonObject> cfg) : OnlineEngine(cfg)
                 do
                 {
                     r = await ws.ReceiveAsync(buf, ct);
-                    if (r.MessageType == WebSocketMessageType.Close) throw new TtsException(T("{0} 没有返回音频", Label));
+                    if (r.MessageType == WebSocketMessageType.Close) throw new TtsException(T("{0} 没有生成声音，所选音色可能读不了这种语言", Label));
                     msg.Write(buf, 0, r.Count);
                 } while (!r.EndOfMessage);
 

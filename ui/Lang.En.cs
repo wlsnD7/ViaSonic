@@ -295,7 +295,7 @@ public static partial class Lang
         ["请先填写区域"] = "Enter the region first",
         ["API Key 无效或已过期"] = "Invalid or expired API key",
         ["{0} 请求失败：{1}"] = "{0} request failed: {1}",
-        ["{0} 没有返回音频"] = "{0} returned no audio",
+        ["{0} 没有生成声音，所选音色可能读不了这种语言"] = "{0} produced no audio. The selected voice may not support this language.",
         ["连接超时"] = "Connection timed out",
         ["读取音色列表失败：{0}"] = "Couldn't load voices: {0}",
         ["在 Azure 创建「语音服务」资源后获得，每月 50 万字符免费。"] = "Get it by creating a Speech resource in Azure. 500K characters free per month.",

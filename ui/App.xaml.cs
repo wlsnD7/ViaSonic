@@ -59,6 +59,40 @@ public partial class App : Application
             Log.Error(T("未处理的异常"), e.Exception);
             Main?.ShowError(e.Exception.Message);
         };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Error(T("未处理的异常"), (Exception)e.ExceptionObject);
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            Log.Error(T("未处理的异常"), e.Exception);
+            e.SetObserved();
+        };
+    }
+
+    /// <summary>
+    /// 界面线程上投递执行的代码（TryEnqueue、计时器、async void 的后续）里抛出的异常不会进 UnhandledException，
+    /// 而是被 CoreMessaging 直接结束进程（0xC000027B）。统一在这里接住：记录堆栈、弹出提示。
+    /// </summary>
+    public static void Guard(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception e)
+        {
+            Log.Error(T("未处理的异常"), e);
+            try { Current?.Main?.ShowError(e.Message); } catch { }
+        }
+    }
+
+    /// <summary>投递到界面线程执行，异常由 Guard 接住。</summary>
+    public bool Post(Action action) => UI.TryEnqueue(() => Guard(action));
+
+    /// <summary>包住界面线程的 SynchronizationContext：async void 方法里的异常也走 Guard。</summary>
+    private sealed class GuardedContext(SynchronizationContext inner) : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state) => inner.Post(_ => Guard(() => d(state)), null);
+        public override void Send(SendOrPostCallback d, object? state) => inner.Send(_ => Guard(() => d(state)), null);
+        public override SynchronizationContext CreateCopy() => this;
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -74,14 +108,16 @@ public partial class App : Application
             return;
         }
         UI = DispatcherQueue.GetForCurrentThread();
+        if (SynchronizationContext.Current is { } ctx and not GuardedContext)
+            SynchronizationContext.SetSynchronizationContext(new GuardedContext(ctx));
         Config = ConfigStore.Load();
         Log.Info(T("ViaTTS 启动")); // 读完配置才知道界面语言
         _snapshot = Config.DeepClone().AsObject();
         _save = new Debouncer(300);
 
         Speaker = new Speaker(() => _snapshot);
-        Speaker.Changed += () => UI.TryEnqueue(RefreshState);
-        Speaker.Failed += msg => UI.TryEnqueue(() =>
+        Speaker.Changed += () => Post(RefreshState);
+        Speaker.Failed += msg => Post(() =>
         {
             _lastError = msg;
             _errorSeq++;
@@ -95,15 +131,15 @@ public partial class App : Application
         ApplyHotkeys();
         Overlay = new OverlayWindow();
         _tray = new TrayIcon();
-        _tray.OpenRequested += () => UI.TryEnqueue(ShowMain);
-        _tray.ExitRequested += () => UI.TryEnqueue(ExitApp);
+        _tray.OpenRequested += () => Post(ShowMain);
+        _tray.ExitRequested += () => Post(ExitApp);
         Lang.Changed += () =>
         {
             ApplyHotkeys();   // 重新生成快捷键错误（里面的「已被占用」等文字）
             Speaker.Gsv.RefreshError(Config); // 主页还显示着的模型错误
             RefreshState();   // 状态文字、引擎名
             // 推迟到当前事件（例如设置页下拉框的 SelectionChanged）处理完之后再重载页面
-            UI.TryEnqueue(Main.ApplyLanguage);
+            Post(Main.ApplyLanguage);
         };
         Main.OnReady();
         Speaker.OnEngineChanged();
@@ -167,7 +203,7 @@ public partial class App : Application
             {
                 Main.ShowError(e.Message);
                 value = "";
-                UI.TryEnqueue(() => ConfigReplaced?.Invoke());
+                Post(() => ConfigReplaced?.Invoke());
             }
         }
         Config[key] = value?.DeepClone();
@@ -281,7 +317,7 @@ public partial class App : Application
     private void OnHotkeyThread(string name)
     {
         var fg = Native.GetForegroundWindow(); // 记下游戏窗口，发送后把焦点还回去
-        UI.TryEnqueue(() => OnHotkey(name, fg));
+        Post(() => OnHotkey(name, fg));
     }
 
     private void OnHotkey(string name, IntPtr prev)

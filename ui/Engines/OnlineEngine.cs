@@ -103,7 +103,7 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 
     protected Clip Decode(byte[] data)
     {
-        if (data.Length == 0) throw new TtsException(T("{0} 没有返回音频", Label));
+        if (data.Length == 0) throw new TtsException(T("{0} 没有生成声音，所选音色可能读不了这种语言", Label));
         return IsWave(data) ? AudioDecode.FromWave(data) : AudioDecode.FromCompressed(data);
     }
 

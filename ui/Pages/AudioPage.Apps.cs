@@ -47,7 +47,7 @@ public sealed partial class AudioPage
         _meterTimer.Stop();
     }
 
-    private void OnUnsupported() => DispatcherQueue.TryEnqueue(UpdateAppBars);
+    private void OnUnsupported() => A.Post(UpdateAppBars);
 
     private void UpdateAppBars()
     {

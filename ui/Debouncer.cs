@@ -20,6 +20,6 @@ public sealed class Debouncer(int ms = 300)
     private void OnTick(object? sender, object e)
     {
         _timer.Stop();
-        _action?.Invoke();
+        if (_action is { } a) App.Guard(a);
     }
 }

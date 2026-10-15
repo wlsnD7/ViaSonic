@@ -50,6 +50,22 @@ public sealed partial class HomePage
         ShowOnlineOptions();
     }
 
+    /// <summary>
+    /// 下拉框正展开时不要重建列表（展开时清空 Items 会让 WinUI 崩溃），等收起后再刷新。
+    /// 音色列表是从接口异步取回的，可能正好在用户展开下拉框时到达。
+    /// </summary>
+    private static bool DeferIfOpen(ComboBox box, Action refill)
+    {
+        if (!box.IsDropDownOpen) return false;
+        void Closed(object? s, object e)
+        {
+            box.DropDownClosed -= Closed;
+            refill();
+        }
+        box.DropDownClosed += Closed;
+        return true;
+    }
+
     private static void Select(ComboBox box, string tag) =>
         box.SelectedItem = box.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == tag) ?? box.Items.FirstOrDefault();
 
@@ -201,6 +217,7 @@ public sealed partial class HomePage
     private void FillVoices(string engine)
     {
         var (box, del) = VoiceControls(engine);
+        if (DeferIfOpen(box, () => FillVoices(engine))) return;
         bool init = _init;
         _init = true;
         var cur = A.Str(engine + "_voice");
@@ -293,6 +310,7 @@ public sealed partial class HomePage
     // ------------------------------------------------------------------ MiniMax
     private void FillMiniMax(List<(string Id, string Name)> list)
     {
+        if (DeferIfOpen(MiniMaxVoice, () => FillMiniMax(list))) return;
         bool init = _init;
         _init = true;
         var cur = A.Str("minimax_voice");
@@ -329,6 +347,7 @@ public sealed partial class HomePage
 
     private void FillAzure()
     {
+        if (DeferIfOpen(AzureLang, FillAzure) || DeferIfOpen(AzureVoice, FillAzure) || DeferIfOpen(AzureStyle, FillAzure)) return;
         bool init = _init;
         _init = true;
         AzureLang.Items.Clear();
