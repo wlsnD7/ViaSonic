@@ -31,6 +31,7 @@
 ## 安装
 
 - 在 [Releases](https://github.com/wlsnD7/ViaTTS/releases/latest) 页面下载安装包 `ViaTTS_版本号_setup.exe`。
+- 国内用户也可以在 [Gitee](https://gitee.com/wlsnD7/ViaTTS/releases) 下载。
 - 支持 Windows 10（19041 及以上）和 Windows 11。
 - 使用前请阅读软件内「关于」页的常见问题和免责声明。
 

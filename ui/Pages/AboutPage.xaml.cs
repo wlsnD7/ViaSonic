@@ -27,6 +27,28 @@ public sealed partial class AboutPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e) => _timer.Stop();
 
+    private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateButton.IsEnabled = false;
+        UpdateRing.IsActive = true;
+        UpdateLink.Visibility = Visibility.Collapsed;
+        bool ok;
+        try { ok = await App.Current.CheckUpdateAsync(); }
+        finally
+        {
+            UpdateButton.IsEnabled = true;
+            UpdateRing.IsActive = false;
+        }
+        if (App.Current.NewRelease is { } rel)
+        {
+            AppCard.Description = T("发现新版本 {0}", rel.Tag);
+            UpdateLink.NavigateUri = new Uri(rel.Url);
+            UpdateLink.Visibility = Visibility.Visible;
+        }
+        else if (ok) AppCard.Description = T("版本 {0} · 已是最新版本", App.Version);
+        else App.Current.Main.ShowError(T("检查更新失败，请稍后再试"));
+    }
+
     private Task PollAsync()
     {
         var rows = Log.Since(_seq);

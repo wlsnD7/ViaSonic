@@ -14,6 +14,11 @@
                 <tk:SettingsExpander.HeaderIcon>
                     <ImageIcon Source="ms-appx:///Assets/ViaTTS.png" />
                 </tk:SettingsExpander.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ProgressRing x:Name="UpdateRing" IsActive="False" Width="20" Height="20" />
+                    <HyperlinkButton x:Name="UpdateLink" Content="{l:T Text='下载'}" Visibility="Collapsed" />
+                    <Button x:Name="UpdateButton" Content="{l:T Text='检查更新'}" Click="CheckUpdate_Click" />
+                </StackPanel>
                 <tk:SettingsExpander.Items>
                     <tk:SettingsCard Header="GPT-SoVITS">
                         <HyperlinkButton Content="GitHub" NavigateUri="https://github.com/RVC-Boss/GPT-SoVITS" />
@@ -52,7 +57,7 @@
                         <TextBlock TextWrapping="Wrap" LineHeight="24" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                             <Run Text="{l:T Text='• ViaTTS 是免费的开源软件。'}" /><LineBreak />
                             <Run Text="{l:T Text='• Edge TTS 用的是微软 Edge「大声朗读」的接口。用 Edge TTS 时，你输入的文字会发送到微软的服务器。'}" /><LineBreak />
-                            <Run Text="{l:T Text='• ViaTTS 不收集、不上传任何数据，启动时会访问 GitHub 检查新版本。'}" /><LineBreak />
+                            <Run Text="{l:T Text='• ViaTTS 不收集、不上传任何数据，启动时会访问 GitHub 和 Gitee 检查新版本。'}" /><LineBreak />
                             <Run Text="{l:T Text='• ViaTTS 会监听全局快捷键，还会模拟按下按键说话的键。个别游戏的反作弊系统可能会因此有反应，请自行判断。因此造成的封号等后果由使用者承担。'}" /><LineBreak />
                             <Run Text="{l:T Text='• 使用 GPT-SoVITS 模型时，不要用来冒充他人、诈骗或骚扰，由此产生的责任由使用者承担。模型的版权归原作者。'}" />
                         </TextBlock>

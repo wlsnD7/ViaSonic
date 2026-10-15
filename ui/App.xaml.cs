@@ -146,12 +146,14 @@ public partial class App : Application
         _ = CheckUpdateAsync();
     }
 
-    private async Task CheckUpdateAsync()
+    /// <summary>查新版本（启动时一次，「关于」页可以手动再查）。返回是否查询成功。</summary>
+    public async Task<bool> CheckUpdateAsync()
     {
-        NewRelease = await UpdateCheck.NewerAsync(Version);
-        if (NewRelease == null) return;
-        Log.Info(T("发现新版本 {0}", NewRelease.Tag));
+        var r = await UpdateCheck.CheckAsync(Version);
+        NewRelease = r.Newer;
+        if (NewRelease != null) Log.Info(T("发现新版本 {0}", NewRelease.Tag));
         StateChanged?.Invoke();
+        return r.Ok;
     }
 
     /// <summary>页面沿用的状态结构：engine / busy / error / error_seq / engines[]。</summary>
