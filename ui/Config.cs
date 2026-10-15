@@ -56,17 +56,19 @@ public static class ConfigStore
         ["azure_rate"] = 0,
         ["fish_key"] = "",
         ["fish_voice"] = "",
-        ["fish_voice_name"] = "",
+        ["fish_voices"] = new JsonArray(),    // 自己添加的音色 {id, name}；豆包、百炼还带 model
         ["fish_speed"] = 1.0,
         ["doubao_key"] = "",
         ["doubao_model"] = "2.0",
         ["doubao_voice"] = "zh_female_vv_uranus_bigtts",
         ["doubao_rate"] = 0,
+        ["doubao_voices"] = new JsonArray(),
         ["bailian_key"] = "",
         ["bailian_region"] = "cn",
         ["bailian_model"] = "qwen",
         ["bailian_voice"] = "Cherry",
         ["bailian_speed"] = 1.0,
+        ["bailian_voices"] = new JsonArray(),
         ["minimax_key"] = "",
         ["minimax_region"] = "cn",
         ["minimax_model"] = "speech-2.8-hd",
@@ -154,6 +156,7 @@ public static class ConfigStore
         var cur = cfg["gsv_model"]?.GetValue<string>();
         if (!models.Any(m => m?["id"]?.GetValue<string>() == cur))
             cfg["gsv_model"] = models.Count > 0 ? models[0]!["id"]!.GetValue<string>() : "";
+        MigrateVoices(cfg, raw);
         foreach (var p in cfg["phrases"]!.AsArray().OfType<JsonObject>())
         {
             // 1.0 的音频常用语没有名称：原来的文字当名称
@@ -166,6 +169,29 @@ public static class ConfigStore
 
         Save(cfg);
         return cfg;
+    }
+
+    /// <summary>1.3.0 只记当前音色：正在用的自定义音色 ID 放进添加的音色列表，切换后不会丢。</summary>
+    private static void MigrateVoices(JsonObject cfg, JsonObject? raw)
+    {
+        foreach (var engine in new[] { "fish", "doubao", "bailian" })
+        {
+            if (cfg[engine + "_voices"] is not JsonArray) cfg[engine + "_voices"] = new JsonArray();
+            if (raw?.ContainsKey(engine + "_voices") == true) continue; // 已经是新格式
+            var id = cfg[engine + "_voice"]?.GetValue<string>() ?? "";
+            if (id.Length == 0) continue;
+            var model = engine == "fish" ? "" : cfg[engine + "_model"]?.GetValue<string>() ?? "";
+            var presets = engine switch
+            {
+                "doubao" => Engines.Doubao.Presets(model),
+                "bailian" => Engines.Bailian.Presets(model),
+                _ => [],
+            };
+            if (presets.Any(v => v.Id == id)) continue;
+            var v = new JsonObject { ["id"] = id, ["name"] = raw?[engine + "_voice_name"]?.GetValue<string>() is { Length: > 0 } n ? n : id };
+            if (engine != "fish") v["model"] = model;
+            cfg[engine + "_voices"]!.AsArray().Add((JsonNode)v);
+        }
     }
 
     public static void Save(JsonObject cfg)

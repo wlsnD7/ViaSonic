@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -10,8 +11,8 @@ public sealed partial class HomePage
 {
     private readonly Debouncer _keySave = new(500);
     private List<AzureTts.AzureVoice> _azure = [];
-    /// <summary>可输入的音色框：下拉项是名称，这里按顺序记着对应的 ID。</summary>
-    private readonly Dictionary<ComboBox, List<(string Id, string Name)>> _editVoices = [];
+    /// <summary>Fish Audio 账号里自己创建的音色（从接口取）。</summary>
+    private List<(string Id, string Name)> _fishMine = [];
 
     private TE Engine<TE>(string key) where TE : class => (TE)A.Speaker.Engines[key];
 
@@ -41,9 +42,9 @@ public sealed partial class HomePage
         foreach (var box in new[] { DoubaoModel, BailianRegion, BailianModel, MiniMaxRegion, MiniMaxModel, CustomMethod })
             Select(box, A.Str((string)box.Tag));
 
-        FillDoubao();
-        FillBailian();
-        FillFish([]);
+        FillVoices("doubao");
+        FillVoices("bailian");
+        FillVoices("fish");
         FillMiniMax([]);
         FillAzure();
         ShowOnlineOptions();
@@ -72,7 +73,8 @@ public sealed partial class HomePage
                     FillAzure();
                     break;
                 case "fish":
-                    FillFish(await Engine<FishAudio>("fish").MyVoicesAsync(cfg));
+                    _fishMine = await Engine<FishAudio>("fish").MyVoicesAsync(cfg);
+                    FillVoices("fish");
                     break;
                 case "minimax":
                     FillMiniMax(await Engine<MiniMax>("minimax").VoicesAsync(cfg, refresh));
@@ -115,13 +117,11 @@ public sealed partial class HomePage
         A.Set(key, value);
         switch (key)
         {
-            case "doubao_model":
-                if (!Doubao.Presets(value).Any(v => v.Id == A.Str("doubao_voice"))) A.Set("doubao_voice", Doubao.Presets(value)[0].Id);
-                FillDoubao();
-                break;
-            case "bailian_model":
-                if (!Bailian.Presets(value).Any(v => v.Id == A.Str("bailian_voice"))) A.Set("bailian_voice", Bailian.Presets(value)[0].Id);
-                FillBailian();
+            case "doubao_model" or "bailian_model":
+                var engine = key[..key.IndexOf('_')];
+                var list = VoiceList(engine);
+                if (!list.Any(v => v.Id == A.Str(engine + "_voice"))) A.Set(engine + "_voice", list[0].Id);
+                FillVoices(engine);
                 break;
             case "minimax_region":
                 LoadVoices("minimax", refresh: true);
@@ -167,81 +167,127 @@ public sealed partial class HomePage
         else if (v != A.Str(key)) A.Set(key, v);
     }
 
-    // ------------------------------------------------------------------ 可输入的音色框（Fish Audio、豆包、百炼）
-    private void FillEdit(ComboBox box, List<(string Id, string Name)> list, string current)
+    // ------------------------------------------------------------------ 音色列表（Fish Audio、豆包、百炼）：内置/接口取的 + 自己添加的
+    private (ComboBox Box, Button Del) VoiceControls(string engine) => engine switch
     {
+        "fish" => (FishVoice, FishDelVoice),
+        "doubao" => (DoubaoVoice, DoubaoDelVoice),
+        _ => (BailianVoice, BailianDelVoice),
+    };
+
+    /// <summary>豆包、百炼的音色分模型保存；Fish Audio 不分。</summary>
+    private string VoiceModel(string engine) => engine == "fish" ? "" : A.Str(engine + "_model");
+
+    private JsonArray SavedVoices(string engine) => A.Config[engine + "_voices"]!.AsArray();
+
+    private List<JsonObject> SavedFor(string engine) =>
+        SavedVoices(engine).OfType<JsonObject>().Where(v => (v["model"]?.GetValue<string>() ?? "") == VoiceModel(engine)).ToList();
+
+    /// <summary>下拉框里的全部音色：添加的在前，然后是预置或接口取到的。</summary>
+    private List<(string Id, string Name, bool Saved)> VoiceList(string engine)
+    {
+        var list = SavedFor(engine).Select(v => (Id: v["id"]!.GetValue<string>(), Name: v["name"]?.GetValue<string>() ?? "", Saved: true)).ToList();
+        IEnumerable<(string Id, string Name)> builtIn = engine switch
+        {
+            "fish" => _fishMine,
+            "doubao" => Doubao.Presets(A.Str("doubao_model")).Select(v => (v.Id, v.Name)),
+            _ => Bailian.Presets(A.Str("bailian_model")).Select(v => (v.Id, v.Name)),
+        };
+        foreach (var (id, name) in builtIn)
+            if (!list.Any(v => v.Id == id)) list.Add((id, name, false));
+        return list.Select(v => (v.Id, v.Name.Length > 0 ? v.Name : v.Id, v.Saved)).ToList();
+    }
+
+    private void FillVoices(string engine)
+    {
+        var (box, del) = VoiceControls(engine);
         bool init = _init;
         _init = true;
-        _editVoices[box] = list;
+        var cur = A.Str(engine + "_voice");
+        var list = VoiceList(engine);
         box.Items.Clear();
-        foreach (var v in list) box.Items.Add(v.Name);
-        int i = list.FindIndex(v => v.Id == current);
-        box.SelectedIndex = i;
-        if (i < 0) box.Text = current;
+        foreach (var v in list) box.Items.Add(new ComboBoxItem { Content = v.Name, Tag = v.Id });
+        // 还没取到接口列表时，当前音色先按 ID 显示
+        if (cur.Length > 0 && !list.Any(v => v.Id == cur)) box.Items.Insert(0, new ComboBoxItem { Content = cur, Tag = cur });
+        box.SelectedItem = box.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == cur);
+        del.IsEnabled = list.Any(v => v.Saved && v.Id == cur);
         _init = init;
     }
 
-    private void FillDoubao() =>
-        FillEdit(DoubaoVoice, Doubao.Presets(A.Str("doubao_model")).Select(v => (v.Id, v.Name)).ToList(), A.Str("doubao_voice"));
-
-    private void FillBailian() =>
-        FillEdit(BailianVoice, Bailian.Presets(A.Str("bailian_model")).Select(v => (v.Id, v.Name)).ToList(), A.Str("bailian_voice"));
-
-    private void FillFish(List<(string Id, string Name)> mine)
-    {
-        var cur = A.Str("fish_voice");
-        var list = mine.ToList();
-        if (cur.Length > 0 && !list.Any(v => v.Id == cur)) list.Add((cur, A.Str("fish_voice_name") is { Length: > 0 } n ? n : cur));
-        FillEdit(FishVoice, list, cur);
-    }
-
-    private void EditVoice_Changed(object sender, SelectionChangedEventArgs e)
+    private void Voice_Changed(object sender, SelectionChangedEventArgs e)
     {
         var box = (ComboBox)sender;
-        if (_init || box.SelectedIndex < 0 || !_editVoices.TryGetValue(box, out var list) || box.SelectedIndex >= list.Count) return;
-        SaveVoice(box, list[box.SelectedIndex].Id);
-    }
-
-    private void EditVoice_Submitted(ComboBox box, ComboBoxTextSubmittedEventArgs args)
-    {
-        args.Handled = true;
-        SubmitVoice(box, args.Text);
-    }
-
-    /// <summary>输入后直接点别处也保存。</summary>
-    private void EditVoice_LostFocus(object sender, RoutedEventArgs e)
-    {
-        var box = (ComboBox)sender;
-        if (!_init && box.SelectedIndex < 0) SubmitVoice(box, box.Text);
-    }
-
-    private void SubmitVoice(ComboBox box, string? input)
-    {
-        var text = input?.Trim() ?? "";
-        if (text.Length == 0 || !_editVoices.TryGetValue(box, out var list)) return;
-        int i = list.FindIndex(v => v.Name == text || v.Id == text);
-        if (i >= 0)
-        {
-            _init = true;
-            box.SelectedIndex = i;
-            _init = false;
-        }
-        SaveVoice(box, i >= 0 ? list[i].Id : text);
-    }
-
-    private async void SaveVoice(ComboBox box, string id)
-    {
+        if (_init || box.SelectedItem is not ComboBoxItem { Tag: string id }) return;
         var key = (string)box.Tag;
-        if (A.Str(key) == id) return;
-        A.Set(key, id);
-        if (box != FishVoice) return;
-        // Fish Audio 粘贴的 ID 查一下名称，下拉框里显示名称
-        var list = _editVoices[box];
-        var name = list.FirstOrDefault(v => v.Id == id).Name
-                   ?? await Engine<FishAudio>("fish").VoiceNameAsync(A.Config.DeepClone().AsObject(), id) ?? "";
-        if (A.Str("fish_voice") != id) return;
-        A.Set("fish_voice_name", name);
-        if (name.Length > 0 && !list.Any(v => v.Id == id)) FillFish(list);
+        var engine = key[..key.IndexOf('_')];
+        if (A.Str(key) != id) A.Set(key, id);
+        VoiceControls(engine).Del.IsEnabled = VoiceList(engine).Any(v => v.Saved && v.Id == id);
+    }
+
+    private async void AddVoice_Click(object sender, RoutedEventArgs e)
+    {
+        var engine = (string)((Button)sender).Tag;
+        var input = new TextBox
+        {
+            Width = 360,
+            PlaceholderText = engine == "fish" ? T("音色 ID 或 fish.audio 链接") : T("音色 ID"),
+        };
+        var dlg = new ContentDialog
+        {
+            Title = T("添加音色"),
+            Content = input,
+            PrimaryButtonText = T("添加"),
+            CloseButtonText = T("取消"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = XamlRoot,
+        };
+        if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
+        var id = VoiceId(input.Text);
+        if (id.Length == 0) return;
+
+        var name = id;
+        if (engine == "fish" && A.Speaker.Engines["fish"].Ready)
+        {
+            var found = _fishMine.FirstOrDefault(v => v.Id == id).Name
+                        ?? await Engine<FishAudio>("fish").VoiceNameAsync(A.Config.DeepClone().AsObject(), id);
+            if (found == null)
+            {
+                A.Main.ShowError(T("找不到这个音色"));
+                return;
+            }
+            name = found;
+        }
+        if (!VoiceList(engine).Any(v => v.Id == id))
+        {
+            var v = new JsonObject { ["id"] = id, ["name"] = name };
+            if (engine != "fish") v["model"] = VoiceModel(engine);
+            SavedVoices(engine).Add((JsonNode)v);
+            A.Commit(engine + "_voices");
+        }
+        A.Set(engine + "_voice", id);
+        FillVoices(engine);
+    }
+
+    /// <summary>粘贴的链接取最后一段作为 ID（fish.audio/m/xxx、带查询参数的都行）。</summary>
+    private static string VoiceId(string text)
+    {
+        text = text.Trim();
+        if (!text.Contains('/')) return text;
+        var path = text.Split('?', '#')[0].TrimEnd('/');
+        return path[(path.LastIndexOf('/') + 1)..].Trim();
+    }
+
+    private void RemoveVoice_Click(object sender, RoutedEventArgs e)
+    {
+        var engine = (string)((Button)sender).Tag;
+        var cur = A.Str(engine + "_voice");
+        var saved = SavedFor(engine).FirstOrDefault(v => v["id"]?.GetValue<string>() == cur);
+        if (saved == null) return;
+        SavedVoices(engine).Remove(saved);
+        A.Commit(engine + "_voices");
+        var next = VoiceList(engine).FirstOrDefault().Id ?? "";
+        A.Set(engine + "_voice", next);
+        FillVoices(engine);
     }
 
     // ------------------------------------------------------------------ MiniMax

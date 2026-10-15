@@ -216,11 +216,16 @@
                     </tk:SettingsCard>
                     <tk:SettingsCard>
                         <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='列表里是你创建的音色。也可以粘贴音色 ID：fish.audio 音色页网址的最后一段。'}" />
+                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='列表里是你创建的音色和添加的音色。'}" />
                         </tk:SettingsCard.Header>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <ComboBox x:Name="FishVoice" Width="260" IsEditable="True" Tag="fish_voice"
-                                      SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                            <ComboBox x:Name="FishVoice" Width="260" Tag="fish_voice" SelectionChanged="Voice_Changed" />
+                            <Button Click="AddVoice_Click" Tag="fish" ToolTipService.ToolTip="{l:T Text='添加音色'}" AutomationProperties.Name="{l:T Text='添加音色'}">
+                                <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            </Button>
+                            <Button x:Name="FishDelVoice" Click="RemoveVoice_Click" Tag="fish" ToolTipService.ToolTip="{l:T Text='删除音色'}" AutomationProperties.Name="{l:T Text='删除音色'}">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                            </Button>
                             <Button Click="RefreshVoices_Click" Tag="fish" ToolTipService.ToolTip="{l:T Text='刷新音色'}" AutomationProperties.Name="{l:T Text='刷新音色'}">
                                 <FontIcon Glyph="&#xE72C;" FontSize="14" />
                             </Button>
@@ -251,12 +256,16 @@
                             <ComboBoxItem Content="{l:T Text='豆包语音合成 1.0'}" Tag="1.0" />
                         </ComboBox>
                     </tk:SettingsCard>
-                    <tk:SettingsCard>
-                        <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='也可以直接填音色 ID。'}" />
-                        </tk:SettingsCard.Header>
-                        <ComboBox x:Name="DoubaoVoice" Width="260" IsEditable="True" Tag="doubao_voice"
-                                  SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                    <tk:SettingsCard Header="{l:T Text='音色'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox x:Name="DoubaoVoice" Width="260" Tag="doubao_voice" SelectionChanged="Voice_Changed" />
+                            <Button Click="AddVoice_Click" Tag="doubao" ToolTipService.ToolTip="{l:T Text='添加音色'}" AutomationProperties.Name="{l:T Text='添加音色'}">
+                                <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            </Button>
+                            <Button x:Name="DoubaoDelVoice" Click="RemoveVoice_Click" Tag="doubao" ToolTipService.ToolTip="{l:T Text='删除音色'}" AutomationProperties.Name="{l:T Text='删除音色'}">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                            </Button>
+                        </StackPanel>
                     </tk:SettingsCard>
                     <tk:SettingsCard Header="{l:T Text='语速'}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
@@ -286,12 +295,16 @@
                             <ComboBoxItem Content="CosyVoice" Tag="cosy" />
                         </ComboBox>
                     </tk:SettingsCard>
-                    <tk:SettingsCard>
-                        <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='也可以直接填音色 ID，例如复刻的音色。'}" />
-                        </tk:SettingsCard.Header>
-                        <ComboBox x:Name="BailianVoice" Width="260" IsEditable="True" Tag="bailian_voice"
-                                  SelectionChanged="EditVoice_Changed" TextSubmitted="EditVoice_Submitted" LostFocus="EditVoice_LostFocus" />
+                    <tk:SettingsCard Header="{l:T Text='音色'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox x:Name="BailianVoice" Width="260" Tag="bailian_voice" SelectionChanged="Voice_Changed" />
+                            <Button Click="AddVoice_Click" Tag="bailian" ToolTipService.ToolTip="{l:T Text='添加音色'}" AutomationProperties.Name="{l:T Text='添加音色'}">
+                                <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            </Button>
+                            <Button x:Name="BailianDelVoice" Click="RemoveVoice_Click" Tag="bailian" ToolTipService.ToolTip="{l:T Text='删除音色'}" AutomationProperties.Name="{l:T Text='删除音色'}">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                            </Button>
+                        </StackPanel>
                     </tk:SettingsCard>
                     <tk:SettingsCard x:Name="BailianSpeedCard" Header="{l:T Text='语速'}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
