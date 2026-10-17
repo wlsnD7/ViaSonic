@@ -22,6 +22,10 @@
                     <Button x:Name="UpdateButton" Content="{l:T Text='检查更新'}" Click="CheckUpdate_Click" />
                 </StackPanel>
                 <tk:SettingsExpander.Items>
+                    <!-- 软件介绍，放在外链上面 -->
+                    <tk:SettingsCard ContentAlignment="Left">
+                        <TextBlock Text="{l:T Text='实时文本转语音、变声器（含 RVC）、常用语和音效，以及音乐播放器。通过虚拟麦克风输出声音。'}" TextWrapping="Wrap" />
+                    </tk:SettingsCard>
                     <tk:SettingsCard Header="GPT-SoVITS">
                         <HyperlinkButton Content="GitHub" NavigateUri="https://github.com/RVC-Boss/GPT-SoVITS" />
                     </tk:SettingsCard>

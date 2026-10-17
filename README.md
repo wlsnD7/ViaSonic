@@ -4,21 +4,25 @@
 
 # ViaSonic
 
-集文本转语音、变声器和音效播放于一体，通过虚拟麦克风输出声音。
+实时文本转语音、变声器（含 RVC）、常用语和音效，以及音乐播放器。通过虚拟麦克风输出声音。
 
 [![Release](https://img.shields.io/github/v/release/wlsnD7/ViaSonic)](https://github.com/wlsnD7/ViaSonic/releases/latest)
 [![License](https://img.shields.io/github/license/wlsnD7/ViaSonic)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet)
 
-[安装](#安装) · [游戏内设置](#游戏内设置) · [快捷键](#默认快捷键) · [开发](#开发)
+[安装](#安装) | [游戏内设置](#游戏内设置) | [快捷键](#默认快捷键) | [开发](#开发)
 
 简体中文 | [English](README.en.md)
 
 <table>
   <tr>
     <td><img src="docs/zh/home.png" width="400" alt="朗读"></td>
+    <td><img src="docs/zh/voice.png" width="400" alt="变声"></td>
+  </tr>
+  <tr>
     <td><img src="docs/zh/phrases.png" width="400" alt="常用语与音效"></td>
+    <td><img src="docs/zh/player.png" width="400" alt="音乐播放器"></td>
   </tr>
   <tr>
     <td><img src="docs/zh/audio.png" width="400" alt="音频"></td>
@@ -43,21 +47,25 @@
 | 系统语音 | Windows 自带，离线。 |
 | GPT-SoVITS（可选） | 可添加任意 GPT-SoVITS 模型（GPT 权重 + SoVITS 权重 + 参考音频），版本自动识别。需要 NVIDIA 显卡和 GPT-SoVITS 整合包。 |
 | Azure 语音 | 微软官方语音服务，音色比 Edge 更全，支持风格。需要 API Key，每月 50 万字符免费。 |
-| Fish Audio | 可以使用社区里的大量角色音色。需要 API Key。 |
-| 豆包语音 | 火山引擎的语音合成，需要 API Key。 |
-| 阿里云百炼 | Qwen3-TTS 和 CosyVoice，需要 API Key。 |
+| Fish Audio | 可以使用社区里的大量角色音色，也会列出你自己创建（包括复刻）的模型。需要 API Key。 |
+| 豆包语音 | 火山引擎的语音合成，支持声音复刻 2.0（在控制台复刻后添加音色 ID）。需要 API Key，并在控制台开通对应的模型。 |
+| 阿里云百炼 | Qwen3-TTS 和 CosyVoice，CosyVoice 可以添加复刻音色。需要 API Key。 |
 | MiniMax | 支持复刻音色，需要 API Key。 |
 | 自定义接口 | 连接任意返回音频的 HTTP 接口，例如本地运行的 GPT-SoVITS、IndexTTS、CosyVoice。 |
 
 API Key 加密保存在本机，只有当前 Windows 用户能读取。联网付费引擎的常用语在第一次使用时合成，之后用缓存。
 
-GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50 系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 NVIDIA 显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约 9GB）。需要使用时，在软件「朗读」页的「GPT-SoVITS 目录」指定整合包位置，在「模型」里点击加号添加模型。
+GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50 系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 NVIDIA 显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约 9GB）。需要使用时，在「朗读」页把引擎选成 GPT-SoVITS，点「引擎」旁边的 ⚙，在「GPT-SoVITS 目录」指定整合包位置，然后在「模型」里点击加号添加模型。
 
 ## 变声器
 
 在「变声」页打开变声器。基础效果可以叠加，最多同时开 6 个，调好后可以保存成组合。
 
-AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConversionWebUI](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main) 下载：RTX 50 系选择 `RVC20260718Nvidia50x0.7z`，其他 NVIDIA 显卡选择 `RVC20260718Nvidia.7z`。解压后在「变声」页的「RVC 目录」指定位置。模型（.pth）放进整合包的 `assets\weights` 文件夹会自动列出。
+AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConversionWebUI](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main) 下载：RTX 50 系选择 `RVC20260718Nvidia50x0.7z`，其他 NVIDIA 显卡选择 `RVC20260718Nvidia.7z`。解压后在「变声」页「AI 变声」右边的 ⚙ 里指定「RVC 目录」。模型（.pth）放进整合包的 `assets\weights` 文件夹会自动列出。
+
+## 音乐播放器
+
+在「常用语与音效」页的「音乐播放器」标签里播放音乐，同样通过虚拟麦克风输出。可以添加文件、文件夹或导入 .m3u / .m3u8 歌单，支持倍速、后退 10 秒、前进 30 秒、交叉过渡和三种播放模式。音量在页面右上角的「音频音量」里，进虚拟麦克风和进监听的分开调。
 
 ## 游戏内设置
 
@@ -67,7 +75,7 @@ AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConve
 4. 同时接入麦克风和文本生成的语音，需在「音频」页打开「麦克风直通」并选择你的麦克风。
 5. 想让队友听到音乐或视频的声音，在「音频」页打开「应用声音」，添加对应的应用。
 6. 如果游戏用「按键说话」，在「音频」页的「按键说话」里点「按键」按钮，再按下游戏里的说话键（键盘单键，或鼠标中键、侧键）。朗读期间会自动按住这个键。可在「音频」页或用快捷键随时开关。
-7. 游戏请用**无边框窗口**模式，全屏下弹出输入框会让游戏最小化。
+7. 游戏请用**无边框窗口**模式，全屏下弹出输入框会让游戏最小化。有些游戏即使是无边框窗口，失去焦点也会最小化，可以在游戏设置里关掉「失去焦点时最小化」之类的选项，或者改成窗口模式。
 
 ## 默认快捷键
 
@@ -78,6 +86,8 @@ AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConve
 | 停止播放 | Ctrl + Alt + X |
 | 重复上一句 | Ctrl + Alt + R |
 | 打开 / 关闭按键说话 | 未设置 |
+| 播放 / 暂停音乐 | 未设置 |
+| 下一首 | 未设置 |
 
 关闭主窗口后，软件会在后台运行，右键系统托盘图标退出。
 

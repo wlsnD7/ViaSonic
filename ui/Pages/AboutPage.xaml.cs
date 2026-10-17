@@ -27,9 +27,8 @@ public sealed partial class AboutPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e) => _timer.Stop();
 
-    /// <summary>ViaSonic 卡片的说明：第一行软件介绍，第二行版本。</summary>
-    private void ShowAbout(string version) =>
-        AppCard.Description = T("实时文本转语音、变声器（含 RVC）、常用语和音效，以及音乐播放器。通过虚拟麦克风输出声音。") + "\n" + version;
+    /// <summary>ViaSonic 卡片的说明：版本（软件介绍在展开栏里）。</summary>
+    private void ShowAbout(string version) => AppCard.Description = version;
 
     private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
     {
