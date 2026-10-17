@@ -110,7 +110,7 @@ public static partial class Lang
         ["快捷键没反应"] = "Hotkeys don't work",
         ["可能被其他软件占用，如果游戏以管理员身份运行，ViaSonic 也要以管理员身份运行，不然快捷键等对游戏都不起作用。"] = "Another app may be using them. If the game runs as administrator, ViaSonic must too, or hotkeys and other features won't work in the game.",
         ["弹出输入框时游戏最小化了"] = "The game minimizes when the input box opens",
-        ["把游戏改成无边框窗口模式。"] = "Switch the game to borderless windowed mode.",
+        ["有些游戏一失去焦点就会最小化，即使是无边框窗口。可以在游戏设置里关掉「失去焦点时最小化」之类的选项，或者改成窗口模式。"] = "Some games minimize as soon as they lose focus, even in borderless mode. Turn off options like \"Minimize on focus loss\" in the game, or use windowed mode.",
         ["Edge TTS 合成失败"] = "Edge TTS fails",
         ["Edge TTS需要联网。开着代理的话，试试关掉或者换个节点。"] = "Edge TTS needs an internet connection. If you use a proxy, try turning it off or switching servers.",
         ["GPT-SoVITS 用不了"] = "GPT-SoVITS doesn't work",
