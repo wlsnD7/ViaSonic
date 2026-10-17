@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>
 /// 查 GitHub 和 Gitee 上的最新 Release（标签格式 v1.2.3），只提醒，不自动下载。
@@ -8,9 +8,9 @@ namespace ViaTTS;
 /// </summary>
 public static class UpdateCheck
 {
-    private const string GitHubApi = "https://api.github.com/repos/wlsnD7/ViaTTS/releases/latest";
-    private const string GiteeApi = "https://gitee.com/api/v5/repos/wlsnD7/ViaTTS/releases/latest";
-    private const string GiteePage = "https://gitee.com/wlsnD7/ViaTTS/releases/tag/";
+    private const string GitHubApi = "https://api.github.com/repos/wlsnD7/ViaSonic/releases/latest";
+    private const string GiteeApi = "https://gitee.com/api/v5/repos/wlsnD7/ViaSonic/releases/latest";
+    private const string GiteePage = "https://gitee.com/wlsnD7/ViaSonic/releases/tag/";
 
     public record Release(string Tag, string Url);
 
@@ -42,7 +42,7 @@ public static class UpdateCheck
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd($"ViaTTS/{current}");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd($"ViaSonic/{current}");
             if (api == GitHubApi) http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
             var r = JsonNode.Parse(await http.GetStringAsync(api))!;
             var tag = r["tag_name"]?.GetValue<string>() ?? "";

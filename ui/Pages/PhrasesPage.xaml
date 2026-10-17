@@ -1,58 +1,230 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page
-    x:Class="ViaTTS.Pages.PhrasesPage"
+    x:Class="ViaSonic.Pages.PhrasesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:l="using:ViaTTS.Markup"
+    xmlns:l="using:ViaSonic.Markup"
+    xmlns:c="using:ViaSonic.Controls"
     AllowDrop="True" DragOver="Page_DragOver" Drop="Page_Drop">
 
-    <ScrollViewer Style="{StaticResource PageScroll}">
-        <StackPanel Style="{StaticResource PageStack}">
-            <TextBlock Text="{l:T Text='常用语与音效'}" Style="{StaticResource PageTitle}" />
+    <Page.Resources>
+        <!-- 播放器里的图标按钮：没有底色和边框，悬停时才有底色 -->
+        <Style x:Key="PlIconButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="MinHeight" Value="36" />
+        </Style>
+    </Page.Resources>
 
-            <Grid Margin="0,0,0,12" ColumnSpacing="8">
+    <ScrollViewer Style="{StaticResource PageScroll}">
+        <c:PageColumn>
+        <StackPanel Style="{StaticResource PageStack}">
+            <!-- 标题，右边是音效和播放列表共用的「音频音量」；窗口窄时滑块变短，不和标题重叠 -->
+            <Grid ColumnSpacing="24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Button Style="{StaticResource AccentButtonStyle}" AutomationProperties.Name="{l:T Text='添加'}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE710;" FontSize="14" />
-                        <TextBlock Text="{l:T Text='添加'}" />
-                    </StackPanel>
-                    <Button.Flyout>
-                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyoutItem Text="{l:T Text='文字'}" Click="AddText_Click">
-                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D2;" /></MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="{l:T Text='音频'}" Click="AddAudio_Click">
-                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D6;" /></MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </Button.Flyout>
-                </Button>
-                <Button Grid.Column="1" Click="StopAll_Click" AutomationProperties.Name="{l:T Text='停止全部'}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE71A;" FontSize="14" />
-                        <TextBlock Text="{l:T Text='停止全部'}" />
-                    </StackPanel>
-                </Button>
-                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="{l:T Text='音频音量'}" VerticalAlignment="Center" />
-                    <Slider x:Name="SoundVol" AutomationProperties.Name="{l:T Text='音频音量'}" Width="160" Minimum="0" Maximum="150" StepFrequency="5" VerticalAlignment="Center"
-                            ValueChanged="SoundVol_Changed" />
-                    <TextBlock x:Name="SoundVolText" VerticalAlignment="Center" MinWidth="40" />
-                </StackPanel>
+                <TextBlock Text="{l:T Text='常用语与音效'}" Style="{StaticResource PageTitle}" />
+                <!-- 音频文件进虚拟麦克风、进监听的音量分开调 -->
+                <Grid Grid.Column="1" VerticalAlignment="Center" ColumnSpacing="12" RowSpacing="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="3*" MinWidth="80" MaxWidth="140" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Column="1" Grid.RowSpan="2" Text="{l:T Text='音频音量'}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <TextBlock Grid.Column="2" Text="{l:T Text='虚拟麦克风'}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Slider x:Name="SoundVol" Grid.Column="3" AutomationProperties.Name="{l:T Text='虚拟麦克风'}" Minimum="0" Maximum="150" StepFrequency="5"
+                            VerticalAlignment="Center" ValueChanged="SoundVol_Changed" />
+                    <TextBlock x:Name="SoundVolText" Grid.Column="4" VerticalAlignment="Center" MinWidth="40" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{l:T Text='监听'}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Slider x:Name="SoundMonVol" Grid.Row="1" Grid.Column="3" AutomationProperties.Name="{l:T Text='监听'}" Minimum="0" Maximum="150" StepFrequency="5"
+                            VerticalAlignment="Center" ValueChanged="SoundMonVol_Changed" />
+                    <TextBlock x:Name="SoundMonVolText" Grid.Row="1" Grid.Column="4" VerticalAlignment="Center" MinWidth="40" />
+                </Grid>
             </Grid>
 
-            <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='快捷键冲突'}" Margin="0,0,0,8" />
+            <!-- 分段标签：常用语与音效 / 播放列表 -->
+            <Border Style="{StaticResource Group}" Padding="4">
+                <Grid ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="TabPhrases" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click" IsChecked="True"
+                                  Content="{l:T Text='常用语与音效'}" />
+                    <ToggleButton x:Name="TabPlaylist" Grid.Column="1" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click"
+                                  Content="{l:T Text='播放列表'}" />
+                </Grid>
+            </Border>
 
-            <StackPanel x:Name="List" Spacing="6" />
+            <!-- 常用语与音效 -->
+            <StackPanel x:Name="PhrasesPanel" Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Style="{StaticResource AccentButtonStyle}" AutomationProperties.Name="{l:T Text='添加'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="{l:T Text='添加'}" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                <MenuFlyoutItem Text="{l:T Text='文字'}" Click="AddText_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D2;" /></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="{l:T Text='音频'}" Click="AddAudio_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D6;" /></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button Click="StopAll_Click" AutomationProperties.Name="{l:T Text='停止全部'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE71A;" FontSize="14" />
+                            <TextBlock Text="{l:T Text='停止全部'}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
 
-            <TextBlock x:Name="Empty" Text="{l:T Text='添加常用语或音频文件'}" Style="{StaticResource HintText}" Margin="0,24,0,0"
-                       HorizontalAlignment="Center" Visibility="Collapsed" />
+                <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='快捷键冲突'}" />
+
+                <StackPanel x:Name="List" Spacing="6" />
+
+                <TextBlock x:Name="Empty" Text="{l:T Text='添加常用语或音频文件'}" Style="{StaticResource HintText}" Margin="0,24,0,0"
+                           HorizontalAlignment="Center" Visibility="Collapsed" />
+            </StackPanel>
+
+            <!-- 播放列表（PhrasesPage.Playlist.cs） -->
+            <StackPanel x:Name="PlaylistPanel" Spacing="12" Visibility="Collapsed">
+                <!-- 播放器：第一行歌名和添加，第二行进度，第三行左边倍速和模式、中间播放按钮、右边过渡 -->
+                <Border Style="{StaticResource Card}">
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!-- 封面：没有嵌入封面时显示音符 -->
+                        <Border Width="112" Height="112" CornerRadius="6" VerticalAlignment="Center"
+                                Background="{ThemeResource ControlAltFillColorSecondaryBrush}">
+                            <Grid>
+                                <FontIcon x:Name="PlCoverIcon" Glyph="&#xEC4F;" FontSize="36" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                <Image x:Name="PlCover" Stretch="UniformToFill" Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="PlNow" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Style="{StaticResource PlIconButton}"
+                                        ToolTipService.ToolTip="{l:T Text='添加'}" AutomationProperties.Name="{l:T Text='添加'}">
+                                    <FontIcon Glyph="&#xE710;" FontSize="16" />
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                            <MenuFlyoutItem Text="{l:T Text='添加文件'}" Click="PlAdd_Click">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D6;" /></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="{l:T Text='添加文件夹'}" Click="PlAddFolder_Click">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8B7;" /></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="{l:T Text='导入歌单'}" Click="PlImport_Click">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8E5;" /></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem Text="{l:T Text='导出歌单'}" Click="PlExport_Click">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xEDE1;" /></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="PlPos" Text="0:00" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" MinWidth="36" />
+                                <Slider x:Name="PlSeek" Grid.Column="1" Minimum="0" Maximum="1" StepFrequency="0.5" IsThumbToolTipEnabled="False"
+                                        ValueChanged="PlSeek_Changed" AutomationProperties.Name="{l:T Text='播放列表'}" />
+                                <TextBlock x:Name="PlLen" Grid.Column="2" Text="0:00" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"
+                                           MinWidth="36" TextAlignment="Right" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <!-- 倍速：只显示数字，不存配置，启动时总是 1x -->
+                                    <Button x:Name="PlSpeed" Style="{StaticResource PlIconButton}" MinWidth="44" AutomationProperties.Name="{l:T Text='倍速'}">
+                                        <TextBlock x:Name="PlSpeedText" Text="1x" />
+                                        <Button.Flyout>
+                                            <MenuFlyout x:Name="PlSpeedMenu" Placement="Top" />
+                                        </Button.Flyout>
+                                    </Button>
+                                    <!-- 播放模式：点一下换一种（列表循环 → 单曲循环 → 随机播放） -->
+                                    <Button x:Name="PlMode" Style="{StaticResource PlIconButton}" Click="PlMode_Click">
+                                        <FontIcon x:Name="PlModeIcon" Glyph="&#xE8EE;" FontSize="16" />
+                                    </Button>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource PlIconButton}" Click="PlBack_Click"
+                                            ToolTipService.ToolTip="{l:T Text='后退 10 秒'}" AutomationProperties.Name="{l:T Text='后退 10 秒'}">
+                                        <FontIcon Glyph="&#xED3C;" FontSize="18" />
+                                    </Button>
+                                    <Button Style="{StaticResource PlIconButton}" Click="PlPrev_Click"
+                                            ToolTipService.ToolTip="{l:T Text='上一首'}" AutomationProperties.Name="{l:T Text='上一首'}">
+                                        <FontIcon Glyph="&#xE892;" FontSize="16" />
+                                    </Button>
+                                    <Button x:Name="PlPlay" Style="{StaticResource AccentButtonStyle}" Click="PlPlay_Click" Width="44" Height="44" CornerRadius="22" Padding="0"
+                                            Margin="6,0" ToolTipService.ToolTip="{l:T Text='播放'}" AutomationProperties.Name="{l:T Text='播放'}">
+                                        <FontIcon x:Name="PlPlayIcon" Glyph="&#xE768;" FontSize="16" />
+                                    </Button>
+                                    <Button Style="{StaticResource PlIconButton}" Click="PlNext_Click"
+                                            ToolTipService.ToolTip="{l:T Text='下一首'}" AutomationProperties.Name="{l:T Text='下一首'}">
+                                        <FontIcon Glyph="&#xE893;" FontSize="16" />
+                                    </Button>
+                                    <Button Style="{StaticResource PlIconButton}" Click="PlForward_Click"
+                                            ToolTipService.ToolTip="{l:T Text='前进 30 秒'}" AutomationProperties.Name="{l:T Text='前进 30 秒'}">
+                                        <FontIcon Glyph="&#xED3D;" FontSize="18" />
+                                    </Button>
+                                </StackPanel>
+                                <!-- 过渡：打开时图标用主题色，旁边显示秒数 -->
+                                <Button x:Name="PlFade" Grid.Column="2" Style="{StaticResource PlIconButton}" HorizontalAlignment="Right"
+                                        ToolTipService.ToolTip="{l:T Text='过渡'}" AutomationProperties.Name="{l:T Text='过渡'}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon x:Name="PlFadeIcon" Glyph="&#xE8AB;" FontSize="16" />
+                                        <TextBlock x:Name="PlFadeText" VerticalAlignment="Center" Visibility="Collapsed" />
+                                    </StackPanel>
+                                    <Button.Flyout>
+                                        <MenuFlyout x:Name="PlFadeMenu" Placement="Top" />
+                                    </Button.Flyout>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 曲目：拖动调整顺序，双击播放 -->
+                <ListView x:Name="PlList" CanReorderItems="True" CanDragItems="True" AllowDrop="True" SelectionMode="Single"
+                          DragItemsCompleted="PlList_DragItemsCompleted" />
+
+
+                <TextBlock x:Name="PlEmpty" Text="{l:T Text='把音频文件拖到这里，或者点 ＋ 添加。'}" Style="{StaticResource HintText}" Margin="0,12,0,0"
+                           HorizontalAlignment="Center" Visibility="Collapsed" />
+            </StackPanel>
         </StackPanel>
+    </c:PageColumn>
     </ScrollViewer>
 </Page>

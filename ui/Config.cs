@@ -2,7 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>config.json 读写与默认值。</summary>
 public static class ConfigStore
@@ -85,23 +85,42 @@ public static class ConfigStore
         ["monitor_device"] = "",
         ["monitor_volume"] = 0.6,
         ["mic_passthrough"] = false,
+        ["mic_monitor"] = false,     // 在监听设备里听到直通的麦克风（开着变声器时是变声后的声音）
         ["passthrough_device"] = "",
         ["passthrough_volume"] = 1.0,
         ["app_audio"] = false,
         ["app_audio_apps"] = new JsonArray(), // {exe, path, name, volume}
-        ["sound_volume"] = 1.0,
+        ["sound_volume"] = 1.0,         // 音频文件进虚拟麦克风的音量
+        ["sound_monitor_volume"] = 1.0, // 音频文件进监听的音量
         ["play_mode"] = "interrupt",
+        ["random_voice"] = false,
+        // 变声：fx_effects 是正在用的效果（调整后点「保存」才写进当前组合）
+        ["fx_enabled"] = false,
+        ["fx_mic"] = true,
+        ["fx_speech"] = false,
+        ["fx_effects"] = Audio.VoiceFx.DefaultEffects(),
+        ["fx_presets"] = new JsonArray(), // {id, name, effects}
+        ["fx_preset"] = "",
+        ["rvc_home"] = "",
+        ["rvc_models"] = new JsonArray(), // 自己添加的 .pth（完整路径）；整合包 assets\weights 里的自动列出
+        ["rvc_f0"] = 0,                   // 0 RMVPE / 1 FCPE / 2 PM
+        ["rvc_block_ms"] = 150,
+        ["rvc_crossfade_ms"] = 50,
+        ["rvc_extra_ms"] = 2500,
         ["lead_silence_ms"] = 120,
         ["ptt_enabled"] = true,
         ["ptt_key"] = "",
         ["ptt_delay_ms"] = 150,
-        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r", ["ptt"] = "" },
+        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r", ["ptt"] = "", ["playlist"] = "", ["next"] = "" },
         ["hotkeys_paused"] = false,
         ["overlay"] = new JsonObject
         {
             ["opacity"] = 0.75, ["width_ratio"] = 0.22, ["x_ratio"] = 0.5, ["bottom_offset"] = 80, ["hide_after_send"] = false, ["restore_focus"] = false,
         },
         ["phrases"] = new JsonArray(NewPhrase()),
+        ["playlist"] = new JsonArray(),      // {id, path}
+        ["playlist_mode"] = "all",           // all 列表循环 / one 单曲循环 / shuffle 随机播放
+        ["playlist_crossfade"] = 0,          // 交叉过渡秒数，0＝关
         ["welcome_shown"] = false,
         ["language"] = "",
     };
@@ -157,6 +176,11 @@ public static class ConfigStore
         if (!models.Any(m => m?["id"]?.GetValue<string>() == cur))
             cfg["gsv_model"] = models.Count > 0 ? models[0]!["id"]!.GetValue<string>() : "";
         MigrateVoices(cfg, raw);
+        // 2.0 测试版的「监听麦克风」在变声页（fx_monitor），现在挪到音频页的麦克风直通下面
+        if (raw?["fx_monitor"] is JsonValue fm && raw["mic_monitor"] == null) cfg["mic_monitor"] = fm.GetValue<bool>();
+        // 2.0 之前音频音量只有一个，监听的那个先用同样的值
+        if (raw?["sound_volume"] is JsonValue soundVol && raw["sound_monitor_volume"] == null) cfg["sound_monitor_volume"] = soundVol.DeepClone();
+        FixPresets(cfg);
         foreach (var p in cfg["phrases"]!.AsArray().OfType<JsonObject>())
         {
             // 1.0 的音频常用语没有名称：原来的文字当名称
@@ -169,6 +193,38 @@ public static class ConfigStore
 
         Save(cfg);
         return cfg;
+    }
+
+    public static JsonObject NewPreset(string name, JsonObject effects) => new()
+    {
+        ["id"] = NewId(), ["name"] = name, ["effects"] = effects.DeepClone(),
+    };
+
+    /// <summary>至少有一个变声组合（第一次用时建「默认」），当前组合要存在；缺的效果补上默认值。</summary>
+    private static void FixPresets(JsonObject cfg)
+    {
+        var defaults = Audio.VoiceFx.DefaultEffects();
+        void Fill(JsonObject effects)
+        {
+            foreach (var (k, v) in defaults)
+            {
+                if (effects[k] is not JsonObject e) { effects[k] = v!.DeepClone(); continue; }
+                foreach (var (pk, pv) in v!.AsObject()) e[pk] ??= pv!.DeepClone();
+            }
+        }
+        if (cfg["fx_effects"] is not JsonObject cur) cfg["fx_effects"] = cur = defaults.DeepClone().AsObject();
+        Fill(cur);
+        if (cfg["fx_presets"] is not JsonArray presets) cfg["fx_presets"] = presets = new JsonArray();
+        if (presets.Count == 0) presets.Add((JsonNode)NewPreset(T("默认"), cur));
+        foreach (var p in presets.OfType<JsonObject>())
+        {
+            p["id"] ??= NewId();
+            p["name"] ??= "";
+            if (p["effects"] is not JsonObject e) p["effects"] = e = defaults.DeepClone().AsObject();
+            Fill(e);
+        }
+        var id = cfg["fx_preset"]?.GetValue<string>() ?? "";
+        if (!presets.Any(p => p?["id"]?.GetValue<string>() == id)) cfg["fx_preset"] = presets[0]!["id"]!.GetValue<string>();
     }
 
     /// <summary>1.3.0 只记当前音色：正在用的自定义音色 ID 放进添加的音色列表，切换后不会丢。</summary>

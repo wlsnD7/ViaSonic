@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """最终图标：午夜蓝渐变底 + 白色 Via（Yellowtail 字体，Apache 2.0）。
-生成 ui/Assets/ViaTTS.ico（16~256）和 ViaTTS.png（256）。
+生成 ui/Assets/ViaSonic.ico（16~256）和 ViaSonic.png（256）。
 运行：python design/make_icon_final.py（需要已安装 Yellowtail 字体）"""
 import os
 
@@ -55,8 +55,8 @@ def master():
 if __name__ == "__main__":
     img = master()
     os.makedirs(ASSETS, exist_ok=True)
-    img.resize((256, 256), LANCZOS).save(os.path.join(ASSETS, "ViaTTS.png"))
-    img.save(os.path.join(ASSETS, "ViaTTS.ico"),
+    img.resize((256, 256), LANCZOS).save(os.path.join(ASSETS, "ViaSonic.png"))
+    img.save(os.path.join(ASSETS, "ViaSonic.ico"),
              sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (40, 40), (48, 48), (64, 64), (128, 128), (256, 256)])
     img.resize((512, 512), LANCZOS).save(os.path.join(HERE, "icons", "final.png"))
     print("ok", ASSETS)

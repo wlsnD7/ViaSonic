@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>滑块拖动等高频变化合并成一次保存。</summary>
 public sealed class Debouncer(int ms = 300)

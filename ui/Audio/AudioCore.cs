@@ -2,7 +2,7 @@ using NAudio.CoreAudioApi;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 
-namespace ViaTTS.Audio;
+namespace ViaSonic.Audio;
 
 /// <summary>一段单声道音频。</summary>
 public sealed record Clip(float[] Samples, int SampleRate)

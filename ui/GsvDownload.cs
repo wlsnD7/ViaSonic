@@ -1,8 +1,8 @@
 using Microsoft.Win32;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
-/// <summary>按显卡推荐该下载哪个 GPT-SoVITS 整合包（ViaTTS 在 v2Pro 整合包上测试过）。</summary>
+/// <summary>按显卡推荐该下载哪个 GPT-SoVITS 整合包（ViaSonic 在 v2Pro 整合包上测试过）。</summary>
 public static class GsvDownload
 {
     private const string Base = "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/resolve/main/";

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>界面语言：以中文原文作键，英文查 Lang.En.cs 里的对照表，查不到就显示中文。</summary>
 public static partial class Lang

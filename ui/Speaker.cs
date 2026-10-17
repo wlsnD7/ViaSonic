@@ -1,17 +1,18 @@
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
-using ViaTTS.Audio;
-using ViaTTS.Engines;
+using ViaSonic.Audio;
+using ViaSonic.Engines;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>合成调度：单线程合成队列（避免 GPU 并发）、常用语预生成缓存、播放。</summary>
 public sealed class Speaker : IDisposable
 {
     /// <summary>Sound：合成后作为音效播放（循环的文字常用语），Tag 是常用语 id。</summary>
     /// <summary>Export：只合成不播放，结果交给导出（不受打断影响）。</summary>
+    /// <summary>Random：随机音色，合成前现选引擎和音色。</summary>
     private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false,
-                              TaskCompletionSource<Clip>? Export = null);
+                              TaskCompletionSource<Clip>? Export = null, bool Random = false);
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
@@ -25,6 +26,8 @@ public sealed class Speaker : IDisposable
     public Player Player { get; }
     public string Busy { get; private set; } = "";
     public string LastText { get; private set; } = "";
+    /// <summary>上一句朗读的生成耗时（毫秒），用缓存直接播放的不算；0＝还没合成过。</summary>
+    public int LastSynthMs { get; private set; }
 
     /// <summary>状态有变化（可能在任意线程触发）。</summary>
     public event Action? Changed;
@@ -67,7 +70,7 @@ public sealed class Speaker : IDisposable
         {
             var e = Current;
             var s = e is OnlineEngine { Ready: false } o ? o.Missing(C) : e.Ready ? T("就绪") : e.Loading ? T("加载中") : T("未加载");
-            return $"{e.Label} · {s}";
+            return $"{e.Label} {s}";
         }
     }
 
@@ -95,7 +98,9 @@ public sealed class Speaker : IDisposable
         if (text.Length == 0) return;
         LastText = text;
         if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen); // 丢掉还没合成的旧句子
-        _jobs.Writer.TryWrite(new Job(_gen, text, cache, true, tag));
+        // 随机音色只换朗读的句子，常用语不变
+        bool random = tag.Length == 0 && (C["random_voice"]?.GetValue<bool>() ?? false);
+        _jobs.Writer.TryWrite(new Job(_gen, text, cache && !random, true, tag, Random: random));
     }
 
     /// <summary>开了循环的文字常用语：合成后像音效一样叠加、循环播放，不打断也不排队。</summary>
@@ -133,7 +138,9 @@ public sealed class Speaker : IDisposable
     }
 
     /// <summary>常用语的音频文件，和语音叠加播放。</summary>
-    public void PlaySound(string id, string path) => _ = Task.Run(() =>
+    /// <param name="cache">播放列表的歌曲很长，不放进缓存。</param>
+    public void PlaySound(string id, string path, Action<bool>? ended = null, bool cache = true, double fadeIn = 0, double fadeTail = 0,
+        Func<double>? speed = null) => _ = Task.Run(() =>
     {
         try
         {
@@ -146,15 +153,19 @@ public sealed class Speaker : IDisposable
                 {
                     if (!File.Exists(path)) throw new FileNotFoundException(T("文件不存在"), path);
                     clip = AudioDecode.FromFile(path);
-                    if (_files.Count > 32) _files.Clear();
-                    _files[path] = (mtime, clip);
+                    if (cache)
+                    {
+                        if (_files.Count > 32) _files.Clear();
+                        _files[path] = (mtime, clip);
+                    }
                 }
             }
-            Player.PlaySound(id, clip);
+            Player.PlaySound(id, clip, ended: ended, fadeIn: fadeIn, fadeTail: fadeTail, speed: speed);
         }
         catch (Exception e)
         {
             Failed?.Invoke(T("无法播放音频：{0}", e.Message));
+            ended?.Invoke(false);
         }
     });
 
@@ -177,6 +188,11 @@ public sealed class Speaker : IDisposable
             if (job.Gen >= 0 && job.Gen != _gen) continue;
             var cfg = C.DeepClone().AsObject(); // 合成期间界面改配置不影响这一句
             var eng = Current;
+            if (job.Random && await RandomVoice.PickAsync(cfg, job.Text, Engines) is { } pick)
+            {
+                eng = pick.Engine;
+                cfg = pick.Cfg;
+            }
             var key = eng.CacheKey(cfg) + "|" + job.Text;
             Clip? clip;
             lock (_cache) _cache.TryGetValue(key, out clip);
@@ -199,6 +215,7 @@ public sealed class Speaker : IDisposable
                     var t0 = DateTime.UtcNow;
                     clip = await eng.SynthAsync(job.Text, cfg, CancellationToken.None);
                     Log.Info(T("合成 {0:0.00}s：{1}", (DateTime.UtcNow - t0).TotalSeconds, job.Text.Length > 40 ? job.Text[..40] : job.Text));
+                    if (job.Play) LastSynthMs = (int)(DateTime.UtcNow - t0).TotalMilliseconds; // 状态栏随后会刷新
                 }
                 catch (Exception e)
                 {
@@ -228,6 +245,11 @@ public sealed class Speaker : IDisposable
                 else SetBusy("");
                 job.Export.TrySetResult(clip);
                 continue;
+            }
+            if (job.Play && Player.SpeechFx.On.Count > 0)
+            {
+                try { clip = VoiceFx.ProcessClip(clip, Player.SpeechFx); } // 缓存里留原声，换效果后不用重新合成
+                catch (Exception e) { Log.Error(T("播放失败"), e); }
             }
             if (job.Play && job.Sound && job.Gen == _gen) Player.PlaySound(job.Tag, clip, speech: true);
             else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);

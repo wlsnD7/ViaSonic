@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ViaTTS.Audio;
+namespace ViaSonic.Audio;
 
 /// <summary>按键说话：朗读期间模拟按住游戏的说话键。用扫描码发送，DirectInput / RawInput 的游戏才能识别。</summary>
 public static partial class Ptt

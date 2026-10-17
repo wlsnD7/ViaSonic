@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="ui/Assets/ViaTTS.png" width="128" alt="ViaTTS">
+<img src="ui/Assets/ViaSonic.png" width="128" alt="ViaSonic">
 
-# ViaTTS
+# ViaSonic
 
-Text to speech for games and voice chat, with mic passthrough and sound effects, output through a virtual microphone.
+Text-to-speech, a voice changer and a sound player in one, output through a virtual microphone.
 
-[![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
-[![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/wlsnD7/ViaSonic)](https://github.com/wlsnD7/ViaSonic/releases/latest)
+[![License](https://img.shields.io/github/license/wlsnD7/ViaSonic)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet)
 
@@ -17,7 +17,7 @@ Text to speech for games and voice chat, with mic passthrough and sound effects,
 
 <table>
   <tr>
-    <td><img src="docs/en/home.png" width="400" alt="Home"></td>
+    <td><img src="docs/en/home.png" width="400" alt="Speak"></td>
     <td><img src="docs/en/phrases.png" width="400" alt="Phrases & sounds"></td>
   </tr>
   <tr>
@@ -30,7 +30,7 @@ Text to speech for games and voice chat, with mic passthrough and sound effects,
 
 ## Install
 
-- Download `ViaTTS_<version>_setup.exe` from [Releases](https://github.com/wlsnD7/ViaTTS/releases/latest).
+- Download `ViaSonic_<version>_setup.exe` from [Releases](https://github.com/wlsnD7/ViaSonic/releases/latest).
 - Works on Windows 10 version 19041 or later, and Windows 11.
 - Before using it, read the FAQ and disclaimer on the About page in the app.
 
@@ -50,7 +50,13 @@ Text to speech for games and voice chat, with mic passthrough and sound effects,
 
 API keys are stored encrypted on this PC and can only be read by the current Windows user. With paid online engines, phrases are synthesized the first time you use them and cached after that.
 
-Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main): choose `GPT-SoVITS-v2pro-20250604-nvidia50.7z` for RTX 50 series, or `GPT-SoVITS-v2pro-20250604.7z` for other NVIDIA GPUs (about 9 GB). To use it, set the package location in GPT-SoVITS folder on the Home page, then click + next to Model to add a model.
+Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main): choose `GPT-SoVITS-v2pro-20250604-nvidia50.7z` for RTX 50 series, or `GPT-SoVITS-v2pro-20250604.7z` for other NVIDIA GPUs (about 9 GB). To use it, set the package location in GPT-SoVITS folder on the Speak page, then click + next to Model to add a model.
+
+## Voice changer
+
+Turn on the voice changer on the Voice changer page. Basic effects can be stacked, up to 6 at once, and saved as presets.
+
+AI voice (RVC) needs an NVIDIA GPU and the RVC package. Download it from [lj1995/VoiceConversionWebUI](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main): choose `RVC20260718Nvidia50x0.7z` for RTX 50 series, or `RVC20260718Nvidia.7z` for other NVIDIA GPUs. Extract it, then set its location in RVC folder on the Voice changer page. Models (.pth) in the package's `assets\weights` folder are listed automatically.
 
 ## In-game setup
 
@@ -72,16 +78,17 @@ Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https:/
 | Repeat last | Ctrl + Alt + R |
 | Turn push to talk on/off | Not set |
 
-Closing the main window keeps ViaTTS running in the background. Right-click the tray icon to exit.
+Closing the main window keeps ViaSonic running in the background. Right-click the tray icon to exit.
 
 ## Development
 
 ### Structure
 
 ```
-ViaTTS/
+ViaSonic/
 ├─ ui/               UI and audio (C# / WinUI 3)
 ├─ gsv_server.py     GPT-SoVITS synthesis service
+├─ rvc_server.py     RVC real-time voice conversion process
 ├─ installer/        Inno Setup script
 ├─ tools/            Development scripts (translation check)
 ├─ design/           Icon generation script
@@ -98,7 +105,7 @@ Requires .NET 8 SDK and Inno Setup 6:
 
 ```
 dotnet publish ui -c Release -p:Platform=x64 -o app
-ISCC installer\ViaTTS.iss
+ISCC installer\ViaSonic.iss
 ```
 
 

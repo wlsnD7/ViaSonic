@@ -1,8 +1,8 @@
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 using Windows.Media.SpeechSynthesis;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>Windows 自带语音（离线）：慧慧、康康、瑶瑶等，在系统「语音」设置里可以添加更多。</summary>
 public sealed class SystemTts : ITtsEngine

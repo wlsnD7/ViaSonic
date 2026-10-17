@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Storage.Pickers;
 using Windows.System;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 public sealed partial class HomePage : Page
 {
@@ -23,6 +23,7 @@ public sealed partial class HomePage : Page
     public HomePage()
     {
         InitializeComponent();
+        Controls.Bars.Collapse(UpdateBar, CableBar, GsvBar);
         foreach (var (_, n) in Langs)
         {
             GsvLang.Items.Add(T(n));
@@ -94,6 +95,9 @@ public sealed partial class HomePage : Page
         StatusText.Text = string.IsNullOrEmpty(busy) ? (missing.Length > 0 ? missing : ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
         LoadButton.IsEnabled = !ready && !loading && missing.Length == 0;
+        var ms = A.Speaker.LastSynthMs;
+        SynthText.Text = ms > 0 ? T("上一句生成耗时 {0} ms", ms) : "";
+        SynthText.Visibility = ms > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         if (A.NewRelease is { } rel)
         {

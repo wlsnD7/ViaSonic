@@ -4,12 +4,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.Storage.Pickers;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 /// <summary>音频页的「应用声音」：选中的应用列表，每个应用单独的音量。</summary>
 public sealed partial class AudioPage
@@ -213,7 +213,7 @@ public sealed partial class AudioPage
 
     private void AddApp(string exe, string path, string name)
     {
-        if (exe.Equals(Path.GetFileName(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase)) return; // ViaTTS 自己
+        if (exe.Equals(Path.GetFileName(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase)) return; // ViaSonic 自己
         if (Apps.Any(a => Field(a, "exe").Equals(exe, StringComparison.OrdinalIgnoreCase))) return;
         Apps.Add((JsonNode)new JsonObject { ["exe"] = exe, ["path"] = path, ["name"] = name, ["volume"] = 1.0 });
         A.Commit("app_audio_apps");

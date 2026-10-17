@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="ui/Assets/ViaTTS.png" width="128" alt="ViaTTS">
+<img src="ui/Assets/ViaSonic.png" width="128" alt="ViaSonic">
 
-# ViaTTS
+# ViaSonic
 
-游戏或语音软件内的文本转语音，接入麦克风以及播放音效，通过虚拟麦克风输出声音。
+集文本转语音、变声器和音效播放于一体，通过虚拟麦克风输出声音。
 
-[![Release](https://img.shields.io/github/v/release/wlsnD7/ViaTTS)](https://github.com/wlsnD7/ViaTTS/releases/latest)
-[![License](https://img.shields.io/github/license/wlsnD7/ViaTTS)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/wlsnD7/ViaSonic)](https://github.com/wlsnD7/ViaSonic/releases/latest)
+[![License](https://img.shields.io/github/license/wlsnD7/ViaSonic)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet)
 
@@ -17,7 +17,7 @@
 
 <table>
   <tr>
-    <td><img src="docs/zh/home.png" width="400" alt="主页"></td>
+    <td><img src="docs/zh/home.png" width="400" alt="朗读"></td>
     <td><img src="docs/zh/phrases.png" width="400" alt="常用语与音效"></td>
   </tr>
   <tr>
@@ -30,8 +30,8 @@
 
 ## 安装
 
-- 在 [Releases](https://github.com/wlsnD7/ViaTTS/releases/latest) 页面下载安装包 `ViaTTS_版本号_setup.exe`。
-- 国内用户也可以在 [Gitee](https://gitee.com/wlsnD7/ViaTTS/releases) 下载。
+- 在 [Releases](https://github.com/wlsnD7/ViaSonic/releases/latest) 页面下载安装包 `ViaSonic_版本号_setup.exe`。
+- 国内用户也可以在 [Gitee](https://gitee.com/wlsnD7/ViaSonic/releases) 下载。
 - 支持 Windows 10（19041 及以上）和 Windows 11。
 - 使用前请阅读软件内「关于」页的常见问题和免责声明。
 
@@ -51,7 +51,13 @@
 
 API Key 加密保存在本机，只有当前 Windows 用户能读取。联网付费引擎的常用语在第一次使用时合成，之后用缓存。
 
-GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50 系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 NVIDIA 显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约 9GB）。需要使用时，在软件主页「GPT-SoVITS 目录」指定整合包位置，在「模型」里点击加号添加模型。
+GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main) 下载：RTX 50 系选择 `GPT-SoVITS-v2pro-20250604-nvidia50.7z`，其他 NVIDIA 显卡选择 `GPT-SoVITS-v2pro-20250604.7z`（约 9GB）。需要使用时，在软件「朗读」页的「GPT-SoVITS 目录」指定整合包位置，在「模型」里点击加号添加模型。
+
+## 变声器
+
+在「变声」页打开变声器。基础效果可以叠加，最多同时开 6 个，调好后可以保存成组合。
+
+AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConversionWebUI](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main) 下载：RTX 50 系选择 `RVC20260718Nvidia50x0.7z`，其他 NVIDIA 显卡选择 `RVC20260718Nvidia.7z`。解压后在「变声」页的「RVC 目录」指定位置。模型（.pth）放进整合包的 `assets\weights` 文件夹会自动列出。
 
 ## 游戏内设置
 
@@ -80,9 +86,10 @@ GPT-SoVITS 整合包从 [lj1995/GPT-SoVITS-windows-package](https://huggingface.
 ### 结构
 
 ```
-ViaTTS/
+ViaSonic/
 ├─ ui/               界面与音频（C# / WinUI 3）
 ├─ gsv_server.py     GPT-SoVITS 合成服务
+├─ rvc_server.py     RVC 实时变声进程
 ├─ installer/        Inno Setup 安装脚本
 ├─ tools/            开发脚本（翻译检查）
 ├─ design/           图标生成脚本
@@ -99,7 +106,7 @@ ViaTTS/
 
 ```
 dotnet publish ui -c Release -p:Platform=x64 -o app
-ISCC installer\ViaTTS.iss
+ISCC installer\ViaSonic.iss
 ```
 
 

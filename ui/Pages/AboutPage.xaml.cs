@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 public sealed partial class AboutPage : Page
 {
@@ -45,7 +45,7 @@ public sealed partial class AboutPage : Page
             UpdateLink.NavigateUri = new Uri(rel.Url);
             UpdateLink.Visibility = Visibility.Visible;
         }
-        else if (ok) AppCard.Description = T("版本 {0} · 已是最新版本", App.Version);
+        else if (ok) AppCard.Description = T("版本 {0}（已是最新版本）", App.Version);
         else App.Current.Main.ShowError(T("检查更新失败，请稍后再试"));
     }
 

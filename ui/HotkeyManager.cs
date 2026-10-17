@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>
 /// 全局快捷键。

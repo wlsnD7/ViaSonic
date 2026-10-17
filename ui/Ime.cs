@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>
 /// 输入法状态。游戏（如 Unity）会在自己的窗口里关掉输入法，焦点刚切到输入框时微软拼音还停在关闭 / 英文状态，

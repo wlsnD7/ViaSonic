@@ -2,7 +2,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace ViaTTS.Audio;
+namespace ViaSonic.Audio;
 
 /// <summary>一个输出设备上常开的混音流：语音、音效、麦克风直通都作为输入加进来，空闲一会儿后自动关闭。</summary>
 public sealed class Bus : IDisposable

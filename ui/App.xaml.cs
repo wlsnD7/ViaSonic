@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 public partial class App : Application
 {
@@ -16,6 +16,7 @@ public partial class App : Application
     private volatile JsonObject _snapshot = new();
 
     public Speaker Speaker { get; private set; } = null!;
+    public Playlist Playlist { get; private set; } = null!;
     public JsonObject State { get; private set; } = new();
     /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
     public UpdateCheck.Release? NewRelease { get; set; }
@@ -48,6 +49,8 @@ public partial class App : Application
         ["stop"] = "停止", // 翻译键
         ["repeat"] = "重复上一句", // 翻译键
         ["ptt"] = "打开/关闭按键说话", // 翻译键
+        ["playlist"] = "播放/暂停播放列表", // 翻译键
+        ["next"] = "下一首", // 翻译键
     };
 
     public App()
@@ -97,13 +100,13 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _mutex = Native.CreateMutex(IntPtr.Zero, false, "ViaTTS_WinUI_SingleInstance");
+        _mutex = Native.CreateMutex(IntPtr.Zero, false, "ViaSonic_WinUI_SingleInstance");
         if (System.Runtime.InteropServices.Marshal.GetLastWin32Error() == 183)
         {
             // 已经在运行（可能在托盘里）：让它把主窗口调出来
             var other = TrayIcon.FindWindowW(TrayIcon.WindowClass, null);
             if (other != IntPtr.Zero) TrayIcon.PostMessageW(other, TrayIcon.WM_SHOW_MAIN, IntPtr.Zero, IntPtr.Zero);
-            else Native.MessageBox(IntPtr.Zero, T("ViaTTS 已经在运行了。"), "ViaTTS", 0x40);
+            else Native.MessageBox(IntPtr.Zero, T("ViaSonic 已经在运行了。"), "ViaSonic", 0x40);
             Exit();
             return;
         }
@@ -111,11 +114,12 @@ public partial class App : Application
         if (SynchronizationContext.Current is { } ctx and not GuardedContext)
             SynchronizationContext.SetSynchronizationContext(new GuardedContext(ctx));
         Config = ConfigStore.Load();
-        Log.Info(T("ViaTTS 启动")); // 读完配置才知道界面语言
+        Log.Info(T("ViaSonic 启动")); // 读完配置才知道界面语言
         _snapshot = Config.DeepClone().AsObject();
         _save = new Debouncer(300);
 
         Speaker = new Speaker(() => _snapshot);
+        Playlist = new Playlist(this);
         Speaker.Changed += () => Post(RefreshState);
         Speaker.Failed += msg => Post(() =>
         {
@@ -291,6 +295,8 @@ public partial class App : Application
             b["stop"] = hk["stop"]?.GetValue<string>() ?? "";
             b["repeat"] = hk["repeat"]?.GetValue<string>() ?? "";
             b["ptt"] = hk["ptt"]?.GetValue<string>() ?? "";
+            b["playlist"] = hk["playlist"]?.GetValue<string>() ?? "";
+            b["next"] = hk["next"]?.GetValue<string>() ?? "";
             foreach (var p in Phrases)
                 b["phrase:" + p!["id"]!.GetValue<string>()] = p["hotkey"]?.GetValue<string>() ?? "";
         }
@@ -331,6 +337,8 @@ public partial class App : Application
             case "stop": Speaker.Stop(); break;
             case "repeat": Speaker.Repeat(); break;
             case "ptt": Set("ptt_enabled", !Bool("ptt_enabled")); PttToggled?.Invoke(); break;
+            case "playlist": Playlist.Toggle(); break;
+            case "next": Playlist.Next(); break;
             default:
                 if (name.StartsWith("phrase:"))
                 {
@@ -356,7 +364,7 @@ public partial class App : Application
         if (!_trayHintShown)
         {
             _trayHintShown = true;
-            _tray?.ShowBalloon("", T("ViaTTS在后台运行"));
+            _tray?.ShowBalloon("", T("ViaSonic在后台运行"));
         }
     }
 
@@ -373,6 +381,6 @@ public partial class App : Application
         Overlay?.Close();
         _tray?.Dispose();
         Speaker.Dispose();
-        Log.Info(T("ViaTTS 退出"));
+        Log.Info(T("ViaSonic 退出"));
     }
 }

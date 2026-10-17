@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
-namespace ViaTTS.Controls;
+namespace ViaSonic.Controls;
 
 /// <summary>设置项标题 + 悬停显示说明的问号图标。</summary>
 public sealed class InfoHeader : StackPanel

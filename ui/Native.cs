@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 internal static partial class Native
 {

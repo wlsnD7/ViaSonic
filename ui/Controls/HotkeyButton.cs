@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
-namespace ViaTTS.Controls;
+namespace ViaSonic.Controls;
 
 /// <summary>
 /// 点击后按下按键录入：组合键、单个键，或单独按一下 Alt / Ctrl / Shift。Esc 取消，Backspace 清除。

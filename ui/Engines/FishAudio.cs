@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>Fish Audio：音色是社区或自己创建的模型，用模型 ID 指定。</summary>
 public sealed class FishAudio(Func<JsonObject> cfg) : OnlineEngine(cfg)

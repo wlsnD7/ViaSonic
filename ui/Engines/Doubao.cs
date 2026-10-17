@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>火山引擎豆包语音：V3 HTTP 单向流式接口，新版控制台的 API Key 鉴权。1.0 和 2.0 的音色要用不同的资源 ID。</summary>
 public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
@@ -21,7 +21,7 @@ public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
         var model = S(c, "doubao_model", "2.0");
         var body = new JsonObject
         {
-            ["user"] = new JsonObject { ["uid"] = "viatts" },
+            ["user"] = new JsonObject { ["uid"] = "viasonic" },
             ["req_params"] = new JsonObject
             {
                 ["text"] = text,

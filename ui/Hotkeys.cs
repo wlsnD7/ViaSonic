@@ -1,4 +1,4 @@
-namespace ViaTTS;
+namespace ViaSonic;
 
 public class HotkeyException(string message) : Exception(message);
 

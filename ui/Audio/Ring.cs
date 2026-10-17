@@ -1,6 +1,6 @@
 using NAudio.Wave;
 
-namespace ViaTTS.Audio;
+namespace ViaSonic.Audio;
 
 /// <summary>录音（麦克风直通、应用声音）→ 单声道环形缓冲。积到 20ms 才开始输出，欠载时补静音并重新积攒；积压超过 100ms 时丢掉旧的，防止时钟漂移导致延迟越来越大。</summary>
 internal sealed class Ring(int rate, Func<float> volume) : ISampleProvider
@@ -34,6 +34,25 @@ internal sealed class Ring(int rate, Func<float> volume) : ISampleProvider
                         : BitConverter.ToInt32(data, o) / 2147483648f;
                 }
                 _buf[(_head + _count) % _buf.Length] = sum / ch;
+                if (_count < _buf.Length) _count++;
+                else _head = (_head + 1) % _buf.Length;
+            }
+            if (_count > _max)
+            {
+                _head = (_head + _count - _trim) % _buf.Length;
+                _count = _trim;
+            }
+        }
+    }
+
+    /// <summary>写入已经是单声道 float 的数据（变声后的麦克风送去监听）。</summary>
+    public void WriteMono(float[] data, int offset, int count)
+    {
+        lock (_buf)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                _buf[(_head + _count) % _buf.Length] = data[offset + i];
                 if (_count < _buf.Length) _count++;
                 else _head = (_head + 1) % _buf.Length;
             }

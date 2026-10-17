@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ViaSonic.Pages.VoicePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ViaSonic.Markup"
+    xmlns:tk="using:CommunityToolkit.WinUI.Controls"
+    xmlns:c="using:ViaSonic.Controls">
+
+    <ScrollViewer Style="{StaticResource PageScroll}">
+        <c:PageColumn>
+        <StackPanel Style="{StaticResource PageStack}">
+            <TextBlock Text="{l:T Text='变声'}" Style="{StaticResource PageTitle}" />
+
+            <!-- 变声器总开关，作用于哪里用勾选框 -->
+            <Border Style="{StaticResource Group}">
+                <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='变声器'}">
+                    <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE9E9;" /></tk:SettingsCard.HeaderIcon>
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <CheckBox x:Name="FxMic" MinWidth="0" Content="{l:T Text='麦克风'}" Click="Check_Click" Tag="fx_mic"
+                                  ToolTipService.ToolTip="{l:T Text='将变声后的声音接入虚拟麦克风。'}" />
+                        <CheckBox x:Name="FxSpeech" MinWidth="0" Content="{l:T Text='朗读'}" Click="Check_Click" Tag="fx_speech"
+                                  ToolTipService.ToolTip="{l:T Text='文字合成的语音也加上基础效果，不经过 AI 变声。'}" />
+                        <ToggleSwitch x:Name="FxOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="fx_enabled" />
+                    </StackPanel>
+                </tk:SettingsCard>
+            </Border>
+
+            <InfoBar x:Name="PassBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='需要先在「音频」页打开麦克风直通'}" />
+
+            <Border Style="{StaticResource Group}">
+                <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='组合'}">
+                    <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8F1;" /></tk:SettingsCard.HeaderIcon>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="PresetBox" MinWidth="200" SelectionChanged="Preset_Changed" AutomationProperties.Name="{l:T Text='组合'}" />
+                        <Button x:Name="SaveButton" Click="Save_Click" ToolTipService.ToolTip="{l:T Text='保存'}" AutomationProperties.Name="{l:T Text='保存'}">
+                            <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                        </Button>
+                        <Button Click="Add_Click" ToolTipService.ToolTip="{l:T Text='添加组合'}" AutomationProperties.Name="{l:T Text='添加组合'}">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                        </Button>
+                        <Button Click="Rename_Click" ToolTipService.ToolTip="{l:T Text='重命名组合'}" AutomationProperties.Name="{l:T Text='重命名组合'}">
+                            <FontIcon Glyph="&#xE70F;" FontSize="14" />
+                        </Button>
+                        <Button x:Name="DeleteButton" Click="Delete_Click" ToolTipService.ToolTip="{l:T Text='删除组合'}" AutomationProperties.Name="{l:T Text='删除组合'}">
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                        </Button>
+                    </StackPanel>
+                </tk:SettingsCard>
+            </Border>
+
+            <!-- 分段标签：基础效果 / AI 变声，两个标签平分宽度 -->
+            <Border Style="{StaticResource Group}" Padding="4">
+                <Grid ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="TabEffects" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click" IsChecked="True"
+                                  AutomationProperties.Name="{l:T Text='基础效果'}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{l:T Text='基础效果'}" />
+                            <TextBlock x:Name="CountText" Opacity="0.7" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="TabRvc" Grid.Column="1" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click"
+                                  Content="{l:T Text='AI 变声'}" />
+                </Grid>
+            </Border>
+
+            <!-- 基础效果：卡片在代码里生成（VoiceFx.Defs） -->
+            <StackPanel x:Name="EffectsPanel" Spacing="8">
+                <TextBlock x:Name="FullText" Text="{l:T Text='最多同时开 6 个效果'}" Style="{StaticResource HintText}" HorizontalAlignment="Right" Visibility="Collapsed" />
+                <ItemsRepeater x:Name="EffectGrid">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout MinItemWidth="160" MinColumnSpacing="12" MinRowSpacing="12" ItemsStretch="Fill" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+            </StackPanel>
+
+            <!-- AI 变声（RVC），属于组合；旋钮在代码里生成（VoicePage.Rvc.cs） -->
+            <StackPanel x:Name="RvcPanel" Visibility="Collapsed">
+                <Border Style="{StaticResource Group}">
+                    <StackPanel>
+                        <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='AI 变声（RVC）'}">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE99A;" /></tk:SettingsCard.HeaderIcon>
+                            <tk:SettingsCard.Description>
+                                <TextBlock x:Name="RvcStatus" />
+                            </tk:SettingsCard.Description>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button ToolTipService.ToolTip="{l:T Text='高级'}" AutomationProperties.Name="{l:T Text='高级'}">
+                                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                    <Button.Flyout>
+                                        <Flyout Placement="BottomEdgeAlignedRight">
+                                            <Grid Width="400" ColumnSpacing="16" RowSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                                                </Grid.RowDefinitions>
+                                                <c:InfoHeader Text="{l:T Text='音高算法'}" Tip="{l:T Text='RMVPE 效果最好，FCPE 更快，PM 最快但效果差。'}" />
+                                                <ComboBox x:Name="RvcF0" Grid.Column="1" MinWidth="160" SelectionChanged="RvcF0_Changed">
+                                                    <ComboBoxItem Content="RMVPE" />
+                                                    <ComboBoxItem Content="FCPE" />
+                                                    <ComboBoxItem Content="PM" />
+                                                </ComboBox>
+                                                <c:InfoHeader Grid.Row="1" Text="{l:T Text='采样长度 (ms)'}" Tip="{l:T Text='越短延迟越低，但需要更快的显卡，太短会断断续续。'}" />
+                                                <NumberBox x:Name="RvcBlock" Grid.Row="1" Grid.Column="1" Minimum="20" Maximum="1000" SmallChange="10" LargeChange="50"
+                                                           SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="RvcNumber_Changed" Tag="rvc_block_ms" />
+                                                <TextBlock Grid.Row="2" Text="{l:T Text='淡入淡出长度 (ms)'}" VerticalAlignment="Center" />
+                                                <NumberBox x:Name="RvcCrossfade" Grid.Row="2" Grid.Column="1" Minimum="10" Maximum="100" SmallChange="10" LargeChange="20"
+                                                           SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="RvcNumber_Changed" Tag="rvc_crossfade_ms" />
+                                                <c:InfoHeader Grid.Row="3" Text="{l:T Text='额外推理时长 (ms)'}" Tip="{l:T Text='越长声音越稳定，显卡负担越大。'}" />
+                                                <NumberBox x:Name="RvcExtra" Grid.Row="3" Grid.Column="1" Minimum="50" Maximum="5000" SmallChange="100" LargeChange="500"
+                                                           SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="RvcNumber_Changed" Tag="rvc_extra_ms" />
+                                                <c:InfoHeader Grid.Row="4" Grid.ColumnSpan="2" Text="{l:T Text='RVC 目录'}" Tip="{l:T Text='RVC 整合包所在的文件夹。'}" />
+                                                <Grid Grid.Row="5" Grid.ColumnSpan="2" ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="RvcHomeBox" PlaceholderText="{l:T Text='自动'}" LostFocus="RvcHome_LostFocus" />
+                                                    <Button Grid.Column="1" Content="{l:T Text='浏览'}" Click="RvcBrowse_Click" />
+                                                </Grid>
+                                            </Grid>
+                                        </Flyout>
+                                    </Button.Flyout>
+                                </Button>
+                                <ToggleSwitch x:Name="RvcOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="RvcOn_Toggled" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                        <InfoBar x:Name="RvcBar" IsClosable="False" IsOpen="False" CornerRadius="0" BorderThickness="0">
+                            <InfoBar.ActionButton>
+                                <HyperlinkButton x:Name="RvcLink" Content="{l:T Text='下载'}" />
+                            </InfoBar.ActionButton>
+                        </InfoBar>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='模型'}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ComboBox x:Name="RvcModel" MinWidth="220" SelectionChanged="RvcModel_Changed" AutomationProperties.Name="{l:T Text='模型'}" />
+                                <Button Click="RvcAdd_Click" ToolTipService.ToolTip="{l:T Text='添加模型'}" AutomationProperties.Name="{l:T Text='添加模型'}">
+                                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                                </Button>
+                                <Button x:Name="RvcDel" Click="RvcDel_Click" ToolTipService.ToolTip="{l:T Text='删除模型'}" AutomationProperties.Name="{l:T Text='删除模型'}">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                </Button>
+                            </StackPanel>
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <Grid x:Name="RvcKnobs" Padding="16,10,16,12" ColumnSpacing="8" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </c:PageColumn>
+    </ScrollViewer>
+</Page>

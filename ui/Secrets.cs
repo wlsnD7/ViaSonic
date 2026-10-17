@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>API Key 等用 Windows DPAPI 加密后存进 config.json，只有本机当前用户能解开。</summary>
 public static class Secrets
@@ -55,7 +55,7 @@ public static class Secrets
         {
             var input = new Blob { Size = data.Length, Data = h.AddrOfPinnedObject() };
             bool ok = protect
-                ? CryptProtectData(ref input, "ViaTTS", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, UiForbidden, out var output)
+                ? CryptProtectData(ref input, "ViaSonic", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, UiForbidden, out var output)
                 : CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, UiForbidden, out output);
             if (!ok) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
             try

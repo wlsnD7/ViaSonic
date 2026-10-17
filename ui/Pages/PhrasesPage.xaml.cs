@@ -8,9 +8,9 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using ViaTTS.Controls;
+using ViaSonic.Controls;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 public sealed partial class PhrasesPage : Page
 {
@@ -41,21 +41,32 @@ public sealed partial class PhrasesPage : Page
         public bool Dragging, Updating, Open, Auto, WasPlaying;
     }
 
-    public PhrasesPage() => InitializeComponent();
+    public PhrasesPage()
+    {
+        InitializeComponent();
+        Bars.Collapse(ErrBar);
+    }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         _init = true;
         SoundVol.Value = Math.Round(A.Num("sound_volume") * 100);
         SoundVolText.Text = $"{SoundVol.Value:0}%";
+        SoundMonVol.Value = Math.Round(A.Num("sound_monitor_volume") * 100);
+        SoundMonVolText.Text = $"{SoundMonVol.Value:0}%";
         _init = false;
         Rebuild();
+        InitPlaylist();
         ShowErrors();
         A.HotkeyErrorsChanged += ShowErrors;
         A.Speaker.Player.ActiveChanged += OnActiveChanged;
         _tick = DispatcherQueue.CreateTimer();
         _tick.Interval = TimeSpan.FromMilliseconds(200);
-        _tick.Tick += (_, _) => App.Guard(UpdateProgress);
+        _tick.Tick += (_, _) => App.Guard(() =>
+        {
+            UpdateProgress();
+            if (_playlistTab && Pl.Playing) UpdatePlaylistProgress();
+        });
         _tick.Start();
     }
 
@@ -63,6 +74,7 @@ public sealed partial class PhrasesPage : Page
     {
         A.HotkeyErrorsChanged -= ShowErrors;
         A.Speaker.Player.ActiveChanged -= OnActiveChanged;
+        LeavePlaylist();
         _tick?.Stop();
     }
 
@@ -488,6 +500,15 @@ public sealed partial class PhrasesPage : Page
         if (!_init) _save.Run(() => A.Set("sound_volume", Math.Round(SoundVol.Value / 100.0, 2)));
     }
 
+    private readonly Debouncer _saveMon = new();
+
+    private void SoundMonVol_Changed(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (SoundMonVolText == null) return;
+        SoundMonVolText.Text = $"{e.NewValue:0}%";
+        if (!_init) _saveMon.Run(() => A.Set("sound_monitor_volume", Math.Round(SoundMonVol.Value / 100.0, 2)));
+    }
+
     private void Page_DragOver(object sender, DragEventArgs e)
     {
         if (e.DataView.Contains(StandardDataFormats.StorageItems)) e.AcceptedOperation = DataPackageOperation.Copy;
@@ -504,7 +525,8 @@ public sealed partial class PhrasesPage : Page
             if (it is StorageFile f && AudioTypes.Contains(Path.GetExtension(f.Path).ToLowerInvariant())) ok.Add(f.Path);
             else bad.Add(it.Name);
         }
-        AddAudio(ok);
+        if (_playlistTab) AddTracks(ok); // 播放列表标签开着时拖进播放列表
+        else AddAudio(ok);
         if (bad.Count > 0) A.Main.ShowError(T("不支持的文件：{0}", string.Join(", ", bad)));
     }
 }

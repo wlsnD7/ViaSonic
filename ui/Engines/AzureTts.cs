@@ -1,9 +1,9 @@
 using System.Security;
 using System.Text;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>Azure 语音（官方）：Key + 区域，音色列表从接口获取，支持说话风格。</summary>
 public sealed class AzureTts(Func<JsonObject> cfg) : OnlineEngine(cfg)
@@ -69,7 +69,7 @@ public sealed class AzureTts(Func<JsonObject> cfg) : OnlineEngine(cfg)
         };
         req.Headers.Add("Ocp-Apim-Subscription-Key", ApiKey(c));
         req.Headers.Add("X-Microsoft-OutputFormat", "audio-24khz-48kbitrate-mono-mp3");
-        req.Headers.Add("User-Agent", "ViaTTS");
+        req.Headers.Add("User-Agent", "ViaSonic");
         using var r = await SendAsync(req, token);
         return Decode(await r.Content.ReadAsByteArrayAsync(token));
     }

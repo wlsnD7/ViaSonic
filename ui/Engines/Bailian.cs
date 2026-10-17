@@ -2,9 +2,9 @@ using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>阿里云百炼：Qwen3-TTS 走 HTTP，返回音频地址再下载；CosyVoice 走 WebSocket，音频以二进制帧返回。</summary>
 public sealed class Bailian(Func<JsonObject> cfg) : OnlineEngine(cfg)

@@ -1,10 +1,10 @@
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using ViaTTS.Engines;
+using ViaSonic.Engines;
 using Windows.Storage.Pickers;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>首次启动的引导：检查虚拟麦克风和 GPT-SoVITS，只出现一次。</summary>
 public sealed class WelcomeDialog : ContentDialog
@@ -19,7 +19,7 @@ public sealed class WelcomeDialog : ContentDialog
     {
         XamlRoot = root;
         Resources["ContentDialogMaxWidth"] = 640.0; // 默认 548 放不下卡片，右边会被截掉
-        Title = T("欢迎使用 ViaTTS");
+        Title = T("欢迎使用 ViaSonic");
         PrimaryButtonText = T("开始使用");
         DefaultButton = ContentDialogButton.Primary;
 

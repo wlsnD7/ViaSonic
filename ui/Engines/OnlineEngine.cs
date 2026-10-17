@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>联网服务的共同部分：API Key、HTTP 请求、错误提示。没填 Key 时不算就绪。</summary>
 public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine

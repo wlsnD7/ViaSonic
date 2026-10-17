@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ViaTTS 的 GPT-SoVITS 合成服务。
+"""ViaSonic 的 GPT-SoVITS 合成服务。
 
 由界面程序在需要时启动，运行在 GPT-SoVITS 整合包自带的 Python 里，只负责「文字 → 音频」，
 播放、设备、快捷键都在界面程序里。只用标准库起 HTTP 服务，不依赖整合包里的 Web 框架版本。

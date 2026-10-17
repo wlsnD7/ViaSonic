@@ -1,4 +1,4 @@
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>
 /// 没有音色列表接口的服务用的预置音色，名称取自各家官方音色表。

@@ -1,4 +1,4 @@
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>日志：写文件，同时在内存里保留最近几百条给「关于」页显示。</summary>
 public static class Log
@@ -30,7 +30,7 @@ public static class Log
                 if (_file == null)
                 {
                     Directory.CreateDirectory(AppPaths.LogDir);
-                    var path = Path.Combine(AppPaths.LogDir, "viatts.log");
+                    var path = Path.Combine(AppPaths.LogDir, "viasonic.log");
                     if (File.Exists(path) && new FileInfo(path).Length > 1 << 20)
                         File.Move(path, path + ".1", true);
                     _file = new StreamWriter(path, true, new System.Text.UTF8Encoding(false)) { AutoFlush = true };

@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>
 /// GPT-SoVITS：在整合包自带的 Python 里启动 gsv_server.py，只在选用这个引擎时才启动。
@@ -44,7 +44,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         !string.IsNullOrEmpty(dir) && File.Exists(Path.Combine(dir, "runtime", "python.exe"))
                                    && Directory.Exists(Path.Combine(dir, "GPT_SoVITS"));
 
-    /// <summary>配置里的目录 → GSV_HOME 环境变量 → ViaTTS 旁边的 GPT-SoVITS 文件夹。</summary>
+    /// <summary>配置里的目录 → GSV_HOME 环境变量 → ViaSonic 旁边的 GPT-SoVITS 文件夹。</summary>
     public static string? FindHome(string configured)
     {
         foreach (var d in new[] { configured, Environment.GetEnvironmentVariable("GSV_HOME") })

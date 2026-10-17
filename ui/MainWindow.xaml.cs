@@ -2,16 +2,17 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
-using ViaTTS.Pages;
+using ViaSonic.Pages;
 using WinRT.Interop;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 public sealed partial class MainWindow : Window
 {
     private static readonly Dictionary<string, Type> PageTypes = new()
     {
         ["home"] = typeof(HomePage),
+        ["voice"] = typeof(VoicePage),
         ["phrases"] = typeof(PhrasesPage),
         ["audio"] = typeof(AudioPage),
         ["hotkeys"] = typeof(HotkeysPage),
@@ -27,7 +28,7 @@ public sealed partial class MainWindow : Window
         Hwnd = WindowNative.GetWindowHandle(this);
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(TitleBar);
-        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "ViaTTS.ico"));
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "ViaSonic.ico"));
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
 
         double scale = Native.GetDpiForWindow(Hwnd) / 96.0;
@@ -98,7 +99,8 @@ public sealed partial class MainWindow : Window
 
     private static readonly Dictionary<string, string> NavNames = new()
     {
-        ["home"] = "主页", // 翻译键
+        ["home"] = "朗读", // 翻译键
+        ["voice"] = "变声", // 翻译键
         ["phrases"] = "常用语与音效", // 翻译键
         ["audio"] = "音频", // 翻译键
         ["hotkeys"] = "设置", // 翻译键

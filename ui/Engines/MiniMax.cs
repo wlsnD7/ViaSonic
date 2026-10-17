@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>MiniMax 语音：音色列表包括系统音色和自己复刻、生成的音色。返回十六进制编码的 MP3。</summary>
 public sealed class MiniMax(Func<JsonObject> cfg) : OnlineEngine(cfg)

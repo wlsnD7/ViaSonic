@@ -1,8 +1,8 @@
 # 第三方声明 / Third-Party Notices
 
-ViaTTS 本身以 [MIT](LICENSE) 许可证开源。安装包里还包含以下第三方组件，它们各自遵循自己的许可证。
+ViaSonic 本身以 [MIT](LICENSE) 许可证开源。安装包里还包含以下第三方组件，它们各自遵循自己的许可证。
 
-ViaTTS is licensed under [MIT](LICENSE). The installer also includes the following third-party components, each under its own license.
+ViaSonic is licensed under [MIT](LICENSE). The installer also includes the following third-party components, each under its own license.
 
 | 组件 / Component | 版本 / Version | 许可证 / License |
 |---|---|---|
@@ -11,13 +11,15 @@ ViaTTS is licensed under [MIT](LICENSE). The installer also includes the followi
 | [WebView2 SDK](https://www.nuget.org/packages/Microsoft.Web.WebView2)（随 Windows App SDK 带入 / via Windows App SDK） | 1.0.2903.40 | BSD 3-Clause |
 | [Windows Community Toolkit](https://github.com/CommunityToolkit/Windows) | 8.2.250402 | MIT |
 | [NAudio](https://github.com/naudio/NAudio) | 2.2.1 | MIT |
+| [RVC](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)（`rvc_server.py` 改写自 `RVCRealtimeVST/worker/rvc_worker.py` / adapted from `RVCRealtimeVST/worker/rvc_worker.py`） | 2026-07-18 | MIT |
 | [Yellowtail 字体 / font](https://fonts.google.com/specimen/Yellowtail)（只用于图标图片，不包含字体文件 / icon image only, font file not included） | — | Apache 2.0 |
 
-以下项目没有打包进 ViaTTS，由用户自行下载安装，或者只参考了协议。
+以下项目没有打包进 ViaSonic，由用户自行下载安装，或者只参考了协议。
 
-The following are not bundled with ViaTTS. Users download and install them separately, or only their protocol was referenced.
+The following are not bundled with ViaSonic. Users download and install them separately, or only their protocol was referenced.
 
 - [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)（MIT）：可选的本地语音合成，`gsv_server.py` 运行在用户自己下载的整合包里。Optional local speech synthesis; `gsv_server.py` runs inside the package the user downloads.
+- [RVC](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)（MIT）：可选的 AI 变声，`rvc_server.py` 运行在用户自己下载的整合包里。Optional AI voice conversion; `rvc_server.py` runs inside the package the user downloads.
 - [edge-tts](https://github.com/rany2/edge-tts)：Edge TTS 的通信协议参考了这个项目，没有使用它的代码。The Edge TTS protocol was referenced from this project; none of its code is used.
 - [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)：虚拟麦克风驱动，需要用户自行安装。Virtual microphone driver, installed by the user.
 - 安装程序用 [Inno Setup](https://jrsoftware.org/isinfo.php) 制作，简体中文语言文件由 Zhenghan Yang 维护。The installer is built with Inno Setup; the Simplified Chinese language file is maintained by Zhenghan Yang.
@@ -45,6 +47,14 @@ MIT License，全文见下方「MIT License」。Full text under "MIT License" b
 （NAudio.Core、NAudio.Wasapi）
 
 Copyright (c) 2023 Mark Heath
+
+MIT License，全文见下方「MIT License」。Full text under "MIT License" below.
+
+## RVC
+
+（`rvc_server.py`）
+
+Copyright (c) 2023 liujing04, Copyright (c) 2023 源文雨, Copyright (c) 2023 Ftps
 
 MIT License，全文见下方「MIT License」。Full text under "MIT License" below.
 
@@ -110,7 +120,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Windows App SDK
 
-ViaTTS 附带的 Windows App SDK 运行时文件遵循以下 Microsoft 软件许可条款。The Windows App SDK runtime files included with ViaTTS are licensed under the following Microsoft Software License Terms.
+ViaSonic 附带的 Windows App SDK 运行时文件遵循以下 Microsoft 软件许可条款。The Windows App SDK runtime files included with ViaSonic are licensed under the following Microsoft Software License Terms.
 
 ```
 MICROSOFT SOFTWARE LICENSE TERMS

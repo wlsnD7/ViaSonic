@@ -2,9 +2,9 @@ using System.Text.Json.Nodes;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using ViaTTS.Engines;
+using ViaSonic.Engines;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 /// <summary>主页里联网服务和自定义接口的设置。</summary>
 public sealed partial class HomePage

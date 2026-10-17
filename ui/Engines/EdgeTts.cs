@@ -3,9 +3,9 @@ using System.Security.Cryptography;
 using System.Security;
 using System.Text;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 public class TtsException(string message, string kind = "") : Exception(message)
 {
@@ -32,18 +32,18 @@ public sealed class EdgeTts : ITtsEngine
 {
     public static readonly (string Id, string Name)[] Voices =
     [
-        ("zh-CN-YunxiNeural", "云希 · 男"), // 翻译键
-        ("zh-CN-YunjianNeural", "云健 · 男"), // 翻译键
-        ("zh-CN-YunyangNeural", "云扬 · 男"), // 翻译键
-        ("zh-CN-YunxiaNeural", "云夏 · 童声"), // 翻译键
-        ("zh-CN-XiaoxiaoNeural", "晓晓 · 女"), // 翻译键
-        ("zh-CN-XiaoyiNeural", "晓伊 · 女"), // 翻译键
-        ("zh-CN-liaoning-XiaobeiNeural", "晓北 · 东北话"), // 翻译键
-        ("zh-CN-shaanxi-XiaoniNeural", "晓妮 · 陕西话"), // 翻译键
-        ("zh-TW-HsiaoChenNeural", "曉臻 · 台湾"), // 翻译键
-        ("zh-HK-WanLungNeural", "雲龍 · 粤语"), // 翻译键
-        ("en-US-GuyNeural", "Guy · 英语"), // 翻译键
-        ("ja-JP-KeitaNeural", "圭太 · 日语"), // 翻译键
+        ("zh-CN-YunxiNeural", "云希（男）"), // 翻译键
+        ("zh-CN-YunjianNeural", "云健（男）"), // 翻译键
+        ("zh-CN-YunyangNeural", "云扬（男）"), // 翻译键
+        ("zh-CN-YunxiaNeural", "云夏（童声）"), // 翻译键
+        ("zh-CN-XiaoxiaoNeural", "晓晓（女）"), // 翻译键
+        ("zh-CN-XiaoyiNeural", "晓伊（女）"), // 翻译键
+        ("zh-CN-liaoning-XiaobeiNeural", "晓北（东北话）"), // 翻译键
+        ("zh-CN-shaanxi-XiaoniNeural", "晓妮（陕西话）"), // 翻译键
+        ("zh-TW-HsiaoChenNeural", "曉臻（台湾）"), // 翻译键
+        ("zh-HK-WanLungNeural", "雲龍（粤语）"), // 翻译键
+        ("en-US-GuyNeural", "Guy（英语）"), // 翻译键
+        ("ja-JP-KeitaNeural", "圭太（日语）"), // 翻译键
     ];
 
     private const string TrustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
@@ -99,7 +99,7 @@ public sealed class EdgeTts : ITtsEngine
             catch (TtsException again) when (again.Kind == "skew")
             {
                 // 修正时间后仍被拒绝，不是时间问题，多半是微软改了接口
-                throw new TtsException(T("Edge TTS 被微软服务器拒绝（403），请检查 ViaTTS 是否有新版本"));
+                throw new TtsException(T("Edge TTS 被微软服务器拒绝（403），请检查 ViaSonic 是否有新版本"));
             }
         }
     }

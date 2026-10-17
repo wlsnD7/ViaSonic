@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
-using ViaTTS.Audio;
+using ViaSonic.Audio;
 
-namespace ViaTTS.Engines;
+namespace ViaSonic.Engines;
 
 /// <summary>
 /// 自定义接口：任意直接返回音频的 HTTP 接口（本地的 GPT-SoVITS api_v2、IndexTTS、CosyVoice 等）。

@@ -1,2 +1,2 @@
 @echo off
-start "" "%~dp0app\ViaTTS.exe"
+start "" "%~dp0app\ViaSonic.exe"

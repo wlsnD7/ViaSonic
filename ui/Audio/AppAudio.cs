@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
-namespace ViaTTS.Audio;
+namespace ViaSonic.Audio;
 
 /// <summary>
 /// 应用声音：用 Windows 的进程环回（VAD\Process_Loopback）只录选中应用（含子进程）的声音，加到虚拟麦克风的混音流里。
@@ -451,7 +451,7 @@ public static class Procs
         return System.IO.Path.GetFileNameWithoutExtension(exe);
     }
 
-    /// <summary>正在播放声音的应用（所有输出设备上处于活动状态的音频会话），不含 ViaTTS 自己和系统声音。</summary>
+    /// <summary>正在播放声音的应用（所有输出设备上处于活动状态的音频会话），不含 ViaSonic 自己和系统声音。</summary>
     public static List<AppInfo> Playing()
     {
         var snap = Snapshot();

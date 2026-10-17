@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Navigation;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 public sealed partial class HotkeysPage : Page
 {
@@ -14,7 +14,8 @@ public sealed partial class HotkeysPage : Page
     public HotkeysPage()
     {
         InitializeComponent();
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt })
+        Controls.Bars.Collapse(ErrBar);
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext })
         {
             var name = (string)b.Tag;
             b.HotkeyChanged += v =>
@@ -29,7 +30,7 @@ public sealed partial class HotkeysPage : Page
     {
         _init = true;
         var hk = A.Sub("hotkeys");
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt })
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext })
             b.Value = hk[(string)b.Tag]?.GetValue<string>() ?? "";
         Paused.IsOn = A.Bool("hotkeys_paused");
         var o = A.Sub("overlay");

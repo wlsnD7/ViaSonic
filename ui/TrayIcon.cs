@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>
 /// 系统托盘图标。WinUI 3 没有托盘，直接用 Shell_NotifyIcon：在独立线程里建一个隐藏窗口接收托盘消息。
@@ -8,7 +8,7 @@ namespace ViaTTS;
 /// </summary>
 public sealed class TrayIcon : IDisposable
 {
-    public const string WindowClass = "ViaTTS_TrayWindow";
+    public const string WindowClass = "ViaSonic_TrayWindow";
     /// <summary>第二个实例启动时发这个消息，让已运行的实例显示主窗口。</summary>
     public const uint WM_SHOW_MAIN = 0x8000 + 1;
     private const uint WM_TRAY = 0x8000 + 2;
@@ -104,8 +104,8 @@ public sealed class TrayIcon : IDisposable
             lpszClassName = WindowClass,
         };
         RegisterClassExW(ref wc);
-        _hwnd = CreateWindowExW(0, WindowClass, "ViaTTS Tray", 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-        var ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ViaTTS.ico");
+        _hwnd = CreateWindowExW(0, WindowClass, "ViaSonic Tray", 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        var ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ViaSonic.ico");
         int size = GetSystemMetrics(49); // SM_CXSMICON
         _icon = LoadImageW(IntPtr.Zero, ico, 1 /* IMAGE_ICON */, size, size, 0x10 /* LR_LOADFROMFILE */);
         AddIcon();
@@ -125,7 +125,7 @@ public sealed class TrayIcon : IDisposable
         uFlags = flags,
         uCallbackMessage = WM_TRAY,
         hIcon = _icon,
-        szTip = "ViaTTS",
+        szTip = "ViaSonic",
         szInfo = "",
         szInfoTitle = "",
     };
@@ -146,7 +146,7 @@ public sealed class TrayIcon : IDisposable
     private void ShowMenu()
     {
         var menu = CreatePopupMenu();
-        AppendMenuW(menu, 0, (IntPtr)MenuOpen, T("打开 ViaTTS"));
+        AppendMenuW(menu, 0, (IntPtr)MenuOpen, T("打开 ViaSonic"));
         AppendMenuW(menu, 0x800 /* MF_SEPARATOR */, IntPtr.Zero, null);
         AppendMenuW(menu, 0, (IntPtr)MenuExit, T("退出"));
         GetCursorPos(out var pt);

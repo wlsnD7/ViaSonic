@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Media;
 using Windows.System;
 using WinRT.Interop;
 
-namespace ViaTTS;
+namespace ViaSonic;
 
 /// <summary>
 /// 快捷键呼出的半透明输入框：只有一个文本框，回车朗读。
@@ -83,7 +83,7 @@ public sealed partial class OverlayWindow : Window
         };
         _root.ActualThemeChanged += (_, _) => ApplyBackground();
         Content = _root;
-        Title = T("ViaTTS 输入");
+        Title = T("ViaSonic 输入");
 
         _hwnd = WindowNative.GetWindowHandle(this);
         var p = OverlappedPresenter.CreateForToolWindow();

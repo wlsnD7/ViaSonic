@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Navigation;
 
-namespace ViaTTS.Pages;
+namespace ViaSonic.Pages;
 
 public sealed partial class AudioPage : Page
 {
@@ -14,6 +14,7 @@ public sealed partial class AudioPage : Page
     public AudioPage()
     {
         InitializeComponent();
+        Controls.Bars.Collapse(CableBar);
         PttKey.HotkeyChanged += v => A.Set("ptt_key", v);
     }
 
@@ -23,6 +24,7 @@ public sealed partial class AudioPage : Page
         MicOn.IsOn = A.Bool("mic_enabled");
         MonOn.IsOn = A.Bool("monitor_enabled");
         PassOn.IsOn = A.Bool("mic_passthrough");
+        PassMonOn.IsOn = A.Bool("mic_monitor");
         PassVol.Value = Math.Round(A.Num("passthrough_volume") * 100);
         PassVolText.Text = $"{PassVol.Value:0}%";
         UpdatePassBar();
@@ -35,6 +37,7 @@ public sealed partial class AudioPage : Page
         PttDelay.Value = A.Num("ptt_delay_ms");
         PttKey.Value = A.Str("ptt_key");
         PttOn.IsOn = A.Bool("ptt_enabled");
+        RandomOn.IsOn = A.Bool("random_voice");
         A.ConfigReplaced += OnConfigReplaced;
         A.PttToggled += OnPttToggled;
         InitApps();
