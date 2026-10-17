@@ -11,7 +11,17 @@ public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
     public override string Key => "doubao";
     public override string Label => T("豆包语音");
 
-    public static VoiceItem[] Presets(string model) => model == "1.0" ? VoicePresets.Doubao1 : VoicePresets.Doubao2;
+    /// <summary>预置音色；声音复刻 2.0（icl2）没有预置，只有自己添加的 S_ 开头的复刻音色。</summary>
+    public static VoiceItem[] Presets(string model) => model switch
+    {
+        "1.0" => VoicePresets.Doubao1,
+        "icl2" => [],
+        _ => VoicePresets.Doubao2,
+    };
+
+    public override string Missing(JsonObject c) =>
+        base.Missing(c) is { Length: > 0 } m ? m
+        : S(c, "doubao_model", "2.0") == "icl2" && S(c, "doubao_voice").Length == 0 ? T("还没有音色，点「音色」右边的 + 添加") : "";
 
     public override string CacheKey(JsonObject c) => $"doubao|{c["doubao_model"]}|{c["doubao_voice"]}|{c["doubao_rate"]}";
 
@@ -25,7 +35,7 @@ public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
             ["req_params"] = new JsonObject
             {
                 ["text"] = text,
-                ["speaker"] = S(c, "doubao_voice", Presets(model)[0].Id),
+                ["speaker"] = S(c, "doubao_voice", Presets(model).FirstOrDefault()?.Id ?? ""),
                 ["audio_params"] = new JsonObject
                 {
                     ["format"] = "mp3",
@@ -36,7 +46,7 @@ public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
         };
         using var req = new HttpRequestMessage(HttpMethod.Post, Url) { Content = Json(body) };
         req.Headers.Add("X-Api-Key", ApiKey(c));
-        req.Headers.Add("X-Api-Resource-Id", model == "1.0" ? "seed-tts-1.0" : "seed-tts-2.0");
+        req.Headers.Add("X-Api-Resource-Id", model switch { "1.0" => "seed-tts-1.0", "icl2" => "seed-icl-2.0", _ => "seed-tts-2.0" });
         req.Headers.Add("X-Api-Request-Id", Guid.NewGuid().ToString());
         using var r = await SendAsync(req, token);
 

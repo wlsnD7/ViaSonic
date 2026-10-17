@@ -79,8 +79,13 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 
     protected TtsException Fail(HttpStatusCode status, string body)
     {
-        if (status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new TtsException(T("API Key 无效或已过期"));
-        return new TtsException(T("{0} 请求失败：{1}", Label, ErrorText(body) is { Length: > 0 } m ? m : $"HTTP {(int)status}"));
+        if (status == HttpStatusCode.Unauthorized) return new TtsException(T("API Key 无效或已过期"));
+        // 403 不一定是 Key 不对：豆包的模型或声音复刻没开通时也是 403（45000030 requested resource not granted）
+        if (status == HttpStatusCode.Forbidden && (body.Contains("45000030") || body.Contains("not granted")))
+            return new TtsException(T("这个模型还没有开通，请先在控制台开通"));
+        var msg = ErrorText(body);
+        if (status == HttpStatusCode.Forbidden && msg.Length == 0) return new TtsException(T("API Key 无效或已过期"));
+        return new TtsException(T("{0} 请求失败：{1}", Label, msg.Length > 0 ? msg : $"HTTP {(int)status}"));
     }
 
     /// <summary>从各家的错误 JSON 里找出说明文字。</summary>
@@ -89,7 +94,7 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
         try
         {
             var j = JsonNode.Parse(body);
-            foreach (var path in new[] { "message", "error_message", "status_msg", "error/message", "base_resp/status_msg", "detail" })
+            foreach (var path in new[] { "message", "error_message", "status_msg", "error/message", "base_resp/status_msg", "detail", "header/message" })
             {
                 JsonNode? n = j;
                 foreach (var p in path.Split('/')) n = n is JsonObject o ? o[p] : null;

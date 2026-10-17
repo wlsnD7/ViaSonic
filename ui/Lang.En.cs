@@ -450,5 +450,9 @@ public static partial class Lang
         ["这个文件夹不是 RVC 整合包，请选择解压后的根目录。"] = "This folder isn't an RVC package. Choose the root of the extracted folder.",
         ["重试"] = "Retry",
         ["切换引擎后保持加载"] = "Keep loaded after switching engines",
+        ["豆包声音复刻 2.0"] = "Doubao Voice Clone 2.0",
+        ["在火山引擎控制台的声音复刻里复刻好声音，把 S_ 开头的音色 ID 点 ＋ 添加进来。"] = "Clone a voice under Voice Cloning in the Volcengine console, then click + and add its voice ID (starts with S_).",
+        ["还没有音色，点「音色」右边的 + 添加"] = "No voices yet. Click + next to Voice to add one.",
+        ["这个模型还没有开通，请先在控制台开通"] = "This model isn't enabled yet. Enable it in the console first.",
     };
 }

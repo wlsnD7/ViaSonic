@@ -255,10 +255,19 @@
                             <ComboBox x:Name="DoubaoModel" MinWidth="260" Tag="doubao_model" SelectionChanged="Choice_Changed">
                                 <ComboBoxItem Content="{l:T Text='豆包语音合成 2.0'}" Tag="2.0" />
                                 <ComboBoxItem Content="{l:T Text='豆包语音合成 1.0'}" Tag="1.0" />
+                                <ComboBoxItem Content="{l:T Text='豆包声音复刻 2.0'}" Tag="icl2" />
                             </ComboBox>
                         </tk:SettingsCard>
                         <Rectangle Style="{StaticResource Divider}" />
-                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='音色'}">
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <!-- 选声音复刻 2.0 时，标题旁的问号说明去哪里拿复刻音色的 ID（DoubaoCloneTip） -->
+                            <tk:SettingsCard.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="DoubaoVoiceTitle" Text="{l:T Text='音色'}" VerticalAlignment="Center" />
+                                    <c:InfoHeader x:Name="DoubaoCloneTip" Text="{l:T Text='音色'}" Visibility="Collapsed"
+                                                  Tip="{l:T Text='在火山引擎控制台的声音复刻里复刻好声音，把 S_ 开头的音色 ID 点 ＋ 添加进来。'}" />
+                                </StackPanel>
+                            </tk:SettingsCard.Header>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <ComboBox x:Name="DoubaoVoice" Width="260" Tag="doubao_voice" SelectionChanged="Voice_Changed" />
                                 <Button Click="AddVoice_Click" Tag="doubao" ToolTipService.ToolTip="{l:T Text='添加音色'}" AutomationProperties.Name="{l:T Text='添加音色'}">

@@ -73,6 +73,9 @@ public sealed partial class HomePage
     {
         BailianSpeedCard.Visibility = A.Str("bailian_model") == "cosy" ? Visibility.Visible : Visibility.Collapsed;
         CustomBodyCard.Visibility = A.Str("custom_method") == "POST" ? Visibility.Visible : Visibility.Collapsed;
+        bool clone = A.Str("doubao_model") == "icl2";
+        DoubaoCloneTip.Visibility = clone ? Visibility.Visible : Visibility.Collapsed;
+        DoubaoVoiceTitle.Visibility = clone ? Visibility.Collapsed : Visibility.Visible;
     }
 
     /// <summary>引擎就绪（填了 Key）时从接口取音色列表。</summary>
@@ -136,7 +139,7 @@ public sealed partial class HomePage
             case "doubao_model" or "bailian_model":
                 var engine = key[..key.IndexOf('_')];
                 var list = VoiceList(engine);
-                if (!list.Any(v => v.Id == A.Str(engine + "_voice"))) A.Set(engine + "_voice", list[0].Id);
+                if (!list.Any(v => v.Id == A.Str(engine + "_voice"))) A.Set(engine + "_voice", list.Count > 0 ? list[0].Id : "");
                 FillVoices(engine);
                 break;
             case "minimax_region":
