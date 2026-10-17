@@ -81,15 +81,19 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
-                                                <RowDefinition /><RowDefinition /><RowDefinition />
+                                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
                                             </Grid.RowDefinitions>
                                             <c:InfoHeader Text="{l:T Text='设备'}" Tip="{l:T Text='CUDA 使用 NVIDIA 显卡推理，CPU在没有 NVIDIA 显卡时使用。修改后需重启。'}" />
                                             <ComboBox x:Name="GsvDevice" Grid.Column="1" MinWidth="160" SelectionChanged="GsvDevice_Changed">
                                                 <ComboBoxItem Content="CUDA" Tag="cuda" />
                                                 <ComboBoxItem Content="CPU" Tag="cpu" />
                                             </ComboBox>
-                                            <c:InfoHeader Grid.Row="1" Grid.ColumnSpan="2" Text="{l:T Text='GPT-SoVITS 目录'}" Tip="{l:T Text='GPT-SoVITS 整合包所在的文件夹。'}" />
-                                            <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnSpacing="8">
+                                            <TextBlock Grid.Row="1" Text="{l:T Text='切换引擎后保持加载'}" VerticalAlignment="Center" />
+                                            <ToggleSwitch x:Name="GsvKeep" Grid.Row="1" Grid.Column="1" MinWidth="0" HorizontalAlignment="Right"
+                                                          OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="GsvKeep_Toggled"
+                                                          AutomationProperties.Name="{l:T Text='切换引擎后保持加载'}" />
+                                            <c:InfoHeader Grid.Row="2" Grid.ColumnSpan="2" Text="{l:T Text='GPT-SoVITS 目录'}" Tip="{l:T Text='GPT-SoVITS 整合包所在的文件夹。'}" />
+                                            <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnSpacing="8">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />

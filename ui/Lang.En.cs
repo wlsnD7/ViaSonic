@@ -449,5 +449,6 @@ public static partial class Lang
         ["检测到 {0}，请下载 {1}（约 {2}GB），解压后选择解压出来的文件夹。"] = "Found {0}. Download {1} (about {2} GB), extract it, then choose the extracted folder.",
         ["这个文件夹不是 RVC 整合包，请选择解压后的根目录。"] = "This folder isn't an RVC package. Choose the root of the extracted folder.",
         ["重试"] = "Retry",
+        ["切换引擎后保持加载"] = "Keep loaded after switching engines",
     };
 }

@@ -41,6 +41,7 @@ public static class ConfigStore
         ["gsv_models"] = new JsonArray(),   // 模型由用户自己添加
         ["gsv_model"] = "",
         ["gsv_device"] = "cuda",
+        ["gsv_keep_loaded"] = true, // 切到别的引擎后 GPT-SoVITS 仍然保持加载
         ["gsv_speed"] = 1.0,
         ["gsv_text_lang"] = "zh",
         ["edge_voice"] = "zh-CN-YunxiNeural",

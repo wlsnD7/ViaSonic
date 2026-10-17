@@ -41,6 +41,7 @@ public sealed partial class HomePage : Page
         EngineBox.SelectedItem = EngineBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == A.Str("engine"));
 
         GsvBox.Text = A.Str("gsv_home");
+        GsvKeep.IsOn = A.Bool("gsv_keep_loaded");
         GsvSpeed.Value = A.Num("gsv_speed");
         GsvSpeedText.Text = GsvSpeed.Value.ToString("0.00");
         GsvLang.SelectedIndex = LangIndex(A.Str("gsv_text_lang"));
@@ -158,6 +159,11 @@ public sealed partial class HomePage : Page
     {
         var v = GsvBox.Text.Trim();
         if (v != A.Str("gsv_home")) A.Set("gsv_home", v);
+    }
+
+    private void GsvKeep_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!_init) A.Set("gsv_keep_loaded", GsvKeep.IsOn);
     }
 
     private async void BrowseGsv_Click(object sender, RoutedEventArgs e)

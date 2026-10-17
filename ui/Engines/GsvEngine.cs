@@ -82,6 +82,16 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             SetState(Ready, false, bad, "model_missing");
     }
 
+    private int _gen; // 每次 Unload 加一，旧的加载任务发现变了就不再更新状态
+
+    /// <summary>切到别的引擎且没开「切换引擎后保持加载」时：关掉服务，释放显存和内存。</summary>
+    public void Unload()
+    {
+        Interlocked.Increment(ref _gen);
+        StopProcess();
+        SetState(false, false);
+    }
+
     private void SetState(bool ready, bool loading, string error = "", string kind = "")
     {
         Ready = ready;
@@ -112,16 +122,23 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         if (_proc != null && (_home != home || _device != device)) StopProcess(); // 换了整合包或设备，重启服务
         SetState(Ready, true);
         var body = new JsonObject { ["model"] = model!.DeepClone(), ["lang"] = Lang.Current };
+        int gen = Volatile.Read(ref _gen);
         _ = Task.Run(async () =>
         {
             try
             {
                 await EnsureProcessAsync(home, device);
+                if (gen != Volatile.Read(ref _gen))
+                {
+                    StopProcess(); // 启动期间已经切走了
+                    return;
+                }
                 await PostAsync("load", body);
-                await PollUntilSettledAsync();
+                await PollUntilSettledAsync(gen);
             }
             catch (Exception e)
             {
+                if (gen != Volatile.Read(ref _gen)) return; // 切走时关掉了服务，不算失败
                 Log.Error(T("GPT-SoVITS 启动失败"), e);
                 SetState(false, false, T("GPT-SoVITS 启动失败：{0}", e.Message));
             }
@@ -196,11 +213,12 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
     private async Task<HttpResponseMessage> PostAsync(string path, JsonObject body, CancellationToken token = default) =>
         await _http.PostAsync(_base + path, new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"), token);
 
-    private async Task PollUntilSettledAsync()
+    private async Task PollUntilSettledAsync(int gen)
     {
         var lastOk = DateTime.UtcNow;
         while (_proc is { HasExited: false })
         {
+            if (gen != Volatile.Read(ref _gen)) return;
             await PullLogsAsync();
             JsonNode s;
             try
@@ -220,6 +238,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             if (!loading) return;
             await Task.Delay(500);
         }
+        if (gen != Volatile.Read(ref _gen)) return;
         SetState(false, false, T("GPT-SoVITS 服务已退出，见 logs/gsv.log"));
     }
 

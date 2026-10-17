@@ -79,6 +79,8 @@ public sealed class Speaker : IDisposable
 
     public void OnEngineChanged()
     {
+        // 切走 GPT-SoVITS 时，没开「切换引擎后保持加载」就释放显存和内存
+        if (CurrentKey != "gsv" && !(C["gsv_keep_loaded"]?.GetValue<bool>() ?? true) && (Gsv.Ready || Gsv.Loading)) Gsv.Unload();
         Changed?.Invoke();
         if (!Current.Ready) Current.Load(C);
         else Preload();
