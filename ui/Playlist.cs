@@ -21,6 +21,7 @@ public sealed class Playlist
     private int _crossedGen;    // 这一首已经开始交叉过渡了
     private double _pausedAt;   // 暂停时的位置（秒）
     private double _length;     // 当前这首的总长（秒），暂停时也能显示进度
+    private string? _shuffleNext; // 随机模式下已经选好（并提前解码）的下一首的 id
 
     public int Index { get; private set; } = -1;
     public bool Playing { get; private set; }
@@ -67,7 +68,16 @@ public sealed class Playlist
         _app.Speaker.Player.SetStart(SoundId, startAt);
         _app.Speaker.PlaySound(SoundId, path, finished => Ended(gen, finished), cache: false,
             fadeIn: crossfade > 0 ? crossfade : ShortFade, fadeTail: fade, speed: () => Speed);
+        _shuffleNext = null;
+        PrefetchNext();
         Changed?.Invoke();
+    }
+
+    /// <summary>提前解码接下来要放的那首（列表、模式变了也调用）。</summary>
+    public void PrefetchNext()
+    {
+        int next = Playing || Paused ? NextIndex(manual: false) : -1;
+        _app.Speaker.Prefetch(next >= 0 && next < Items.Count ? Items[next]?["path"]?.GetValue<string>() : null);
     }
 
     /// <summary>播放 / 暂停（快捷键和播放按钮）。</summary>
@@ -125,8 +135,12 @@ public sealed class Playlist
         if (Mode == "one" && !manual) return Math.Max(Index, 0);
         if (Mode == "shuffle" && n > 1)
         {
+            // 同一首歌放着时选好的下一首不变，这样提前解码的就是真正要放的那首
+            for (int k = 0; k < n; k++)
+                if (k != Index && _shuffleNext != null && Items[k]?["id"]?.GetValue<string>() == _shuffleNext) return k;
             int i;
             do i = _rng.Next(n); while (i == Index);
+            _shuffleNext = Items[i]?["id"]?.GetValue<string>();
             return i;
         }
         return (Index + 1) % n;
@@ -165,6 +179,7 @@ public sealed class Playlist
         // 被「停止全部」或出错停下
         Playing = false;
         Paused = false;
+        PrefetchNext();
         Changed?.Invoke();
     }
 
@@ -179,6 +194,7 @@ public sealed class Playlist
             Playing = Paused = false;
         }
         Index = i;
+        PrefetchNext();
         Changed?.Invoke();
     }
 }

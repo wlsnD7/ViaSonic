@@ -76,23 +76,34 @@ public static class AudioDecode
         return r.TotalTime;
     }
 
+    /// <summary>
+    /// 按文件头给的长度一次分配好结果数组，直接写进去（长度不准时再扩）。
+    /// 以前用 List&lt;float&gt; 逐个 Add 再 ToArray，一首长歌要分配 3~4 倍大小的大数组，频繁触发完整 GC。
+    /// </summary>
     private static Clip Read(WaveStream stream)
     {
         var sp = stream.ToSampleProvider();
         int ch = sp.WaveFormat.Channels;
-        var all = new List<float>(sp.WaveFormat.SampleRate * 4);
-        var buf = new float[sp.WaveFormat.SampleRate * ch];
-        int n;
+        long frames = stream.WaveFormat.BlockAlign > 0 ? stream.Length / stream.WaveFormat.BlockAlign : 0;
+        var all = new float[Math.Clamp(frames, sp.WaveFormat.SampleRate, Array.MaxLength)];
+        var buf = new float[sp.WaveFormat.SampleRate / 10 * ch];
+        int len = 0, n;
         while ((n = sp.Read(buf, 0, buf.Length)) > 0)
         {
-            for (int i = 0; i + ch <= n; i += ch)
-            {
-                float sum = 0;
-                for (int c = 0; c < ch; c++) sum += buf[i + c];
-                all.Add(sum / ch);
-            }
+            int got = n / ch;
+            if (len + got > all.Length) Array.Resize(ref all, (int)Math.Min(Array.MaxLength, Math.Max(len + got, all.Length + all.Length / 4L)));
+            if (ch == 1) Array.Copy(buf, 0, all, len, got);
+            else
+                for (int i = 0, k = len; i < got; i++, k++)
+                {
+                    float sum = 0;
+                    for (int c = 0; c < ch; c++) sum += buf[i * ch + c];
+                    all[k] = sum / ch;
+                }
+            len += got;
         }
-        return new Clip(all.ToArray(), sp.WaveFormat.SampleRate);
+        if (len != all.Length) Array.Resize(ref all, len);
+        return new Clip(all, sp.WaveFormat.SampleRate);
     }
 }
 

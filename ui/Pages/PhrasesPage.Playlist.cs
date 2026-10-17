@@ -333,6 +333,7 @@ public sealed partial class PhrasesPage
     {
         int i = Array.FindIndex(Modes, m => m.Mode == Pl.Mode);
         A.Set("playlist_mode", Modes[(i + 1) % Modes.Length].Mode);
+        Pl.PrefetchNext();
         ShowMode();
     }
 

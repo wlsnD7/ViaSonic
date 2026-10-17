@@ -287,6 +287,6 @@ public static class RvcDownload
         bool rtx50 = System.Text.RegularExpressions.Regex.IsMatch(nvidia, @"RTX\s*50\d\d", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         var (file, gb) = rtx50 ? ("RVC20260718Nvidia50x0.7z", "7.6") : ("RVC20260718Nvidia.7z", "7.8");
         return new GsvDownload.Advice(nvidia, file, Base + file,
-            T("检测到 {0}，请下载 {1}（约 {2}GB），解压后在下方「RVC 目录」选择解压出来的文件夹。", nvidia, file, gb));
+            T("检测到 {0}，请下载 {1}（约 {2}GB），解压后点 ⚙，在「RVC 目录」里选择解压出来的文件夹。", nvidia, file, gb));
     }
 }

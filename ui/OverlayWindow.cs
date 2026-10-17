@@ -213,8 +213,9 @@ public sealed partial class OverlayWindow : Window
         double ratio = Math.Clamp(App.ToDouble(o["width_ratio"]), 0.1, 0.95);
         double xr = o["x_ratio"] is { } x ? Math.Clamp(App.ToDouble(x), 0, 1) : 0.5;
         int bottom = (int)App.ToDouble(o["bottom_offset"]);
-        var anchor = _prev != IntPtr.Zero ? Win32Interop.GetWindowIdFromWindow(_prev) : A.Main.AppWindow.Id;
-        var b = DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary).OuterBounds;
+        // 呼出前的窗口可能已经关了（游戏退出）：这时 GetFromWindowId 返回 null，改按主窗口所在的屏幕
+        var anchor = _prev != IntPtr.Zero && Native.IsWindow(_prev) ? Win32Interop.GetWindowIdFromWindow(_prev) : A.Main.AppWindow.Id;
+        var b = (DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary) ?? DisplayArea.Primary).OuterBounds;
         double scale = Native.GetDpiForWindow(_hwnd) / 96.0;
         int w = (int)(b.Width * ratio);
         int h = (int)(48 * scale);

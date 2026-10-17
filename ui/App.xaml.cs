@@ -55,6 +55,8 @@ public partial class App : Application
 
     public App()
     {
+        // 播放线程 40ms 的缓冲经不起长时间的完整 GC（会让所有线程暂停）：尽量只做后台 GC
+        System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.SustainedLowLatency;
         InitializeComponent();
         UnhandledException += (_, e) =>
         {

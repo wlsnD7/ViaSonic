@@ -140,34 +140,80 @@ public sealed class Speaker : IDisposable
     /// <summary>常用语的音频文件，和语音叠加播放。</summary>
     /// <param name="cache">播放列表的歌曲很长，不放进缓存。</param>
     public void PlaySound(string id, string path, Action<bool>? ended = null, bool cache = true, double fadeIn = 0, double fadeTail = 0,
-        Func<double>? speed = null) => _ = Task.Run(() =>
+        Func<double>? speed = null)
+    {
+        // 预先解码的下一首在这里就领走：播放列表紧接着会预解码再下一首，把它换掉
+        (string Path, DateTime Mtime, Task<Clip> Clip)? pre = null;
+        lock (_files)
+            if (_prefetch is { } pf && pf.Path == path)
+            {
+                pre = pf;
+                _prefetch = null;
+            }
+        _ = Task.Run(() => PlaySoundNow(id, path, pre, ended, cache, fadeIn, fadeTail, speed));
+    }
+
+    private void PlaySoundNow(string id, string path, (string Path, DateTime Mtime, Task<Clip> Clip)? pre, Action<bool>? ended, bool cache,
+        double fadeIn, double fadeTail, Func<double>? speed)
     {
         try
         {
             var mtime = File.GetLastWriteTimeUtc(path);
-            Clip clip;
-            lock (_files)
+            Clip? clip = null;
+            if (pre is { } p && p.Mtime == mtime) clip = p.Clip.Result; // 还在解码就等它，不重复解码
+            else
+                lock (_files)
+                    if (_files.TryGetValue(path, out var hit) && hit.Mtime == mtime) clip = hit.Clip;
+            // 解码不在锁里做：长歌要 1 秒以上，不能挡住同时按下的音效
+            if (clip == null)
             {
-                if (_files.TryGetValue(path, out var hit) && hit.Mtime == mtime) clip = hit.Clip;
-                else
-                {
-                    if (!File.Exists(path)) throw new FileNotFoundException(T("文件不存在"), path);
-                    clip = AudioDecode.FromFile(path);
-                    if (cache)
+                clip = Decode(path);
+                if (cache)
+                    lock (_files)
                     {
                         if (_files.Count > 32) _files.Clear();
                         _files[path] = (mtime, clip);
                     }
-                }
             }
             Player.PlaySound(id, clip, ended: ended, fadeIn: fadeIn, fadeTail: fadeTail, speed: speed);
         }
         catch (Exception e)
         {
-            Failed?.Invoke(T("无法播放音频：{0}", e.Message));
+            Failed?.Invoke(T("无法播放音频：{0}", e.InnerException?.Message ?? e.Message));
             ended?.Invoke(false);
         }
-    });
+    }
+
+    private (string Path, DateTime Mtime, Task<Clip> Clip)? _prefetch;
+
+    /// <summary>
+    /// 播放列表的下一首提前在后台解码，到时候直接播放：现解码一首歌要零点几秒到 1 秒多，电脑忙（开着游戏）时要好几秒，
+    /// 切歌和交叉过渡就会晚开始、中间断一下。只留一首。
+    /// </summary>
+    public void Prefetch(string? path)
+    {
+        lock (_files)
+        {
+            if (path == null)
+            {
+                _prefetch = null;
+                return;
+            }
+            DateTime mtime;
+            try { mtime = File.GetLastWriteTimeUtc(path); }
+            catch { return; }
+            if (_prefetch is { } pf && pf.Path == path && pf.Mtime == mtime) return;
+            var task = Task.Run(() => Decode(path));
+            task.ContinueWith(_ => { }, TaskContinuationOptions.OnlyOnFaulted); // 解码失败到播放时再报
+            _prefetch = (path, mtime, task);
+        }
+    }
+
+    private static Clip Decode(string path)
+    {
+        if (!File.Exists(path)) throw new FileNotFoundException(T("文件不存在"), path);
+        return AudioDecode.FromFile(path);
+    }
 
     /// <summary>引擎就绪后把文字常用语先合成好，按快捷键时直接播放。</summary>
     public void Preload()

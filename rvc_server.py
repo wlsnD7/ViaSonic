@@ -233,7 +233,8 @@ class RVCStreamEngine:
             indata = gated[self.zc // 2:]
 
         self.input_wav[:-self.block_frame] = self.input_wav[self.block_frame:].clone()
-        self.input_wav[-self.block_frame:] = torch.from_numpy(indata).to(self.config.device)
+        # 开了阈值时 indata 比一块多 2*zc（连同上一块末尾一起门限过），和官方一样按实际长度写回
+        self.input_wav[-indata.shape[0]:] = torch.from_numpy(indata).to(self.config.device)
         self.input_wav_res[:-self.block_frame_16k] = self.input_wav_res[self.block_frame_16k:].clone()
         resample_input = self.input_wav[-self.block_frame - 2 * self.zc:]
         resampled = self.run_cuda_graph(

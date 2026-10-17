@@ -380,7 +380,7 @@ public static partial class Lang
         ["RVC 目录"] = "RVC folder",
         ["RVC 整合包所在的文件夹。"] = "The folder of the RVC package.",
         ["未找到 RVC"] = "RVC not found",
-        ["检测到 {0}，请下载 {1}（约 {2}GB），解压后在下方「RVC 目录」选择解压出来的文件夹。"] = "Found {0}. Download {1} (about {2} GB), extract it, then choose the folder in RVC folder below.",
+        ["检测到 {0}，请下载 {1}（约 {2}GB），解压后点 ⚙，在「RVC 目录」里选择解压出来的文件夹。"] = "Found {0}. Download {1} (about {2} GB), extract it, then click ⚙ and choose the extracted folder under RVC folder.",
         ["没有检测到 NVIDIA 显卡，RVC 可能用不了或者很慢。"] = "No NVIDIA GPU found. RVC may not work or may be very slow.",
         ["RVC 整合包太旧，需要 2026 年 7 月以后的版本"] = "This RVC package is too old. Use the July 2026 version or newer.",
         ["把 .pth 模型放进整合包的 assets\\weights 文件夹，或者点 ＋ 添加。"] = "Put .pth models in the package's assets\\weights folder, or click + to add one.",
