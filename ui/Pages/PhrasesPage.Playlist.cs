@@ -260,7 +260,7 @@ public sealed partial class PhrasesPage
     /// <summary>导出成 .m3u8（UTF-8，绝对路径）。</summary>
     private async void PlExport_Click(object sender, RoutedEventArgs e)
     {
-        var picker = new FileSavePicker { SuggestedFileName = T("播放列表") };
+        var picker = new FileSavePicker { SuggestedFileName = T("歌单") };
         picker.FileTypeChoices.Add(T("M3U 歌单"), [".m3u8"]);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, A.Main.Hwnd);
         var file = await picker.PickSaveFileAsync();

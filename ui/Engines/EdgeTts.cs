@@ -40,7 +40,7 @@ public sealed class EdgeTts : ITtsEngine
         ("zh-CN-XiaoyiNeural", "晓伊（女）"), // 翻译键
         ("zh-CN-liaoning-XiaobeiNeural", "晓北（东北话）"), // 翻译键
         ("zh-CN-shaanxi-XiaoniNeural", "晓妮（陕西话）"), // 翻译键
-        ("zh-TW-HsiaoChenNeural", "曉臻（台湾）"), // 翻译键
+        ("zh-TW-HsiaoChenNeural", "曉臻（中国台湾）"), // 翻译键
         ("zh-HK-WanLungNeural", "雲龍（粤语）"), // 翻译键
         ("en-US-GuyNeural", "Guy（英语）"), // 翻译键
         ("ja-JP-KeitaNeural", "圭太（日语）"), // 翻译键

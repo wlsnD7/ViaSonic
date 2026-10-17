@@ -1,19 +1,21 @@
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using ViaSonic.Audio;
 using ViaSonic.Engines;
+using ViaSonic.Pages;
 using Windows.Storage.Pickers;
 
 namespace ViaSonic;
 
-/// <summary>首次启动的引导：检查虚拟麦克风和 GPT-SoVITS，只出现一次。</summary>
+/// <summary>首次启动的引导：检查虚拟麦克风、GPT-SoVITS 和 RVC，只出现一次。</summary>
 public sealed class WelcomeDialog : ContentDialog
 {
     private const string CableUrl = "https://vb-audio.com/Cable/";
 
     private static App A => App.Current;
-    private readonly SettingsCard _gsvCard;
-    private readonly StackPanel _gsvActions;
+    private readonly SettingsCard _gsvCard, _rvcCard;
+    private readonly StackPanel _gsvActions, _rvcActions;
 
     public WelcomeDialog(XamlRoot root)
     {
@@ -42,15 +44,25 @@ public sealed class WelcomeDialog : ContentDialog
         };
         UpdateGsv(GsvEngine.FindHome(A.Str("gsv_home")));
 
+        _rvcActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        _rvcCard = new SettingsCard
+        {
+            Header = T("RVC（可选）"),
+            HeaderIcon = new FontIcon { Glyph = "" },
+            Content = _rvcActions,
+        };
+        UpdateRvc(RvcHost.FindHome(A.Str("rvc_home")));
+
         var panel = new StackPanel { Spacing = 8, MinWidth = 520 };
         panel.Children.Add(new TextBlock
         {
-            Text = T("默认使用 Edge TTS，可以直接使用。"),
+            Text = T("虚拟麦克风必须安装，GPT-SoVITS 和 RVC 按需安装。"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 8),
         });
         panel.Children.Add(cableCard);
         panel.Children.Add(_gsvCard);
+        panel.Children.Add(_rvcCard);
         Content = panel;
     }
 
@@ -64,10 +76,46 @@ public sealed class WelcomeDialog : ContentDialog
         }
         var advice = GsvDownload.Recommend();
         _gsvCard.Description = error ?? T("未找到。") + advice.Text;
-        if (advice.File != null)
+        AddActions(_gsvActions, advice, path =>
         {
-            _gsvActions.Children.Add(new HyperlinkButton { Content = T("下载"), NavigateUri = new Uri(advice.Url) });
+            if (GsvEngine.IsGsvHome(path))
+            {
+                A.Set("gsv_home", path);
+                UpdateGsv(path);
+            }
+            else UpdateGsv(null, T("这个文件夹不是 GPT-SoVITS 整合包，请选择解压后的根目录。"));
+        });
+    }
+
+    /// <summary>RVC：新版整合包算找到；旧版提示太旧；没找到时按显卡推荐下载。</summary>
+    private void UpdateRvc(string? home, string? error = null)
+    {
+        _rvcActions.Children.Clear();
+        if (error == null && RvcHost.IsHome(home))
+        {
+            _rvcCard.Description = T("已找到（{0}）", home!);
+            return;
         }
+        var advice = RvcDownload.Recommend(welcome: true);
+        _rvcCard.Description = error
+            ?? (RvcHost.IsOldHome(home) ? T("RVC 整合包太旧，需要 2026 年 7 月以后的版本") : T("未找到。") + advice.Text);
+        AddActions(_rvcActions, advice, path =>
+        {
+            if (RvcHost.IsHome(path))
+            {
+                A.Set("rvc_home", path);
+                UpdateRvc(path);
+            }
+            else if (RvcHost.IsOldHome(path)) UpdateRvc(path);
+            else UpdateRvc(null, T("这个文件夹不是 RVC 整合包，请选择解压后的根目录。"));
+        });
+    }
+
+    /// <summary>「下载」（有推荐的文件时）和「选择文件夹」。</summary>
+    private static void AddActions(StackPanel actions, GsvDownload.Advice advice, Action<string> picked)
+    {
+        if (advice.File != null)
+            actions.Children.Add(new HyperlinkButton { Content = T("下载"), NavigateUri = new Uri(advice.Url) });
         var pick = new Button { Content = T("选择文件夹") };
         pick.Click += async (_, _) =>
         {
@@ -75,14 +123,8 @@ public sealed class WelcomeDialog : ContentDialog
             picker.FileTypeFilter.Add("*");
             WinRT.Interop.InitializeWithWindow.Initialize(picker, A.Main.Hwnd);
             var folder = await picker.PickSingleFolderAsync();
-            if (folder == null) return;
-            if (GsvEngine.IsGsvHome(folder.Path))
-            {
-                A.Set("gsv_home", folder.Path);
-                UpdateGsv(folder.Path);
-            }
-            else UpdateGsv(null, T("这个文件夹不是 GPT-SoVITS 整合包，请选择解压后的根目录。"));
+            if (folder != null) picked(folder.Path);
         };
-        _gsvActions.Children.Add(pick);
+        actions.Children.Add(pick);
     }
 }

@@ -88,6 +88,7 @@
                                 <TextBlock x:Name="RvcStatus" />
                             </tk:SettingsCard.Description>
                             <StackPanel Orientation="Horizontal" Spacing="12">
+                                <ProgressRing x:Name="RvcRing" IsActive="False" Width="20" Height="20" />
                                 <Button ToolTipService.ToolTip="{l:T Text='高级'}" AutomationProperties.Name="{l:T Text='高级'}">
                                     <FontIcon Glyph="&#xE713;" FontSize="14" />
                                     <Button.Flyout>
@@ -137,7 +138,10 @@
                             </InfoBar.ActionButton>
                         </InfoBar>
                         <Rectangle Style="{StaticResource Divider}" />
-                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='模型'}">
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <tk:SettingsCard.Header>
+                                <c:InfoHeader Text="{l:T Text='模型'}" Tip="{l:T Text='训练好的 .pth 模型。整合包 assets\weights 文件夹里的会自动列出，同名的 .index 文件会自动找到。'}" />
+                            </tk:SettingsCard.Header>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <ComboBox x:Name="RvcModel" MinWidth="220" SelectionChanged="RvcModel_Changed" AutomationProperties.Name="{l:T Text='模型'}" />
                                 <Button Click="RvcAdd_Click" ToolTipService.ToolTip="{l:T Text='添加模型'}" AutomationProperties.Name="{l:T Text='添加模型'}">

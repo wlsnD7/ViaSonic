@@ -94,7 +94,8 @@ public sealed partial class HomePage : Page
         var missing = en?["missing"]?.GetValue<string>() ?? ""; // 联网服务还没填 Key 等
         StatusText.Text = string.IsNullOrEmpty(busy) ? (missing.Length > 0 ? missing : ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
-        LoadButton.IsEnabled = !ready && !loading && missing.Length == 0;
+        var error = en?["error"]?.GetValue<string>() ?? "";
+        LoadButton.Visibility = !ready && !loading && missing.Length == 0 && error.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         var ms = A.Speaker.LastSynthMs;
         SynthText.Text = ms > 0 ? T("上一句生成耗时 {0} ms", ms) : "";
         SynthText.Visibility = ms > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -112,7 +113,7 @@ public sealed partial class HomePage : Page
         {
             var advice = GsvDownload.Recommend();
             GsvBar.Title = T("未找到 GPT-SoVITS");
-            GsvBar.Message = advice.Text + (advice.File != null ? T("也可以在下方「GPT-SoVITS 目录」指定位置。") : "");
+            GsvBar.Message = advice.Text + (advice.File != null ? T("也可以点 ⚙，在「GPT-SoVITS 目录」里指定位置。") : "");
             GsvLink.Content = T("下载");
             GsvLink.NavigateUri = new Uri(advice.Url);
             GsvLink.Visibility = advice.File != null ? Visibility.Visible : Visibility.Collapsed;
@@ -131,7 +132,7 @@ public sealed partial class HomePage : Page
     private void ShowEngineOptions()
     {
         var key = A.Str("engine");
-        GsvPanel.Visibility = ModelPanel.Visibility = key == "gsv" ? Visibility.Visible : Visibility.Collapsed;
+        GsvPanel.Visibility = ModelPanel.Visibility = GsvGear.Visibility = key == "gsv" ? Visibility.Visible : Visibility.Collapsed;
         EdgePanel.Visibility = key == "edge" ? Visibility.Visible : Visibility.Collapsed;
         SapiPanel.Visibility = key == "sapi" ? Visibility.Visible : Visibility.Collapsed;
         AzurePanel.Visibility = key == "azure" ? Visibility.Visible : Visibility.Collapsed;

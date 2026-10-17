@@ -52,7 +52,7 @@
                 </Grid>
             </Grid>
 
-            <!-- 分段标签：常用语与音效 / 播放列表 -->
+            <!-- 分段标签：常用语与音效 / 音乐播放器 -->
             <Border Style="{StaticResource Group}" Padding="4">
                 <Grid ColumnSpacing="4">
                     <Grid.ColumnDefinitions>
@@ -62,7 +62,7 @@
                     <ToggleButton x:Name="TabPhrases" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click" IsChecked="True"
                                   Content="{l:T Text='常用语与音效'}" />
                     <ToggleButton x:Name="TabPlaylist" Grid.Column="1" HorizontalAlignment="Stretch" Height="36" BorderThickness="0" Click="Tab_Click"
-                                  Content="{l:T Text='播放列表'}" />
+                                  Content="{l:T Text='音乐播放器'}" />
                 </Grid>
             </Border>
 
@@ -155,7 +155,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="PlPos" Text="0:00" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" MinWidth="36" />
                                 <Slider x:Name="PlSeek" Grid.Column="1" Minimum="0" Maximum="1" StepFrequency="0.5" IsThumbToolTipEnabled="False"
-                                        ValueChanged="PlSeek_Changed" AutomationProperties.Name="{l:T Text='播放列表'}" />
+                                        ValueChanged="PlSeek_Changed" AutomationProperties.Name="{l:T Text='音乐播放器'}" />
                                 <TextBlock x:Name="PlLen" Grid.Column="2" Text="0:00" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"
                                            MinWidth="36" TextAlignment="Right" />
                             </Grid>

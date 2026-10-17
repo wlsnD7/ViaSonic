@@ -49,7 +49,7 @@ public partial class App : Application
         ["stop"] = "停止", // 翻译键
         ["repeat"] = "重复上一句", // 翻译键
         ["ptt"] = "打开/关闭按键说话", // 翻译键
-        ["playlist"] = "播放/暂停播放列表", // 翻译键
+        ["playlist"] = "播放/暂停音乐", // 翻译键
         ["next"] = "下一首", // 翻译键
     };
 

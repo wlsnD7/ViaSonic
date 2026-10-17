@@ -26,6 +26,7 @@
 
             <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='快捷键冲突'}" />
 
+            <TextBlock Text="{l:T Text='快捷键'}" Style="{StaticResource SectionHeader}" />
             <Border Style="{StaticResource Group}">
                 <StackPanel>
                     <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='打开/关闭输入框'}">
@@ -56,7 +57,7 @@
                         <c:HotkeyButton x:Name="HkPtt" Tag="ptt" />
                     </tk:SettingsCard>
                     <Rectangle Style="{StaticResource Divider}" />
-                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='播放/暂停播放列表'}">
+                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='播放/暂停音乐'}">
                         <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE768;" /></tk:SettingsCard.HeaderIcon>
                         <c:HotkeyButton x:Name="HkPlaylist" Tag="playlist" />
                     </tk:SettingsCard>

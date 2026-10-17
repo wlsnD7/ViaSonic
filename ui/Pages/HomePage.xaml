@@ -70,7 +70,39 @@
                         </tk:SettingsCard.Description>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ProgressRing x:Name="LoadRing" IsActive="False" Width="20" Height="20" />
-                            <Button x:Name="LoadButton" Content="{l:T Text='加载'}" Click="Load_Click" />
+                            <!-- GPT-SoVITS 的设备和整合包目录：装好后基本不动，收在这里（和 AI 变声的 ⚙ 一样） -->
+                            <Button x:Name="GsvGear" ToolTipService.ToolTip="{l:T Text='高级'}" AutomationProperties.Name="{l:T Text='高级'}">
+                                <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                <Button.Flyout>
+                                    <Flyout Placement="BottomEdgeAlignedRight">
+                                        <Grid Width="400" ColumnSpacing="16" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition /><RowDefinition /><RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <c:InfoHeader Text="{l:T Text='设备'}" Tip="{l:T Text='CUDA 使用 NVIDIA 显卡推理，CPU在没有 NVIDIA 显卡时使用。修改后需重启。'}" />
+                                            <ComboBox x:Name="GsvDevice" Grid.Column="1" MinWidth="160" SelectionChanged="GsvDevice_Changed">
+                                                <ComboBoxItem Content="CUDA" Tag="cuda" />
+                                                <ComboBoxItem Content="CPU" Tag="cpu" />
+                                            </ComboBox>
+                                            <c:InfoHeader Grid.Row="1" Grid.ColumnSpan="2" Text="{l:T Text='GPT-SoVITS 目录'}" Tip="{l:T Text='GPT-SoVITS 整合包所在的文件夹。'}" />
+                                            <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="GsvBox" PlaceholderText="{l:T Text='自动'}" LostFocus="GsvHome_LostFocus" />
+                                                <Button Grid.Column="1" Content="{l:T Text='浏览'}" Click="BrowseGsv_Click" />
+                                            </Grid>
+                                        </Grid>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                            <!-- 引擎会自动加载，只有加载失败后才出现「重试」 -->
+                            <Button x:Name="LoadButton" Content="{l:T Text='重试'}" Click="Load_Click" Visibility="Collapsed" />
                             <ComboBox x:Name="EngineBox" MinWidth="220" SelectionChanged="Engine_Changed" />
                         </StackPanel>
                     </tk:SettingsCard>
@@ -98,26 +130,6 @@
                         <Rectangle Style="{StaticResource Divider}" />
                         <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='语言'}">
                             <ComboBox x:Name="GsvLang" MinWidth="160" SelectionChanged="GsvLang_Changed" />
-                        </tk:SettingsCard>
-                        <Rectangle Style="{StaticResource Divider}" />
-                        <tk:SettingsCard Style="{StaticResource SubRow}">
-                            <tk:SettingsCard.Header>
-                                <c:InfoHeader Text="{l:T Text='设备'}" Tip="{l:T Text='CUDA 使用 NVIDIA 显卡推理，CPU在没有 NVIDIA 显卡时使用。修改后需重启。'}" />
-                            </tk:SettingsCard.Header>
-                            <ComboBox x:Name="GsvDevice" MinWidth="160" SelectionChanged="GsvDevice_Changed">
-                                <ComboBoxItem Content="CUDA" Tag="cuda" />
-                                <ComboBoxItem Content="CPU" Tag="cpu" />
-                            </ComboBox>
-                        </tk:SettingsCard>
-                        <Rectangle Style="{StaticResource Divider}" />
-                        <tk:SettingsCard Style="{StaticResource SubRow}">
-                            <tk:SettingsCard.Header>
-                                <c:InfoHeader Text="{l:T Text='GPT-SoVITS 目录'}" Tip="{l:T Text='GPT-SoVITS 整合包所在的文件夹。'}" />
-                            </tk:SettingsCard.Header>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBox x:Name="GsvBox" Width="340" PlaceholderText="{l:T Text='自动'}" LostFocus="GsvHome_LostFocus" />
-                                <Button Content="{l:T Text='浏览'}" Click="BrowseGsv_Click" />
-                            </StackPanel>
                         </tk:SettingsCard>
                     </StackPanel>
 

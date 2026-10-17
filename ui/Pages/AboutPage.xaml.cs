@@ -15,7 +15,7 @@ public sealed partial class AboutPage : Page
     public AboutPage()
     {
         InitializeComponent();
-        AppCard.Description = T("版本 {0}", App.Version);
+        ShowAbout(T("版本 {0}", App.Version));
         _timer.Tick += async (_, _) => await PollAsync();
     }
 
@@ -26,6 +26,10 @@ public sealed partial class AboutPage : Page
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e) => _timer.Stop();
+
+    /// <summary>ViaSonic 卡片的说明：第一行软件介绍，第二行版本。</summary>
+    private void ShowAbout(string version) =>
+        AppCard.Description = T("实时文本转语音、变声器（含 RVC）、常用语和音效，以及音乐播放器。通过虚拟麦克风输出声音。") + "\n" + version;
 
     private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
     {
@@ -41,11 +45,11 @@ public sealed partial class AboutPage : Page
         }
         if (App.Current.NewRelease is { } rel)
         {
-            AppCard.Description = T("发现新版本 {0}", rel.Tag);
+            ShowAbout(T("发现新版本 {0}", rel.Tag));
             UpdateLink.NavigateUri = new Uri(rel.Url);
             UpdateLink.Visibility = Visibility.Visible;
         }
-        else if (ok) AppCard.Description = T("版本 {0}（已是最新版本）", App.Version);
+        else if (ok) ShowAbout(T("版本 {0}（已是最新版本）", App.Version));
         else App.Current.Main.ShowError(T("检查更新失败，请稍后再试"));
     }
 

@@ -167,6 +167,7 @@ public sealed partial class VoicePage
             : Host.Loading ? T("加载中")
             : "";
         RvcStatus.Visibility = RvcStatus.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed; // 空着时标题居中
+        RvcRing.IsActive = on && !Host.Ready && Host.Loading;
         foreach (var k in _rvcKnobs) k.IsEnabled = on;
         RvcKnobs.Opacity = on ? 1 : 0.45;
     }
@@ -278,7 +279,8 @@ public static class RvcDownload
     private const string Base = "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/";
     private const string ListUrl = "https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main";
 
-    public static GsvDownload.Advice Recommend()
+    /// <param name="welcome">首次引导里用：引导自己有「选择文件夹」按钮，不提 ⚙。</param>
+    public static GsvDownload.Advice Recommend(bool welcome = false)
     {
         var gpus = GsvDownload.Gpus();
         var nvidia = gpus.FirstOrDefault(g => g.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase));
@@ -286,7 +288,8 @@ public static class RvcDownload
             return new GsvDownload.Advice(gpus.FirstOrDefault() ?? T("未知显卡"), null, ListUrl, T("没有检测到 NVIDIA 显卡，RVC 可能用不了或者很慢。"));
         bool rtx50 = System.Text.RegularExpressions.Regex.IsMatch(nvidia, @"RTX\s*50\d\d", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         var (file, gb) = rtx50 ? ("RVC20260718Nvidia50x0.7z", "7.6") : ("RVC20260718Nvidia.7z", "7.8");
-        return new GsvDownload.Advice(nvidia, file, Base + file,
-            T("检测到 {0}，请下载 {1}（约 {2}GB），解压后点 ⚙，在「RVC 目录」里选择解压出来的文件夹。", nvidia, file, gb));
+        return new GsvDownload.Advice(nvidia, file, Base + file, welcome
+            ? T("检测到 {0}，请下载 {1}（约 {2}GB），解压后选择解压出来的文件夹。", nvidia, file, gb)
+            : T("检测到 {0}，请下载 {1}（约 {2}GB），解压后点 ⚙，在「RVC 目录」里选择解压出来的文件夹。", nvidia, file, gb));
     }
 }
