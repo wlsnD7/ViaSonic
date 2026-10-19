@@ -18,7 +18,7 @@ public sealed partial class VoicePage : Page
     private readonly Dictionary<string, (Button Tile, Microsoft.UI.Xaml.Shapes.Ellipse Led, Grid Params, Knob[] Knobs, TextBlock[] Values)> _tiles = [];
 
     /// <summary>这个效果开着没有。</summary>
-    private bool IsOn(string key) => Effects[key]?["on"]?.GetValue<bool>() ?? false;
+    private bool IsOn(string key) => Effects[key].Bool("on");
 
     public VoicePage()
     {
@@ -78,7 +78,7 @@ public sealed partial class VoicePage : Page
     // ------------------------------------------------------------------ 标签
     private static bool _rvcTab; // 切换页面回来时停在上次的标签
 
-    private void Tab_Click(object sender, RoutedEventArgs e) => ShowTab(sender == TabRvc);
+    private void Tab_Click(object sender, RoutedEventArgs e) => ShowTab(ReferenceEquals(sender, TabRvc));
 
     private void ShowTab(bool rvc)
     {
@@ -202,7 +202,7 @@ public sealed partial class VoicePage : Page
             for (int i = 0; i < def.Params.Length; i++)
             {
                 var p = def.Params[i];
-                t.Knobs[i].Value = Math.Clamp(e?[p.Key] is { } n ? App.ToDouble(n) : p.Default, p.Min, p.Max);
+                t.Knobs[i].Value = Math.Clamp(e?[p.Key] is { } n ? Json.ToDouble(n) : p.Default, p.Min, p.Max);
                 t.Values[i].Text = Format(p, t.Knobs[i].Value);
             }
         }
@@ -247,7 +247,7 @@ public sealed partial class VoicePage : Page
         bool was = _init;
         _init = true;
         var items = Presets.OfType<JsonObject>()
-            .Select(p => new ComboBoxItem { Content = p["name"]?.GetValue<string>() ?? "", Tag = p["id"]?.GetValue<string>() ?? "" })
+            .Select(p => new ComboBoxItem { Content = p.Str("name"), Tag = p.Str("id") })
             .ToList();
         PresetBox.ItemsSource = items;
         PresetBox.SelectedItem = items.FirstOrDefault(i => (string)i.Tag == A.Str("fx_preset"));
@@ -261,7 +261,7 @@ public sealed partial class VoicePage : Page
         {
             var dlg = new ContentDialog
             {
-                Title = T("组合「{0}」有没保存的调整", old["name"]?.GetValue<string>() ?? ""),
+                Title = T("组合「{0}」有没保存的调整", old.Str("name")),
                 PrimaryButtonText = T("保存"),
                 SecondaryButtonText = T("不保存"),
                 CloseButtonText = T("取消"),
@@ -318,7 +318,7 @@ public sealed partial class VoicePage : Page
         if (await AskName(T("添加组合"), T("添加"), "") is not { } name) return;
         var p = ConfigStore.NewPreset(name, Effects);
         Presets.Add((JsonNode)p);
-        A.Config["fx_preset"] = p["id"]!.GetValue<string>();
+        A.Config["fx_preset"] = p.Str("id");
         A.Commit("fx_presets");
         FillPresets();
         UpdateState();
@@ -327,7 +327,7 @@ public sealed partial class VoicePage : Page
     private async void Rename_Click(object sender, RoutedEventArgs e)
     {
         if (Preset is not { } p) return;
-        if (await AskName(T("重命名组合"), T("保存"), p["name"]?.GetValue<string>() ?? "") is not { } name) return;
+        if (await AskName(T("重命名组合"), T("保存"), p.Str("name")) is not { } name) return;
         p["name"] = name;
         A.Commit("fx_presets");
         FillPresets();
@@ -338,7 +338,7 @@ public sealed partial class VoicePage : Page
         if (Preset is not { } p || Presets.Count <= 1) return;
         var dlg = new ContentDialog
         {
-            Title = T("删除组合「{0}」？", p["name"]?.GetValue<string>() ?? ""),
+            Title = T("删除组合「{0}」？", p.Str("name")),
             PrimaryButtonText = T("删除"),
             CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Close,
@@ -347,7 +347,7 @@ public sealed partial class VoicePage : Page
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
         Presets.Remove(p);
         var next = Presets.OfType<JsonObject>().First();
-        A.Config["fx_preset"] = next["id"]!.GetValue<string>();
+        A.Config["fx_preset"] = next.Str("id");
         A.Commit("fx_presets");
         A.Set("fx_effects", next["effects"]);
         FillPresets();

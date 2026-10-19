@@ -34,10 +34,9 @@ public sealed partial class HomePage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         _init = true;
-        var engines = A.State["engines"]?.AsArray() ?? [];
         EngineBox.Items.Clear();
-        foreach (var en in engines)
-            EngineBox.Items.Add(new ComboBoxItem { Content = en!["label"]!.GetValue<string>(), Tag = en["key"]!.GetValue<string>() });
+        foreach (var en in A.State.Engines)
+            EngineBox.Items.Add(new ComboBoxItem { Content = en.Label, Tag = en.Key });
         EngineBox.SelectedItem = EngineBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == A.Str("engine"));
 
         GsvBox.Text = A.Str("gsv_home");
@@ -88,14 +87,14 @@ public sealed partial class HomePage : Page
     {
         var s = A.State;
         var key = A.Str("engine");
-        var en = s?["engines"]?.AsArray().FirstOrDefault(x => x!["key"]!.GetValue<string>() == key);
-        bool loading = en?["loading"]?.GetValue<bool>() ?? false;
-        bool ready = en?["ready"]?.GetValue<bool>() ?? false;
-        var busy = s?["busy"]?.GetValue<string>() ?? "";
-        var missing = en?["missing"]?.GetValue<string>() ?? ""; // 联网服务还没填 Key 等
+        var en = s.Engine(key);
+        bool loading = en?.Loading ?? false;
+        bool ready = en?.Ready ?? false;
+        var busy = s.Busy;
+        var missing = en?.Missing ?? ""; // 联网服务还没填 Key 等
         StatusText.Text = string.IsNullOrEmpty(busy) ? (missing.Length > 0 ? missing : ready ? T("就绪") : loading ? T("加载中") : T("未加载")) : T(busy);
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
-        var error = en?["error"]?.GetValue<string>() ?? "";
+        var error = en?.Error ?? "";
         LoadButton.Visibility = !ready && !loading && missing.Length == 0 && error.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         var ms = A.Speaker.LastSynthMs;
         SynthText.Text = ms > 0 ? T("上一句生成耗时 {0} ms", ms) : "";
@@ -108,7 +107,7 @@ public sealed partial class HomePage : Page
         }
         UpdateBar.IsOpen = A.NewRelease != null;
 
-        var kind = key == "gsv" ? en?["error_kind"]?.GetValue<string>() ?? "" : "";
+        var kind = key == "gsv" ? en?.ErrorKind ?? "" : "";
         GsvBar.IsOpen = kind.Length > 0;
         if (kind == "gsv_missing")
         {
@@ -122,7 +121,7 @@ public sealed partial class HomePage : Page
         else if (kind == "model_missing")
         {
             GsvBar.Title = Models.Count == 0 ? T("还没有模型") : T("模型文件不全");
-            GsvBar.Message = en?["error"]?.GetValue<string>() ?? "";
+            GsvBar.Message = error;
             GsvLink.Visibility = Visibility.Collapsed;
             ModelPanel.IsExpanded = true;
         }
@@ -200,10 +199,9 @@ public sealed partial class HomePage : Page
     private JsonObject? CurrentModel()
     {
         var id = A.Str("gsv_model");
-        return Models.FirstOrDefault(m => m!["id"]!.GetValue<string>() == id)?.AsObject();
+        return Models.FirstOrDefault(m => m.Str("id") == id)?.AsObject();
     }
 
-    private static string Field(JsonObject? m, string key) => m?[key]?.GetValue<string>() ?? "";
 
     private void FillModels()
     {
@@ -211,7 +209,7 @@ public sealed partial class HomePage : Page
         _init = true;
         ModelBox.Items.Clear();
         foreach (var m in Models)
-            ModelBox.Items.Add(new ComboBoxItem { Content = Field(m!.AsObject(), "name"), Tag = Field(m.AsObject(), "id") });
+            ModelBox.Items.Add(new ComboBoxItem { Content = m.Str("name"), Tag = m.Str("id") });
         ModelBox.SelectedItem = ModelBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == A.Str("gsv_model"));
         DelModelButton.IsEnabled = Models.Count > 0;
         _init = init;
@@ -226,12 +224,12 @@ public sealed partial class HomePage : Page
         var cur = CurrentModel();
         foreach (var c in new Control[] { ModelName, ModelGpt, ModelSovits, ModelRef, ModelRefText, ModelRefLang })
             c.IsEnabled = cur != null; // 没有模型时先点 + 添加
-        ModelName.Text = Field(cur, "name");
-        ModelGpt.Text = Field(cur, "gpt");
-        ModelSovits.Text = Field(cur, "sovits");
-        ModelRef.Text = Field(cur, "ref");
-        ModelRefText.Text = Field(cur, "ref_text");
-        ModelRefLang.SelectedIndex = LangIndex(Field(cur, "ref_lang"));
+        ModelName.Text = cur.Str("name");
+        ModelGpt.Text = cur.Str("gpt");
+        ModelSovits.Text = cur.Str("sovits");
+        ModelRef.Text = cur.Str("ref");
+        ModelRefText.Text = cur.Str("ref_text");
+        ModelRefLang.SelectedIndex = LangIndex(cur.Str("ref_lang"));
         _init = init;
     }
 
@@ -246,9 +244,9 @@ public sealed partial class HomePage : Page
     {
         var m = ConfigStore.NewModel();
         Models.Add((JsonNode)m);
-        A.Config["gsv_model"] = m["id"]!.GetValue<string>();
+        A.Config["gsv_model"] = m.Str("id");
         A.Commit("gsv_models");
-        A.Set("gsv_model", m["id"]!.GetValue<string>());
+        A.Set("gsv_model", m.Str("id"));
         FillModels();
         ModelPanel.IsExpanded = true;
         ModelName.Focus(FocusState.Programmatic);
@@ -261,7 +259,7 @@ public sealed partial class HomePage : Page
         if (cur == null) return;
         var dlg = new ContentDialog
         {
-            Title = T("删除「{0}」？", Field(cur, "name")),
+            Title = T("删除「{0}」？", cur.Str("name")),
             Content = T("只移除这条配置，不会删除模型文件。"),
             PrimaryButtonText = T("删除"),
             CloseButtonText = T("取消"),
@@ -270,7 +268,7 @@ public sealed partial class HomePage : Page
         };
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
         Models.Remove(cur);
-        var next = Models.Count > 0 ? Field(Models[0]!.AsObject(), "id") : "";
+        var next = Models.Count > 0 ? Models[0].Str("id") : "";
         A.Config["gsv_model"] = next;
         A.Commit("gsv_models");
         A.Set("gsv_model", next);
@@ -281,11 +279,11 @@ public sealed partial class HomePage : Page
 
     private void SetModelField(JsonObject? model, string key, string value)
     {
-        if (model == null || !Models.Contains(model) || Field(model, key) == value) return;
+        if (model == null || !Models.Contains(model) || model.Str(key) == value) return;
         model[key] = value;
         A.Commit("gsv_models");
         // 改名只更新下拉框里这一项；重建列表会重置正在输入的文本框
-        if (key == "name" && ModelBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Field(model, "id")) is { } item)
+        if (key == "name" && ModelBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == model.Str("id")) is { } item)
             item.Content = value;
     }
 

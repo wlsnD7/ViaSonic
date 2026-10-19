@@ -46,11 +46,10 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 
     protected static string S(JsonObject c, string key, string def = "")
     {
-        var v = c[key]?.GetValue<string>() ?? "";
+        var v = c.Str(key);
         return v.Length > 0 ? v : def;
     }
 
-    protected static double N(JsonObject c, string key) => App.ToDouble(c[key]);
 
     protected static StringContent Json(JsonNode body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
 

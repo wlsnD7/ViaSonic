@@ -34,11 +34,11 @@ public sealed partial class HotkeysPage : Page
             b.Value = hk[(string)b.Tag]?.GetValue<string>() ?? "";
         Paused.IsOn = A.Bool("hotkeys_paused");
         var o = A.Sub("overlay");
-        HideAfter.IsOn = o["hide_after_send"]?.GetValue<bool>() ?? true;
-        RestoreFocus.IsOn = o["restore_focus"]?.GetValue<bool>() ?? true;
-        OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? App.ToDouble(op) : 0.75) * 100);
+        HideAfter.IsOn = o.Bool("hide_after_send", true);
+        RestoreFocus.IsOn = o.Bool("restore_focus", true);
+        OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? Json.ToDouble(op) : 0.75) * 100);
         OpacityText.Text = $"{OpacitySlider.Value:0}%";
-        WidthSlider.Value = Math.Round(App.ToDouble(o["width_ratio"]) * 100);
+        WidthSlider.Value = Math.Round(o.Num("width_ratio") * 100);
         WidthText.Text = $"{WidthSlider.Value:0}%";
         LoadPosition();
         ShowErrors();
@@ -57,9 +57,9 @@ public sealed partial class HotkeysPage : Page
     private void LoadPosition()
     {
         var o = A.Sub("overlay");
-        XSlider.Value = Math.Round((o["x_ratio"] is { } x ? App.ToDouble(x) : 0.5) * 100);
+        XSlider.Value = Math.Round((o["x_ratio"] is { } x ? Json.ToDouble(x) : 0.5) * 100);
         XText.Text = $"{XSlider.Value:0}%";
-        Bottom.Value = App.ToDouble(o["bottom_offset"]);
+        Bottom.Value = o.Num("bottom_offset");
     }
 
     /// <summary>拖动输入框后刷新水平位置和底部距离。</summary>

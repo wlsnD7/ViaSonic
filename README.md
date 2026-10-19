@@ -98,6 +98,7 @@ AI 变声（RVC）需要 NVIDIA 显卡和 RVC 整合包。从 [lj1995/VoiceConve
 ```
 ViaSonic/
 ├─ ui/               界面与音频（C# / WinUI 3）
+├─ tests/            单元测试（xUnit）
 ├─ gsv_server.py     GPT-SoVITS 合成服务
 ├─ rvc_server.py     RVC 实时变声进程
 ├─ installer/        Inno Setup 安装脚本
@@ -117,6 +118,13 @@ ViaSonic/
 ```
 dotnet publish ui -c Release -p:Platform=x64 -o app
 ISCC installer\ViaSonic.iss
+```
+
+### 测试
+
+```
+dotnet test tests/ViaSonic.Tests
+python -I tools/check_lang.py
 ```
 
 

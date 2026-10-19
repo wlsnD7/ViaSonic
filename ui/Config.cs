@@ -143,21 +143,35 @@ public static class ConfigStore
             }
         }
 
+        var cfg = Normalize(raw, Lang.SystemDefault());
+        Save(cfg);
+        return cfg;
+    }
+
+    /// <summary>
+    /// 读出来的配置（可能是旧版本的、手改坏的，或者 null＝全新安装）补齐默认值、做版本迁移。
+    /// 类型和默认值对不上的项（比如该是列表的地方写成了 null）丢掉，用默认值。
+    /// </summary>
+    internal static JsonObject Normalize(JsonObject? raw, string systemLang)
+    {
         var cfg = Defaults();
         if (raw != null)
         {
             foreach (var (k, v) in raw)
             {
-                if (!cfg.ContainsKey(k)) continue;
-                if (v is JsonObject sub && cfg[k] is JsonObject def)
-                    foreach (var (sk, sv) in sub) def[sk] = sv?.DeepClone();
-                else cfg[k] = v?.DeepClone();
+                if (!cfg.TryGetPropertyValue(k, out var def) || !SameKind(def, v)) continue;
+                if (def is JsonObject sub)
+                {
+                    foreach (var (sk, sv) in v!.AsObject())
+                        if (!sub.TryGetPropertyValue(sk, out var sd) || SameKind(sd, sv)) sub[sk] = sv?.DeepClone();
+                }
+                else cfg[k] = v!.DeepClone();
             }
         }
 
-        if (string.IsNullOrEmpty(cfg["language"]?.GetValue<string>()))
+        if (string.IsNullOrEmpty(cfg.Str("language")))
         {
-            var lang = Lang.SystemDefault();
+            var lang = systemLang;
             cfg["language"] = lang;
             // 全新安装且是英文时，默认音色和合成语言也用英文；老配置升级只补语言，不动已有设置
             if (raw == null && lang == "en")
@@ -170,15 +184,15 @@ public static class ConfigStore
                 cfg["minimax_region"] = "intl";
             }
         }
-        Lang.Init(cfg["language"]!.GetValue<string>());
+        Lang.Init(cfg.Str("language"));
         if (cfg["gsv_models"] is not JsonArray) cfg["gsv_models"] = new JsonArray();
         var models = cfg["gsv_models"]!.AsArray();
         var cur = cfg["gsv_model"]?.GetValue<string>();
         if (!models.Any(m => m?["id"]?.GetValue<string>() == cur))
-            cfg["gsv_model"] = models.Count > 0 ? models[0]!["id"]!.GetValue<string>() : "";
+            cfg["gsv_model"] = models.Count > 0 ? models[0].Str("id") : "";
         MigrateVoices(cfg, raw);
         // 2.0 测试版的「监听麦克风」在变声页（fx_monitor），现在挪到音频页的麦克风直通下面
-        if (raw?["fx_monitor"] is JsonValue fm && raw["mic_monitor"] == null) cfg["mic_monitor"] = fm.GetValue<bool>();
+        if (raw?["fx_monitor"] is JsonValue fm && fm.TryGetValue<bool>(out var fmOn) && raw["mic_monitor"] == null) cfg["mic_monitor"] = fmOn;
         // 2.0 之前音频音量只有一个，监听的那个先用同样的值
         if (raw?["sound_volume"] is JsonValue soundVol && raw["sound_monitor_volume"] == null) cfg["sound_monitor_volume"] = soundVol.DeepClone();
         FixPresets(cfg);
@@ -191,9 +205,15 @@ public static class ConfigStore
             p["volume"] ??= 1.0;
             p["loop"] ??= false;
         }
-
-        Save(cfg);
         return cfg;
+    }
+
+    /// <summary>同一种 JSON 类型：对象、列表、字符串、数字、布尔（true/false 算一种）。</summary>
+    private static bool SameKind(JsonNode? a, JsonNode? b)
+    {
+        if (a == null || b == null) return false;
+        static JsonValueKind K(JsonNode n) => n.GetValueKind() is JsonValueKind.False ? JsonValueKind.True : n.GetValueKind();
+        return K(a) == K(b);
     }
 
     public static JsonObject NewPreset(string name, JsonObject effects) => new()
@@ -224,8 +244,8 @@ public static class ConfigStore
             if (p["effects"] is not JsonObject e) p["effects"] = e = defaults.DeepClone().AsObject();
             Fill(e);
         }
-        var id = cfg["fx_preset"]?.GetValue<string>() ?? "";
-        if (!presets.Any(p => p?["id"]?.GetValue<string>() == id)) cfg["fx_preset"] = presets[0]!["id"]!.GetValue<string>();
+        var id = cfg.Str("fx_preset");
+        if (!presets.Any(p => p?["id"]?.GetValue<string>() == id)) cfg["fx_preset"] = presets[0].Str("id");
     }
 
     /// <summary>1.3.0 只记当前音色：正在用的自定义音色 ID 放进添加的音色列表，切换后不会丢。</summary>

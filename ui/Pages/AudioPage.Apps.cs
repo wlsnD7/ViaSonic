@@ -24,7 +24,6 @@ public sealed partial class AudioPage
 
     private JsonArray Apps => A.Config["app_audio_apps"]!.AsArray();
 
-    private static string Field(JsonNode? a, string key) => a?[key]?.GetValue<string>() ?? "";
 
     private void InitApps()
     {
@@ -69,7 +68,7 @@ public sealed partial class AudioPage
 
     private SettingsCard AppCard(JsonObject a)
     {
-        var exe = Field(a, "exe");
+        var exe = a.Str("exe");
         var notRunning = new TextBlock
         {
             Text = T("未运行"),
@@ -78,7 +77,7 @@ public sealed partial class AudioPage
         };
         _notRunning[exe] = notRunning;
         var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        title.Children.Add(new TextBlock { Text = Field(a, "name") is { Length: > 0 } n ? n : exe });
+        title.Children.Add(new TextBlock { Text = a.Str("name") is { Length: > 0 } n ? n : exe });
         title.Children.Add(notRunning);
         // 电平条：送进虚拟麦克风的音量（已乘上这个应用的音量）
         var bar = new Border
@@ -98,7 +97,7 @@ public sealed partial class AudioPage
         header.Children.Add(meter);
 
         var volText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 40, TextAlignment = TextAlignment.Right };
-        var vol = new Slider { Width = 220, Minimum = 0, Maximum = 150, StepFrequency = 5, Value = Math.Round(App.ToDouble(a["volume"]) * 100) };
+        var vol = new Slider { Width = 220, Minimum = 0, Maximum = 150, StepFrequency = 5, Value = Math.Round(a.Num("volume") * 100) };
         volText.Text = $"{vol.Value:0}%";
         vol.ValueChanged += (_, e) =>
         {
@@ -124,7 +123,7 @@ public sealed partial class AudioPage
         content.Children.Add(remove);
 
         var icon = new ImageIcon { Width = 20, Height = 20 };
-        _ = LoadIcon(icon, Field(a, "path"));
+        _ = LoadIcon(icon, a.Str("path"));
         return new SettingsCard { Header = header, HeaderIcon = icon, Content = content };
     }
 
@@ -147,7 +146,7 @@ public sealed partial class AudioPage
     {
         foreach (var (exe, m) in _meters.ToList())
         {
-            float peak = A.Speaker.Player.AppLevel(exe);
+            float peak = A.Player.AppLevel(exe);
             double v = peak <= 0 ? 0 : Math.Clamp((20 * Math.Log10(peak) + 50) / 50, 0, 1);
             double shown = Math.Max(v, m.Shown - 0.06);
             if (shown < 0.01) shown = 0;
@@ -182,7 +181,7 @@ public sealed partial class AudioPage
         List<Procs.AppInfo> playing;
         try { playing = await Task.Run(Procs.Playing); }
         finally { button.IsEnabled = true; }
-        var added = new HashSet<string>(Apps.Select(a => Field(a, "exe")), StringComparer.OrdinalIgnoreCase);
+        var added = new HashSet<string>(Apps.Select(a => a.Str("exe")), StringComparer.OrdinalIgnoreCase);
         playing = playing.Where(p => !added.Contains(p.Exe)).ToList();
         var menu = new MenuFlyout { Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedLeft };
         foreach (var p in playing)
@@ -214,7 +213,7 @@ public sealed partial class AudioPage
     private void AddApp(string exe, string path, string name)
     {
         if (exe.Equals(Path.GetFileName(Environment.ProcessPath), StringComparison.OrdinalIgnoreCase)) return; // ViaSonic 自己
-        if (Apps.Any(a => Field(a, "exe").Equals(exe, StringComparison.OrdinalIgnoreCase))) return;
+        if (Apps.Any(a => a.Str("exe").Equals(exe, StringComparison.OrdinalIgnoreCase))) return;
         Apps.Add((JsonNode)new JsonObject { ["exe"] = exe, ["path"] = path, ["name"] = name, ["volume"] = 1.0 });
         A.Commit("app_audio_apps");
         FillApps();

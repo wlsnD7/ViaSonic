@@ -40,7 +40,7 @@ public sealed class Doubao(Func<JsonObject> cfg) : OnlineEngine(cfg)
                 {
                     ["format"] = "mp3",
                     ["sample_rate"] = 24000,
-                    ["speech_rate"] = Math.Clamp((int)N(c, "doubao_rate"), -50, 100),
+                    ["speech_rate"] = Math.Clamp((int)c.Num("doubao_rate"), -50, 100),
                 },
             },
         };

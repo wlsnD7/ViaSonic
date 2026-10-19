@@ -76,7 +76,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
     public void RefreshError(JsonObject c)
     {
         if (Loading || ErrorKind is not ("gsv_missing" or "model_missing")) return;
-        if (FindHome(c["gsv_home"]?.GetValue<string>() ?? "") == null)
+        if (FindHome(c.Str("gsv_home")) == null)
             SetState(false, false, T("找不到 GPT-SoVITS"), "gsv_missing");
         else if (CheckModel(CurrentModel(c)) is { } bad)
             SetState(Ready, false, bad, "model_missing");
@@ -105,7 +105,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
     /// <summary>加载引擎，或在已加载时切换到配置里当前的模型。非阻塞。</summary>
     public void Load(JsonObject c)
     {
-        var home = FindHome(c["gsv_home"]?.GetValue<string>() ?? "");
+        var home = FindHome(c.Str("gsv_home"));
         if (home == null)
         {
             SetState(false, false, T("找不到 GPT-SoVITS"), "gsv_missing");
@@ -118,7 +118,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             SetState(Ready, false, bad, "model_missing");
             return;
         }
-        var device = c["gsv_device"]?.GetValue<string>() ?? "cuda";
+        var device = c.Str("gsv_device", "cuda");
         if (_proc != null && (_home != home || _device != device)) StopProcess(); // 换了整合包或设备，重启服务
         SetState(Ready, true);
         var body = new JsonObject { ["model"] = model!.DeepClone(), ["lang"] = Lang.Current };
@@ -234,7 +234,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
                 continue;
             }
             bool loading = s["loading"]!.GetValue<bool>();
-            SetState(s["ready"]!.GetValue<bool>(), loading, s["error"]!.GetValue<string>(), s["kind"]!.GetValue<string>());
+            SetState(s["ready"]!.GetValue<bool>(), loading, s.Str("error"), s.Str("kind"));
             if (!loading) return;
             await Task.Delay(500);
         }
@@ -249,8 +249,8 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
             var rows = JsonNode.Parse(await _http.GetStringAsync(_base + $"logs?after={_logSeq}&lang={Lang.Current}"))!.AsArray();
             foreach (var r in rows)
             {
-                Log.Raw(r!["text"]!.GetValue<string>());
-                _logSeq = r["seq"]!.GetValue<int>();
+                Log.Raw(r.Str("text"));
+                _logSeq = (int)r.Num("seq");
             }
         }
         catch { }
@@ -264,8 +264,8 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         {
             ["text"] = text,
             ["model"] = CurrentModel(c)?.DeepClone(),
-            ["speed"] = App.ToDouble(c["gsv_speed"]),
-            ["text_lang"] = c["gsv_text_lang"]?.GetValue<string>() ?? "zh",
+            ["speed"] = c.Num("gsv_speed"),
+            ["text_lang"] = c.Str("gsv_text_lang", "zh"),
             ["lang"] = Lang.Current,
         };
         using var r = await PostAsync("synth", body, token);
@@ -273,7 +273,7 @@ public sealed class GsvEngine : ITtsEngine, IDisposable
         {
             var err = JsonNode.Parse(await r.Content.ReadAsStringAsync(token));
             await PullLogsAsync();
-            throw new TtsException(err?["error"]?.GetValue<string>() ?? T("合成失败"), err?["kind"]?.GetValue<string>() ?? "");
+            throw new TtsException(err?["error"]?.GetValue<string>() ?? T("合成失败"), err.Str("kind"));
         }
         var wav = await r.Content.ReadAsByteArrayAsync(token);
         _ = PullLogsAsync();

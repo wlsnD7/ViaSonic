@@ -11,7 +11,7 @@ public static class Secrets
 
     public static string Get(JsonObject c, string key)
     {
-        var v = c[key]?.GetValue<string>() ?? "";
+        var v = c.Str(key);
         if (!v.StartsWith(Prefix)) return v;
         try
         {

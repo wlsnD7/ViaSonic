@@ -55,7 +55,7 @@ public sealed class Playlist
     {
         if (Items.Count == 0) return;
         // 交叉过渡时旧歌按自己的结尾淡出放完；手动切歌时短暂淡出
-        if (crossfade <= 0) _app.Speaker.Player.FadeStopSound(SoundId, ShortFade);
+        if (crossfade <= 0) _app.Player.FadeStopSound(SoundId, ShortFade);
         _slot = 1 - _slot; // 新歌用另一个 id，和旧的重叠淡出
         Index = Math.Clamp(index, 0, Items.Count - 1);
         var path = CurrentPath;
@@ -65,7 +65,7 @@ public sealed class Playlist
         Paused = false;
         _length = 0;
         var fade = Crossfade;
-        _app.Speaker.Player.SetStart(SoundId, startAt);
+        _app.Player.SetStart(SoundId, startAt);
         _app.Speaker.PlaySound(SoundId, path, finished => Ended(gen, finished), cache: false,
             fadeIn: crossfade > 0 ? crossfade : ShortFade, fadeTail: fade, speed: () => Speed);
         _shuffleNext = null;
@@ -91,13 +91,13 @@ public sealed class Playlist
     public void Pause()
     {
         if (!Playing) return;
-        var p = _app.Speaker.Player.Progress(SoundId);
+        var p = _app.Player.Progress(SoundId);
         _pausedAt = p?.Pos ?? 0;
         if (p is { } pp) _length = pp.Len;
         Interlocked.Increment(ref _gen); // 停下来不算播完
         Playing = false;
         Paused = true;
-        _app.Speaker.Player.FadeStopSound(SoundId, ShortFade);
+        _app.Player.FadeStopSound(SoundId, ShortFade);
         Changed?.Invoke();
     }
 
@@ -112,7 +112,7 @@ public sealed class Playlist
 
     public void Seek(double seconds)
     {
-        if (Playing) _app.Speaker.Player.Seek(SoundId, seconds);
+        if (Playing) _app.Player.Seek(SoundId, seconds);
         else if (Paused) _pausedAt = seconds;
         Changed?.Invoke();
     }
@@ -120,7 +120,7 @@ public sealed class Playlist
     /// <summary>当前位置和总长（秒）；没有在放也没暂停时为 null。</summary>
     public (double Pos, double Len)? Progress()
     {
-        if (Playing && _app.Speaker.Player.Progress(SoundId) is { } p)
+        if (Playing && _app.Player.Progress(SoundId) is { } p)
         {
             _length = p.Len;
             return p;
@@ -160,7 +160,7 @@ public sealed class Playlist
         int gen = Volatile.Read(ref _gen);
         if (!Playing || fade <= 0 || _crossedGen == gen || Items.Count == 0) return;
         double speed = Speed;
-        if (_app.Speaker.Player.Progress(SoundId) is not { } p || p.Len / speed < fade * 2 || (p.Len - p.Pos) / speed > fade) return;
+        if (_app.Player.Progress(SoundId) is not { } p || p.Len / speed < fade * 2 || (p.Len - p.Pos) / speed > fade) return;
         _crossedGen = gen;
         _app.Post(() =>
         {
@@ -190,7 +190,7 @@ public sealed class Playlist
         if (i < 0 && (Playing || Paused))
         {
             Interlocked.Increment(ref _gen);
-            _app.Speaker.Player.FadeStopSound(SoundId, ShortFade);
+            _app.Player.FadeStopSound(SoundId, ShortFade);
             Playing = Paused = false;
         }
         Index = i;

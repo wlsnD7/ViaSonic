@@ -75,6 +75,31 @@ public sealed class RvcHost : IDisposable
 
     public void Dispose() => Want(null);
 
+    private (string? Key, string? Home) _home = (null, null); // Key == null：还没找过
+    private (string Model, string Index) _index = ("", "");
+
+    /// <summary>整合包目录（找过一次就缓存，设置变了再找）；没找到或是旧版时为 null。</summary>
+    public string? Home(string configured)
+    {
+        if (_home.Key != configured) _home = (configured, FindHome(configured));
+        return _home.Home;
+    }
+
+    /// <summary>按当前组合设置：参数立即生效，模型等变了才重启进程；用不到时停掉释放显存。返回要不要接到麦克风上。</summary>
+    public bool Configure(JsonObject cfg, bool wanted)
+    {
+        var r = (cfg["fx_effects"] as JsonObject)?["rvc"] as JsonObject;
+        var model = r.Str("model");
+        Live = new Params((float)r.Num("pitch"), (float)r.Num("formant"),
+            (float)(r.Num("index") / 100), (float)(r.Num("rms") / 100), (float)r.Num("gate"), (int)cfg.Num("rvc_f0"));
+        var home = Home(cfg.Str("rvc_home"));
+        bool on = wanted && r.Bool("on") && model.Length > 0 && IsHome(home) && File.Exists(model);
+        if (on && _index.Model != model + "|" + home) _index = (model + "|" + home, FindIndex(model, home));
+        Want(on ? new Options(home!, model, _index.Index, (int)cfg.Num("rvc_block_ms"),
+            (int)cfg.Num("rvc_crossfade_ms"), (int)cfg.Num("rvc_extra_ms")) : null);
+        return on;
+    }
+
     // ------------------------------------------------------------------ 整合包与模型
     /// <summary>新版整合包：runtime\python.exe + infer\rtrvc.py。</summary>
     public static bool IsHome(string? dir) =>

@@ -45,8 +45,8 @@ public sealed class MiniMax(Func<JsonObject> cfg) : OnlineEngine(cfg)
         foreach (var k in new[] { "voice_cloning", "voice_generation", "system_voice" })
             foreach (var v in j[k]?.AsArray().OfType<JsonObject>() ?? [])
             {
-                var id = v["voice_id"]?.GetValue<string>() ?? "";
-                if (id.Length > 0) list.Add((id, v["voice_name"]?.GetValue<string>() is { Length: > 0 } n ? n : id));
+                var id = v.Str("voice_id");
+                if (id.Length > 0) list.Add((id, v.Str("voice_name") is { Length: > 0 } n ? n : id));
             }
         _voices = (cacheKey, list);
         return list;
@@ -63,7 +63,7 @@ public sealed class MiniMax(Func<JsonObject> cfg) : OnlineEngine(cfg)
             ["voice_setting"] = new JsonObject
             {
                 ["voice_id"] = S(c, "minimax_voice", "male-qn-qingse"),
-                ["speed"] = Math.Clamp(N(c, "minimax_speed"), 0.5, 2.0),
+                ["speed"] = Math.Clamp(c.Num("minimax_speed"), 0.5, 2.0),
             },
             ["audio_setting"] = new JsonObject { ["format"] = "mp3", ["sample_rate"] = 32000, ["bitrate"] = 128000, ["channel"] = 1 },
             ["output_format"] = "hex",
@@ -71,7 +71,7 @@ public sealed class MiniMax(Func<JsonObject> cfg) : OnlineEngine(cfg)
         using var req = Post("/v1/t2a_v2", c, body);
         using var r = await SendAsync(req, token);
         var j = Check(await r.Content.ReadAsStringAsync(token));
-        var hex = j["data"]?["audio"]?.GetValue<string>() ?? "";
+        var hex = j["data"].Str("audio");
         return Decode(Convert.FromHexString(hex));
     }
 }

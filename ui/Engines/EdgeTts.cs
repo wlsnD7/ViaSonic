@@ -7,26 +7,6 @@ using ViaSonic.Audio;
 
 namespace ViaSonic.Engines;
 
-public class TtsException(string message, string kind = "") : Exception(message)
-{
-    /// <summary>gsv_missing（没装 GPT-SoVITS）/ model_missing（模型文件不全）/ 空。</summary>
-    public string Kind { get; } = kind;
-}
-
-public interface ITtsEngine
-{
-    string Key { get; }
-    string Label { get; }
-    bool Ready { get; }
-    bool Loading { get; }
-    string Error { get; }
-    string ErrorKind { get; }
-    /// <summary>参数变化时缓存失效。</summary>
-    string CacheKey(JsonObject cfg);
-    void Load(JsonObject cfg);
-    Task<Clip> SynthAsync(string text, JsonObject cfg, CancellationToken token);
-}
-
 /// <summary>微软 Edge 朗读接口（免费，需联网）。协议参照 rany2/edge-tts。</summary>
 public sealed class EdgeTts : ITtsEngine
 {
@@ -106,8 +86,8 @@ public sealed class EdgeTts : ITtsEngine
 
     private async Task<Clip> SynthOnceAsync(string text, JsonObject c, CancellationToken token)
     {
-        var voice = c["edge_voice"]?.GetValue<string>() ?? "zh-CN-YunxiNeural";
-        int rate = (int)App.ToDouble(c["edge_rate"]);
+        var voice = c.Str("edge_voice", "zh-CN-YunxiNeural");
+        int rate = (int)c.Num("edge_rate");
         string Id() => Guid.NewGuid().ToString("N");
 
         using var ws = new ClientWebSocket();

@@ -52,7 +52,7 @@ public sealed partial class PhrasesPage
         HighlightCurrent();
     });
 
-    private void Tab_Click(object sender, RoutedEventArgs e) => ShowTab(sender == TabPlaylist);
+    private void Tab_Click(object sender, RoutedEventArgs e) => ShowTab(ReferenceEquals(sender, TabPlaylist));
 
     private void ShowTab(bool playlist)
     {
@@ -70,8 +70,8 @@ public sealed partial class PhrasesPage
         int i = 0;
         foreach (var item in Pl.Items.OfType<JsonObject>())
         {
-            var id = item["id"]?.GetValue<string>() ?? "";
-            var path = item["path"]?.GetValue<string>() ?? "";
+            var id = item.Str("id");
+            var path = item.Str("path");
             PlList.Items.Add(Row(id, path, ++i));
         }
         PlEmpty.Visibility = Pl.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -145,7 +145,7 @@ public sealed partial class PhrasesPage
     /// <summary>加到列表末尾；列表里已有的文件（按路径，不分大小写）跳过。</summary>
     private void AddTracks(IEnumerable<string> paths)
     {
-        var have = new HashSet<string>(Pl.Items.Select(x => x?["path"]?.GetValue<string>() ?? ""), StringComparer.OrdinalIgnoreCase);
+        var have = new HashSet<string>(Pl.Items.Select(x => x.Str("path")), StringComparer.OrdinalIgnoreCase);
         int n = 0;
         foreach (var p in paths)
         {
@@ -173,7 +173,7 @@ public sealed partial class PhrasesPage
     private void PlList_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
     {
         var current = Pl.CurrentId;
-        var byId = Pl.Items.OfType<JsonObject>().ToDictionary(x => x["id"]?.GetValue<string>() ?? "");
+        var byId = Pl.Items.OfType<JsonObject>().ToDictionary(x => x.Str("id"));
         var order = PlList.Items.OfType<Grid>().Select(g => (string)g.Tag).Where(byId.ContainsKey).ToList();
         Pl.Items.Clear();
         foreach (var id in order) Pl.Items.Add((JsonNode)byId[id].DeepClone());
@@ -265,7 +265,7 @@ public sealed partial class PhrasesPage
         WinRT.Interop.InitializeWithWindow.Initialize(picker, A.Main.Hwnd);
         var file = await picker.PickSaveFileAsync();
         if (file == null) return;
-        var lines = Pl.Items.OfType<JsonObject>().Select(x => x["path"]?.GetValue<string>() ?? "").Where(x => x.Length > 0);
+        var lines = Pl.Items.OfType<JsonObject>().Select(x => x.Str("path")).Where(x => x.Length > 0);
         try
         {
             await File.WriteAllTextAsync(file.Path, "#EXTM3U\r\n" + string.Concat(lines.Select(l => l + "\r\n")), new UTF8Encoding(false));

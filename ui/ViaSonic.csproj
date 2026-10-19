@@ -6,7 +6,7 @@
     <RootNamespace>ViaSonic</RootNamespace>
     <AssemblyName>ViaSonic</AssemblyName>
     <!-- 版本号只改这里，安装包从 exe 里读取 -->
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -38,6 +38,9 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="ViaSonic.Lang" Static="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ViaSonic.Tests" />
   </ItemGroup>
   <!-- Windows App SDK 自带 88 种语言的控件文字（.mui），软件界面只有中英文，只保留这两种；其他系统语言会退回英文 -->
   <Target Name="TrimWinUILanguages" AfterTargets="Publish">

@@ -51,7 +51,7 @@ public static class RandomVoice
     };
 
     /// <summary>文字的主要语言：有汉字算中文，有假名算日语，有谚文算韩语，其他算英语。</summary>
-    private static string TextLang(string text)
+    internal static string TextLang(string text)
     {
         bool han = false;
         foreach (var ch in text)
@@ -69,11 +69,10 @@ public static class RandomVoice
 
     private static async Task<List<string>> VoicesAsync(string key, ITtsEngine eng, JsonObject c, string lang)
     {
-        string Str(string k) => c[k]?.GetValue<string>() ?? "";
         List<string> Saved(string engine, string model = "") =>
             c[engine + "_voices"]?.AsArray().OfType<JsonObject>()
-                .Where(v => engine == "fish" || (v["model"]?.GetValue<string>() ?? "") == model)
-                .Select(v => v["id"]?.GetValue<string>() ?? "").Where(id => id.Length > 0).ToList() ?? [];
+                .Where(v => engine == "fish" || v.Str("model") == model)
+                .Select(v => v.Str("id")).Where(id => id.Length > 0).ToList() ?? [];
         // 豆包的音色 ID 以语言开头（zh_、en_ …），MiniMax 的英文音色以 English_ 开头
         static string IdLocale(string id)
         {
@@ -105,11 +104,11 @@ public static class RandomVoice
                     catch (Exception e) { Log.Warn(e.Message); _fish = (DateTime.UtcNow, []); }
                 }
                 fish.AddRange(_fish!.Value.Ids);
-                if (Str("fish_voice").Length > 0) fish.Add(Str("fish_voice"));
+                if (c.Str("fish_voice").Length > 0) fish.Add(c.Str("fish_voice"));
                 return fish.Distinct().ToList();
             case "doubao":
             case "bailian":
-                var model = Str(key + "_model");
+                var model = c.Str(key + "_model");
                 var presets = key == "doubao" ? Doubao.Presets(model) : Bailian.Presets(model);
                 return presets.Select(v => v.Id).Concat(Saved(key, model))
                     .Where(id => key == "bailian" || Fits(IdLocale(id), lang)).Distinct().ToList();

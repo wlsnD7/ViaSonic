@@ -97,6 +97,7 @@ Closing the main window keeps ViaSonic running in the background. Right-click th
 ```
 ViaSonic/
 ├─ ui/               UI and audio (C# / WinUI 3)
+├─ tests/            Unit tests (xUnit)
 ├─ gsv_server.py     GPT-SoVITS synthesis service
 ├─ rvc_server.py     RVC real-time voice conversion process
 ├─ installer/        Inno Setup script
@@ -116,6 +117,13 @@ Requires .NET 8 SDK and Inno Setup 6:
 ```
 dotnet publish ui -c Release -p:Platform=x64 -o app
 ISCC installer\ViaSonic.iss
+```
+
+### Tests
+
+```
+dotnet test tests/ViaSonic.Tests
+python -I tools/check_lang.py
 ```
 
 

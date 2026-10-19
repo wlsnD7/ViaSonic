@@ -210,9 +210,9 @@ public sealed partial class OverlayWindow : Window
     private void Place()
     {
         var o = A.Sub("overlay");
-        double ratio = Math.Clamp(App.ToDouble(o["width_ratio"]), 0.1, 0.95);
-        double xr = o["x_ratio"] is { } x ? Math.Clamp(App.ToDouble(x), 0, 1) : 0.5;
-        int bottom = (int)App.ToDouble(o["bottom_offset"]);
+        double ratio = Math.Clamp(o.Num("width_ratio"), 0.1, 0.95);
+        double xr = o["x_ratio"] is { } x ? Math.Clamp(Json.ToDouble(x), 0, 1) : 0.5;
+        int bottom = (int)o.Num("bottom_offset");
         // 呼出前的窗口可能已经关了（游戏退出）：这时 GetFromWindowId 返回 null，改按主窗口所在的屏幕
         var anchor = _prev != IntPtr.Zero && Native.IsWindow(_prev) ? Win32Interop.GetWindowIdFromWindow(_prev) : A.Main.AppWindow.Id;
         var b = (DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary) ?? DisplayArea.Primary).OuterBounds;
@@ -227,7 +227,7 @@ public sealed partial class OverlayWindow : Window
     private void ApplyBackground()
     {
         var o = A.Sub("overlay");
-        double op = o["opacity"] is { } v ? Math.Clamp(App.ToDouble(v), 0.2, 1) : 0.75;
+        double op = o["opacity"] is { } v ? Math.Clamp(Json.ToDouble(v), 0.2, 1) : 0.75;
         byte alpha = (byte)Math.Round(op * 255);
         bool dark = _root.ActualTheme == ElementTheme.Dark;
         byte c = dark ? (byte)0x20 : (byte)0xF3;
@@ -307,7 +307,7 @@ public sealed partial class OverlayWindow : Window
         _box.Text = "";
         _visible = false;
         AppWindow.Hide();
-        if (restore && (A.Sub("overlay")["restore_focus"]?.GetValue<bool>() ?? true) && _prev != IntPtr.Zero)
+        if (restore && A.Sub("overlay").Bool("restore_focus", true) && _prev != IntPtr.Zero)
             Native.ForceForeground(_prev);
     }
 
@@ -395,7 +395,7 @@ public sealed partial class OverlayWindow : Window
         _box.Opacity = 0.65;
         _lingering = true;
         _sawBusy = false;
-        if ((o["restore_focus"]?.GetValue<bool>() ?? true) && _prev != IntPtr.Zero) Native.ForceForeground(_prev);
+        if (o.Bool("restore_focus", true) && _prev != IntPtr.Zero) Native.ForceForeground(_prev);
         _lingerTimer = DispatcherQueue.CreateTimer();
         _lingerTimer.Interval = TimeSpan.FromSeconds(4);
         _lingerTimer.IsRepeating = true;
@@ -412,7 +412,7 @@ public sealed partial class OverlayWindow : Window
     private void OnStateChanged()
     {
         if (!_lingering) return;
-        var busy = A.State["busy"]?.GetValue<string>() ?? "";
+        var busy = A.State.Busy;
         if (busy.Length > 0) _sawBusy = true;
         else if (_sawBusy) EndLinger();
     }
@@ -432,7 +432,7 @@ public sealed partial class OverlayWindow : Window
         if (!_lingering) return;
         StopLinger();
         _box.Text = "";
-        if (A.Sub("overlay")["hide_after_send"]?.GetValue<bool>() ?? true)
+        if (A.Sub("overlay").Bool("hide_after_send", true))
         {
             _visible = false;
             AppWindow.Hide();

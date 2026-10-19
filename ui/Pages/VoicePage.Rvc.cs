@@ -35,7 +35,7 @@ public sealed partial class VoicePage
     private readonly TextBlock[] _rvcValues = new TextBlock[RvcParams.Length];
     private DispatcherTimer? _rvcTimer;
 
-    private static RvcHost Host => A.Speaker.Player.Rvc;
+    private static RvcHost Host => A.Player.Rvc;
     private JsonObject Rvc => Effects["rvc"]!.AsObject();
     private JsonArray AddedModels => A.Config["rvc_models"]!.AsArray();
 
@@ -86,12 +86,12 @@ public sealed partial class VoicePage
     {
         bool was = _init;
         _init = true;
-        RvcOn.IsOn = Rvc["on"]?.GetValue<bool>() ?? false;
+        RvcOn.IsOn = Rvc.Bool("on");
         FillRvcModels();
         for (int i = 0; i < RvcParams.Length; i++)
         {
             var p = RvcParams[i];
-            _rvcKnobs[i].Value = Math.Clamp(Rvc[p.Key] is { } n ? App.ToDouble(n) : p.Default, p.Min, p.Max);
+            _rvcKnobs[i].Value = Math.Clamp(Rvc[p.Key] is { } n ? Json.ToDouble(n) : p.Default, p.Min, p.Max);
             _rvcValues[i].Text = RvcFormat(p, _rvcKnobs[i].Value);
         }
         RvcF0.SelectedIndex = Math.Clamp((int)A.Num("rvc_f0"), 0, 2);
@@ -110,8 +110,8 @@ public sealed partial class VoicePage
     {
         bool was = _init;
         _init = true;
-        var current = Rvc["model"]?.GetValue<string>() ?? "";
-        var paths = RvcHost.Models(A.Speaker.Player.RvcHome, AddedModels);
+        var current = Rvc.Str("model");
+        var paths = RvcHost.Models(Host.Home(A.Str("rvc_home")), AddedModels);
         if (current.Length > 0 && !paths.Contains(current, StringComparer.OrdinalIgnoreCase)) paths.Add(current); // 组合里存的模型不在列表里也显示
         var items = paths.Select(p => new ComboBoxItem { Content = Path.GetFileNameWithoutExtension(p), Tag = p }).ToList();
         RvcModel.ItemsSource = items;
@@ -124,7 +124,7 @@ public sealed partial class VoicePage
     private void UpdateRvc()
     {
         bool on = RvcOn.IsOn;
-        var home = A.Speaker.Player.RvcHome;
+        var home = Host.Home(A.Str("rvc_home"));
         string title = "", message = "";
         var severity = InfoBarSeverity.Warning;
         Uri? link = null;
@@ -184,7 +184,7 @@ public sealed partial class VoicePage
         if (_init) return;
         Rvc["on"] = RvcOn.IsOn;
         // 打开时还没选模型：用列表里第一个
-        if (RvcOn.IsOn && (Rvc["model"]?.GetValue<string>() ?? "").Length == 0 && RvcModel.Items.Count > 0)
+        if (RvcOn.IsOn && Rvc.Str("model").Length == 0 && RvcModel.Items.Count > 0)
         {
             Rvc["model"] = (string)((ComboBoxItem)RvcModel.Items[0]).Tag;
             FillRvcModels();
@@ -230,12 +230,12 @@ public sealed partial class VoicePage
 
     private void RvcDel_Click(object sender, RoutedEventArgs e)
     {
-        var current = Rvc["model"]?.GetValue<string>() ?? "";
+        var current = Rvc.Str("model");
         var added = AddedModels.FirstOrDefault(m => string.Equals(m?.GetValue<string>(), current, StringComparison.OrdinalIgnoreCase));
         if (added == null) return;
         AddedModels.Remove(added);
         A.Commit("rvc_models");
-        Rvc["model"] = RvcHost.Models(A.Speaker.Player.RvcHome, AddedModels).FirstOrDefault() ?? "";
+        Rvc["model"] = RvcHost.Models(Host.Home(A.Str("rvc_home")), AddedModels).FirstOrDefault() ?? "";
         FillRvcModels();
         CommitRvc();
     }

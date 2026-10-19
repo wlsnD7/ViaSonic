@@ -28,7 +28,7 @@ public sealed class FishAudio(Func<JsonObject> cfg) : OnlineEngine(cfg)
         using var r = await SendAsync(req, CancellationToken.None);
         var j = JsonNode.Parse(await r.Content.ReadAsStringAsync())!;
         return j["items"]?.AsArray().OfType<JsonObject>()
-                   .Select(m => (m["_id"]?.GetValue<string>() ?? "", m["title"]?.GetValue<string>() ?? ""))
+                   .Select(m => (m.Str("_id"), m.Str("title")))
                    .Where(m => m.Item1.Length > 0).ToList() ?? [];
     }
 
@@ -54,7 +54,7 @@ public sealed class FishAudio(Func<JsonObject> cfg) : OnlineEngine(cfg)
         {
             ["text"] = text,
             ["format"] = "mp3",
-            ["prosody"] = new JsonObject { ["speed"] = Math.Clamp(N(c, "fish_speed"), 0.5, 2.0) },
+            ["prosody"] = new JsonObject { ["speed"] = Math.Clamp(c.Num("fish_speed"), 0.5, 2.0) },
         };
         var voice = S(c, "fish_voice");
         if (voice.Length > 0) body["reference_id"] = voice;

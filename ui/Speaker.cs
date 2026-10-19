@@ -23,7 +23,7 @@ public sealed class Speaker : IDisposable
 
     public Dictionary<string, ITtsEngine> Engines { get; }
     public GsvEngine Gsv { get; } = new();
-    public Player Player { get; }
+    private readonly Player _player;
     public string Busy { get; private set; } = "";
     public string LastText { get; private set; } = "";
     /// <summary>上一句朗读的生成耗时（毫秒），用缓存直接播放的不算；0＝还没合成过。</summary>
@@ -33,7 +33,7 @@ public sealed class Speaker : IDisposable
     public event Action? Changed;
     public event Action<string>? Failed;
 
-    public Speaker(Func<JsonObject> cfg)
+    public Speaker(Func<JsonObject> cfg, Player player)
     {
         _cfg = cfg;
         Engines = new()
@@ -49,13 +49,13 @@ public sealed class Speaker : IDisposable
             // 缺 GPT-SoVITS / 缺模型文件由主页提示条说明，这里只报意外错误
             if (Gsv.Error.Length > 0 && Gsv.ErrorKind.Length == 0) Failed?.Invoke(Gsv.Error);
         };
-        Player = new Player(cfg);
-        Player.PlayingChanged += p => SetBusy(p ? "播放中" : ""); // 翻译键
+        _player = player;
+        _player.PlayingChanged += p => SetBusy(p ? "播放中" : ""); // 翻译键
         _ = Task.Run(WorkerAsync);
     }
 
     private JsonObject C => _cfg();
-    private string CurrentKey => C["engine"]?.GetValue<string>() ?? "edge";
+    private string CurrentKey => C.Str("engine", "edge");
     public ITtsEngine Current => Engines.TryGetValue(CurrentKey, out var e) ? e : Engines["edge"];
 
     private void SetBusy(string s)
@@ -64,23 +64,13 @@ public sealed class Speaker : IDisposable
         Changed?.Invoke();
     }
 
-    public string StatusText
-    {
-        get
-        {
-            var e = Current;
-            var s = e is OnlineEngine { Ready: false } o ? o.Missing(C) : e.Ready ? T("就绪") : e.Loading ? T("加载中") : T("未加载");
-            return $"{e.Label} {s}";
-        }
-    }
-
     // ------------------------------------------------------------------ 引擎
     public void LoadEngine() => Current.Load(C);
 
     public void OnEngineChanged()
     {
         // 切走 GPT-SoVITS 时，没开「切换引擎后保持加载」就释放显存和内存
-        if (CurrentKey != "gsv" && !(C["gsv_keep_loaded"]?.GetValue<bool>() ?? true) && (Gsv.Ready || Gsv.Loading)) Gsv.Unload();
+        if (CurrentKey != "gsv" && !C.Bool("gsv_keep_loaded", true) && (Gsv.Ready || Gsv.Loading)) Gsv.Unload();
         Changed?.Invoke();
         if (!Current.Ready) Current.Load(C);
         else Preload();
@@ -101,7 +91,7 @@ public sealed class Speaker : IDisposable
         LastText = text;
         if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen); // 丢掉还没合成的旧句子
         // 随机音色只换朗读的句子，常用语不变
-        bool random = tag.Length == 0 && (C["random_voice"]?.GetValue<bool>() ?? false);
+        bool random = tag.Length == 0 && C.Bool("random_voice");
         _jobs.Writer.TryWrite(new Job(_gen, text, cache && !random, true, tag, Random: random));
     }
 
@@ -129,14 +119,14 @@ public sealed class Speaker : IDisposable
     public void Stop()
     {
         Interlocked.Increment(ref _gen);
-        Player.Stop();
+        _player.Stop();
     }
 
     /// <summary>只停止语音（包括还没合成完的）。</summary>
     public void StopSpeech()
     {
         Interlocked.Increment(ref _gen);
-        Player.StopSpeech();
+        _player.StopSpeech();
     }
 
     /// <summary>常用语的音频文件，和语音叠加播放。</summary>
@@ -177,7 +167,7 @@ public sealed class Speaker : IDisposable
                         _files[path] = (mtime, clip);
                     }
             }
-            Player.PlaySound(id, clip, ended: ended, fadeIn: fadeIn, fadeTail: fadeTail, speed: speed);
+            _player.PlaySound(id, clip, ended: ended, fadeIn: fadeIn, fadeTail: fadeTail, speed: speed);
         }
         catch (Exception e)
         {
@@ -289,25 +279,24 @@ public sealed class Speaker : IDisposable
             }
             if (job.Export != null)
             {
-                if (Player.Playing) SetBusy("播放中"); // 翻译键
+                if (_player.Playing) SetBusy("播放中"); // 翻译键
                 else SetBusy("");
                 job.Export.TrySetResult(clip);
                 continue;
             }
-            if (job.Play && Player.SpeechFx.On.Count > 0)
+            if (job.Play && _player.SpeechFx.On.Count > 0)
             {
-                try { clip = VoiceFx.ProcessClip(clip, Player.SpeechFx); } // 缓存里留原声，换效果后不用重新合成
+                try { clip = VoiceFx.ProcessClip(clip, _player.SpeechFx); } // 缓存里留原声，换效果后不用重新合成
                 catch (Exception e) { Log.Error(T("播放失败"), e); }
             }
-            if (job.Play && job.Sound && job.Gen == _gen) Player.PlaySound(job.Tag, clip, speech: true);
-            else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) Player.Play(clip, job.Tag);
+            if (job.Play && job.Sound && job.Gen == _gen) _player.PlaySound(job.Tag, clip, speech: true);
+            else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) _player.Play(clip, job.Tag);
             else if (job.Play) SetBusy("");
         }
     }
 
     public void Dispose()
     {
-        Player.Dispose();
         Gsv.Dispose();
     }
 }

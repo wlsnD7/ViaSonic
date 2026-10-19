@@ -20,8 +20,8 @@ public static class UpdateCheck
 
     public static async Task<Result> CheckAsync(string current)
     {
-        var github = Query(GitHubApi, r => r["html_url"]?.GetValue<string>() ?? "", current);
-        var gitee = Query(GiteeApi, r => GiteePage + Uri.EscapeDataString(r["tag_name"]?.GetValue<string>() ?? ""), current);
+        var github = Query(GitHubApi, r => r.Str("html_url"), current);
+        var gitee = Query(GiteeApi, r => GiteePage + Uri.EscapeDataString(r.Str("tag_name")), current);
         var found = (await Task.WhenAll(github, gitee)).ToList();
         var ok = found.Where(r => r != null).Select(r => r!).ToList();
         if (ok.Count == 0) return new Result(null, false);
@@ -45,7 +45,7 @@ public static class UpdateCheck
             http.DefaultRequestHeaders.UserAgent.ParseAdd($"ViaSonic/{current}");
             if (api == GitHubApi) http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
             var r = JsonNode.Parse(await http.GetStringAsync(api))!;
-            var tag = r["tag_name"]?.GetValue<string>() ?? "";
+            var tag = r.Str("tag_name");
             if (!Version.TryParse(tag.TrimStart('v', 'V'), out var v)) return null;
             return new Found(tag, v, url(r), watch.Elapsed);
         }

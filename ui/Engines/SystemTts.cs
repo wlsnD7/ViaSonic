@@ -33,13 +33,13 @@ public sealed class SystemTts : ITtsEngine
     public async Task<Clip> SynthAsync(string text, JsonObject c, CancellationToken token)
     {
         using var synth = new SpeechSynthesizer();
-        var want = c["sapi_voice"]?.GetValue<string>() ?? "";
+        var want = c.Str("sapi_voice");
         var voices = SpeechSynthesizer.AllVoices;
         var voice = voices.FirstOrDefault(v => v.Id == want)
                     ?? voices.FirstOrDefault(v => v.Language.StartsWith("zh", StringComparison.OrdinalIgnoreCase));
         if (voice != null) synth.Voice = voice;
         // 界面上是 -10 ~ 10，换算成 0.5x ~ 2.5x
-        double r = App.ToDouble(c["sapi_rate"]);
+        double r = c.Num("sapi_rate");
         synth.Options.SpeakingRate = r >= 0 ? 1 + r * 0.15 : 1 + r * 0.05;
         try
         {

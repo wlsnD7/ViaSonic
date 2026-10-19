@@ -26,7 +26,7 @@ public sealed partial class HomePage
         CustomUrl.Text = A.Str("custom_url");
         CustomHeaders.Text = Secrets.Get(A.Config, "custom_headers");
         CustomBody.Text = A.Str("custom_body");
-        foreach (var s in new[] { AzureRate, FishSpeed, DoubaoRate, BailianSpeed, MiniMaxSpeed })
+        foreach (var s in RateLabels.Keys)
         {
             s.Value = A.Num((string)s.Tag);
             ShowRate(s);
@@ -158,12 +158,19 @@ public sealed partial class HomePage
         _save.Run(() => A.Set(key, key.EndsWith("_rate") ? (int)s.Value : Math.Round(s.Value, 2)));
     }
 
+    private Dictionary<Slider, TextBlock>? _rateLabels;
+
+    /// <summary>联网服务的语速滑块和左边显示数值的文字。</summary>
+    private Dictionary<Slider, TextBlock> RateLabels => _rateLabels ??= new()
+    {
+        [AzureRate] = AzureRateText, [FishSpeed] = FishSpeedText, [DoubaoRate] = DoubaoRateText,
+        [BailianSpeed] = BailianSpeedText, [MiniMaxSpeed] = MiniMaxSpeedText,
+    };
+
     /// <summary>滑块左边的数值：*_rate 是百分比，*_speed 是倍数。</summary>
     private void ShowRate(Slider s)
     {
-        var text = s == AzureRate ? AzureRateText : s == FishSpeed ? FishSpeedText : s == DoubaoRate ? DoubaoRateText
-                 : s == BailianSpeed ? BailianSpeedText : MiniMaxSpeedText;
-        text.Text = ((string)s.Tag).EndsWith("_rate") ? $"{s.Value:+0;-0;0}%" : s.Value.ToString("0.00");
+        RateLabels[s].Text = ((string)s.Tag).EndsWith("_rate") ? $"{s.Value:+0;-0;0}%" : s.Value.ToString("0.00");
     }
 
     private void Text_Changed(object sender, TextChangedEventArgs e)
@@ -200,12 +207,12 @@ public sealed partial class HomePage
     private JsonArray SavedVoices(string engine) => A.Config[engine + "_voices"]!.AsArray();
 
     private List<JsonObject> SavedFor(string engine) =>
-        SavedVoices(engine).OfType<JsonObject>().Where(v => (v["model"]?.GetValue<string>() ?? "") == VoiceModel(engine)).ToList();
+        SavedVoices(engine).OfType<JsonObject>().Where(v => v.Str("model") == VoiceModel(engine)).ToList();
 
     /// <summary>下拉框里的全部音色：添加的在前，然后是预置或接口取到的。</summary>
     private List<(string Id, string Name, bool Saved)> VoiceList(string engine)
     {
-        var list = SavedFor(engine).Select(v => (Id: v["id"]!.GetValue<string>(), Name: v["name"]?.GetValue<string>() ?? "", Saved: true)).ToList();
+        var list = SavedFor(engine).Select(v => (Id: v.Str("id"), Name: v.Str("name"), Saved: true)).ToList();
         IEnumerable<(string Id, string Name)> builtIn = engine switch
         {
             "fish" => _fishMine,

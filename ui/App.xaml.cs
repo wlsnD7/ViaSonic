@@ -15,43 +15,30 @@ public partial class App : Application
     /// <summary>给合成、播放线程读的只读快照，每次修改配置后替换。</summary>
     private volatile JsonObject _snapshot = new();
 
+    public Player Player { get; private set; } = null!;
     public Speaker Speaker { get; private set; } = null!;
     public Playlist Playlist { get; private set; } = null!;
-    public JsonObject State { get; private set; } = new();
+    public AppState State { get; private set; } = AppState.Empty;
     /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
     public UpdateCheck.Release? NewRelease { get; set; }
-    public Dictionary<string, HotkeyError> HotkeyErrors { get; private set; } = [];
     public DispatcherQueue UI { get; private set; } = null!;
     public MainWindow Main { get; private set; } = null!;
     public OverlayWindow? Overlay { get; private set; }
 
     public event Action? StateChanged;
-    public event Action? HotkeyErrorsChanged;
     public event Action? ConfigReplaced;
     /// <summary>用快捷键开关了按键说话（音频页刷新开关）。</summary>
     public event Action? PttToggled;
 
-    private HotkeyManager? _hotkeys;
     private TrayIcon? _tray;
     private bool _trayHintShown;
 
     /// <summary>托盘菜单「退出」时为 true；否则关闭主窗口只是隐藏到托盘。</summary>
     public bool Exiting { get; private set; }
     private Debouncer? _save;
-    private int _suspend, _errorSeq;
+    private int _errorSeq;
     private string _lastError = "";
     private IntPtr _mutex;
-
-    public static readonly Dictionary<string, string> HotkeyLabels = new()
-    {
-        ["input"] = "打开/关闭输入框", // 翻译键
-        ["focus"] = "聚焦输入框", // 翻译键
-        ["stop"] = "停止", // 翻译键
-        ["repeat"] = "重复上一句", // 翻译键
-        ["ptt"] = "打开/关闭按键说话", // 翻译键
-        ["playlist"] = "播放/暂停音乐", // 翻译键
-        ["next"] = "下一首", // 翻译键
-    };
 
     public App()
     {
@@ -120,7 +107,8 @@ public partial class App : Application
         _snapshot = Config.DeepClone().AsObject();
         _save = new Debouncer(300);
 
-        Speaker = new Speaker(() => _snapshot);
+        Player = new Player(() => _snapshot);
+        Speaker = new Speaker(() => _snapshot, Player);
         Playlist = new Playlist(this);
         Speaker.Changed += () => Post(RefreshState);
         Speaker.Failed += msg => Post(() =>
@@ -162,44 +150,20 @@ public partial class App : Application
         return r.Ok;
     }
 
-    /// <summary>页面沿用的状态结构：engine / busy / error / error_seq / engines[]。</summary>
     private void RefreshState()
     {
-        var engines = new JsonArray();
-        foreach (var (key, e) in Speaker.Engines)
-            engines.Add((JsonNode)new JsonObject
-            {
-                ["key"] = key, ["label"] = e.Label, ["ready"] = e.Ready, ["loading"] = e.Loading,
-                ["error"] = e.Error, ["error_kind"] = e.ErrorKind,
-                ["missing"] = e is Engines.OnlineEngine o ? o.Missing(Config) : "",
-            });
-        State = new JsonObject
-        {
-            ["engine"] = Speaker.StatusText,
-            ["busy"] = Speaker.Busy,
-            ["error"] = _lastError,
-            ["error_seq"] = _errorSeq,
-            ["engine_key"] = Str("engine"),
-            ["engines"] = engines,
-        };
+        var engines = Speaker.Engines.Select(kv => new EngineState(kv.Key, kv.Value.Label, kv.Value.Ready, kv.Value.Loading,
+            kv.Value.Error, kv.Value.ErrorKind, kv.Value is Engines.OnlineEngine o ? o.Missing(Config) : "")).ToList();
+        State = new AppState(Speaker.Busy, _lastError, _errorSeq, engines);
         StateChanged?.Invoke();
     }
 
     // ------------------------------------------------------------------ 配置
-    public string Str(string key) => Config[key]?.GetValue<string>() ?? "";
-    public bool Bool(string key) => Config[key]?.GetValue<bool>() ?? false;
-    public double Num(string key) => ToDouble(Config[key]);
+    public string Str(string key) => Config.Str(key);
+    public bool Bool(string key) => Config.Bool(key);
+    public double Num(string key) => Config.Num(key);
     public JsonObject Sub(string key) => Config[key]!.AsObject();
     public JsonArray Phrases => Config["phrases"]!.AsArray();
-
-    public static double ToDouble(JsonNode? n)
-    {
-        if (n is not JsonValue v) return 0;
-        if (v.TryGetValue<double>(out var d)) return d;
-        if (v.TryGetValue<int>(out var i)) return i;
-        if (v.TryGetValue<long>(out var l)) return l;
-        return 0;
-    }
 
     /// <summary>修改一个顶层配置项。</summary>
     public void Set(string key, JsonNode? value)
@@ -225,7 +189,7 @@ public partial class App : Application
     {
         _snapshot = Config.DeepClone().AsObject();
         _save!.Run(() => ConfigStore.Save(Config));
-        Speaker.Player.OnConfig();
+        Player.OnConfig();
         switch (key)
         {
             case "engine":
@@ -260,96 +224,14 @@ public partial class App : Application
     /// </summary>
     public void PlayPhrase(JsonNode p)
     {
-        var id = p["id"]!.GetValue<string>();
-        var audio = p["audio"]?.GetValue<string>() ?? "";
-        var text = p["text"]?.GetValue<string>() ?? "";
-        bool loop = p["loop"]?.GetValue<bool>() ?? false;
+        var id = p.Str("id");
+        var audio = p.Str("audio");
+        var text = p.Str("text");
+        bool loop = p.Bool("loop");
         if (audio.Length == 0 && !loop) Speaker.Speak(text, cache: true, tag: id);
-        else if (Speaker.Player.IsSound(id)) Speaker.Player.StopSound(id);
+        else if (Player.IsSound(id)) Player.StopSound(id);
         else if (audio.Length == 0) Speaker.SpeakAsSound(id, text);
         else Speaker.PlaySound(id, audio);
-    }
-
-    // ------------------------------------------------------------------ 快捷键
-    public void SuspendHotkeys(bool on)
-    {
-        _suspend += on ? 1 : -1;
-        ApplyHotkeys();
-    }
-
-    public void ApplyHotkeys()
-    {
-        if (_hotkeys == null) return;
-        if (_suspend > 0)
-        {
-            _hotkeys.SetBindings([]);
-            return;
-        }
-        var hk = Sub("hotkeys");
-        // 「输入框」「聚焦输入框」不受「暂停快捷键」影响
-        var b = new Dictionary<string, string>
-        {
-            ["input"] = hk["input"]?.GetValue<string>() ?? "",
-            ["focus"] = hk["focus"]?.GetValue<string>() ?? "",
-        };
-        if (!Bool("hotkeys_paused"))
-        {
-            b["stop"] = hk["stop"]?.GetValue<string>() ?? "";
-            b["repeat"] = hk["repeat"]?.GetValue<string>() ?? "";
-            b["ptt"] = hk["ptt"]?.GetValue<string>() ?? "";
-            b["playlist"] = hk["playlist"]?.GetValue<string>() ?? "";
-            b["next"] = hk["next"]?.GetValue<string>() ?? "";
-            foreach (var p in Phrases)
-                b["phrase:" + p!["id"]!.GetValue<string>()] = p["hotkey"]?.GetValue<string>() ?? "";
-        }
-        HotkeyErrors = _hotkeys.SetBindings(b);
-        HotkeyErrorsChanged?.Invoke();
-    }
-
-    public string DescribeBinding(string name)
-    {
-        if (HotkeyLabels.TryGetValue(name, out var l)) return T(l);
-        if (name.StartsWith("phrase:"))
-        {
-            var id = name[7..];
-            var p = Phrases.FirstOrDefault(x => x!["id"]!.GetValue<string>() == id);
-            var audio = p?["audio"]?.GetValue<string>() ?? "";
-            var t = audio.Length > 0 ? p?["name"]?.GetValue<string>() ?? "" : p?["text"]?.GetValue<string>() ?? "";
-            if (t.Length == 0) t = Path.GetFileName(audio) is { Length: > 0 } f ? f : T("未命名");
-            return T("常用语「{0}」", t.Length > 12 ? t[..12] + "…" : t);
-        }
-        return name;
-    }
-
-    public string DescribeError(string name, HotkeyError e) =>
-        T("{0}：{1}", DescribeBinding(name), e.ConflictWith != null ? T("与「{0}」重复", DescribeBinding(e.ConflictWith)) : e.Message);
-
-    private void OnHotkeyThread(string name)
-    {
-        var fg = Native.GetForegroundWindow(); // 记下游戏窗口，发送后把焦点还回去
-        Post(() => OnHotkey(name, fg));
-    }
-
-    private void OnHotkey(string name, IntPtr prev)
-    {
-        switch (name)
-        {
-            case "input": Overlay?.Toggle(prev); break;
-            case "focus": Overlay?.FocusIfVisible(prev); break;
-            case "stop": Speaker.Stop(); break;
-            case "repeat": Speaker.Repeat(); break;
-            case "ptt": Set("ptt_enabled", !Bool("ptt_enabled")); PttToggled?.Invoke(); break;
-            case "playlist": Playlist.Toggle(); break;
-            case "next": Playlist.Next(); break;
-            default:
-                if (name.StartsWith("phrase:"))
-                {
-                    var id = name[7..];
-                    var p = Phrases.FirstOrDefault(x => x!["id"]!.GetValue<string>() == id);
-                    if (p != null) PlayPhrase(p);
-                }
-                break;
-        }
     }
 
     public void ShowMain()
@@ -383,6 +265,7 @@ public partial class App : Application
         Overlay?.Close();
         _tray?.Dispose();
         Speaker.Dispose();
+        Player.Dispose();
         Log.Info(T("ViaSonic 退出"));
     }
 }

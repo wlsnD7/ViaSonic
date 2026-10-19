@@ -87,10 +87,10 @@ public sealed partial class MainWindow : Window
     private void CheckErrors()
     {
         var s = App.Current.State;
-        int seq = (int)App.ToDouble(s?["error_seq"]);
+        int seq = s.ErrorSeq;
         if (seq != _errorSeq)
         {
-            if (_errorSeq >= 0) ShowError(s?["error"]?.GetValue<string>() ?? "");
+            if (_errorSeq >= 0) ShowError(s.Error);
             _errorSeq = seq;
         }
     }

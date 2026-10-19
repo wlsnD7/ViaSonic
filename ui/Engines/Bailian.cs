@@ -86,7 +86,7 @@ public sealed class Bailian(Func<JsonObject> cfg) : OnlineEngine(cfg)
                 ["parameters"] = new JsonObject
                 {
                     ["text_type"] = "PlainText", ["voice"] = voice, ["format"] = "mp3", ["sample_rate"] = 24000,
-                    ["rate"] = Math.Clamp(N(c, "bailian_speed"), 0.5, 2.0),
+                    ["rate"] = Math.Clamp(c.Num("bailian_speed"), 0.5, 2.0),
                 },
                 ["input"] = new JsonObject(),
             },
@@ -123,7 +123,7 @@ public sealed class Bailian(Func<JsonObject> cfg) : OnlineEngine(cfg)
                         break;
                     case "task-failed":
                         throw new TtsException(T("{0} 请求失败：{1}", Label,
-                            head["error_message"]?.GetValue<string>() ?? head["error_code"]?.GetValue<string>() ?? ""));
+                            head["error_message"]?.GetValue<string>() ?? head.Str("error_code")));
                     case "task-finished":
                         try { await ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None); } catch { }
                         return Decode(audio.ToArray());

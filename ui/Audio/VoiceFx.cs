@@ -50,8 +50,8 @@ public sealed class VoiceFx
             if (effects == null) return s;
             foreach (var def in Defs)
             {
-                if (effects[def.Key] is not JsonObject e || !(e["on"]?.GetValue<bool>() ?? false)) continue;
-                s.On[def.Key] = def.Params.Select(p => Math.Clamp(e[p.Key] is { } n ? App.ToDouble(n) : p.Default, p.Min, p.Max)).ToArray();
+                if (effects[def.Key] is not JsonObject e || !e.Bool("on")) continue;
+                s.On[def.Key] = def.Params.Select(p => Math.Clamp(e[p.Key] is { } n ? Json.ToDouble(n) : p.Default, p.Min, p.Max)).ToArray();
             }
             return s;
         }

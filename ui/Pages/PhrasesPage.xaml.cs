@@ -59,7 +59,7 @@ public sealed partial class PhrasesPage : Page
         InitPlaylist();
         ShowErrors();
         A.HotkeyErrorsChanged += ShowErrors;
-        A.Speaker.Player.ActiveChanged += OnActiveChanged;
+        A.Player.ActiveChanged += OnActiveChanged;
         _tick = DispatcherQueue.CreateTimer();
         _tick.Interval = TimeSpan.FromMilliseconds(200);
         _tick.Tick += (_, _) => App.Guard(() =>
@@ -73,7 +73,7 @@ public sealed partial class PhrasesPage : Page
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         A.HotkeyErrorsChanged -= ShowErrors;
-        A.Speaker.Player.ActiveChanged -= OnActiveChanged;
+        A.Player.ActiveChanged -= OnActiveChanged;
         LeavePlaylist();
         _tick?.Stop();
     }
@@ -94,7 +94,7 @@ public sealed partial class PhrasesPage : Page
     {
         foreach (var (id, (row, play)) in _rows)
         {
-            bool on = A.Speaker.Player.IsActive(id);
+            bool on = A.Player.IsActive(id);
             // 只在状态变了时更新：提示框正显示时反复替换 ToolTip 可能让 WinUI 出错
             if (_shownActive.TryGetValue(id, out var was) && was == on) continue;
             _shownActive[id] = on;
@@ -116,7 +116,7 @@ public sealed partial class PhrasesPage : Page
         {
             var row = BuildRow(phrases[i]!.AsObject(), i, phrases.Count, out var box);
             List.Children.Add(row);
-            if (phrases[i]!["id"]!.GetValue<string>() == focusId)
+            if (phrases[i].Str("id") == focusId)
                 box.Loaded += (_, _) => box.Focus(FocusState.Programmatic);
         }
         Empty.Visibility = phrases.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -133,7 +133,7 @@ public sealed partial class PhrasesPage : Page
 
     private void UpdateProgress()
     {
-        var player = A.Speaker.Player;
+        var player = A.Player;
         foreach (var b in _bars)
         {
             if (b.Dragging) continue;
@@ -179,7 +179,7 @@ public sealed partial class PhrasesPage : Page
 
     private static void SeekTo(Seekbar b)
     {
-        var player = A.Speaker.Player;
+        var player = A.Player;
         if (player.IsSound(b.Id)) player.Seek(b.Id, b.Slider.Value);
         else player.SetStart(b.Id, b.Slider.Value);
     }
@@ -232,7 +232,7 @@ public sealed partial class PhrasesPage : Page
         if (len <= 0) return;
         b.Slider.Maximum = len;
         b.Slider.IsEnabled = true;
-        if (!b.Dragging) SetBar(b, A.Speaker.Player.Progress(b.Id)?.Pos ?? A.Speaker.Player.StartOf(b.Id));
+        if (!b.Dragging) SetBar(b, A.Player.Progress(b.Id)?.Pos ?? A.Player.StartOf(b.Id));
     }
 
     private static Button IconButton(string glyph, string tip, RoutedEventHandler? click = null)
@@ -253,8 +253,8 @@ public sealed partial class PhrasesPage : Page
 
     private Border BuildRow(JsonObject p, int index, int count, out TextBox box)
     {
-        var id = p["id"]!.GetValue<string>();
-        var audio = p["audio"]?.GetValue<string>() ?? "";
+        var id = p.Str("id");
+        var audio = p.Str("audio");
         bool isAudio = audio.Length > 0;
 
         var grid = new Grid { ColumnSpacing = 8 };
@@ -263,7 +263,7 @@ public sealed partial class PhrasesPage : Page
 
         var play = IconButton("", T("播放"), (_, _) =>
         {
-            var player = A.Speaker.Player;
+            var player = A.Player;
             if (!isAudio && !player.IsSound(id) && player.IsActive(id)) A.Speaker.StopSpeech();
             else A.PlayPhrase(p);
         });
@@ -276,7 +276,7 @@ public sealed partial class PhrasesPage : Page
 
         // 文字条目编辑朗读的文字；音频条目编辑名称，留空时显示文件名
         var key = isAudio ? "name" : "text";
-        var text = new TextBox { Text = p[key]?.GetValue<string>() ?? "" };
+        var text = new TextBox { Text = p.Str(key) };
         if (isAudio)
         {
             text.PlaceholderText = Path.GetFileName(audio) + (File.Exists(audio) ? "" : T("（文件不存在）"));
@@ -285,14 +285,14 @@ public sealed partial class PhrasesPage : Page
         text.LostFocus += (_, _) =>
         {
             var t = text.Text.Trim();
-            if (t == (p[key]?.GetValue<string>() ?? "")) return;
+            if (t == p.Str(key)) return;
             p[key] = t;
             A.Commit("phrases");
         };
         box = text;
         grid.Children.Add(At(text, 2));
 
-        var hk = new HotkeyButton { Value = p["hotkey"]?.GetValue<string>() ?? "" };
+        var hk = new HotkeyButton { Value = p.Str("hotkey") };
         hk.HotkeyChanged += v => { p["hotkey"] = v; A.Commit("phrases"); };
         ToolTipService.SetToolTip(hk, T("Backspace 清除"));
         grid.Children.Add(At(hk, 3));
@@ -300,7 +300,7 @@ public sealed partial class PhrasesPage : Page
         var loop = new ToggleButton
         {
             Content = new FontIcon { Glyph = "", FontSize = 14 }, Padding = new Thickness(10, 8, 10, 8),
-            IsChecked = p["loop"]?.GetValue<bool>() ?? false,
+            IsChecked = p.Bool("loop"),
         };
         ToolTipService.SetToolTip(loop, T("循环"));
         AutomationProperties.SetName(loop, T("循环"));
@@ -314,7 +314,7 @@ public sealed partial class PhrasesPage : Page
             var vol = new Slider
             {
                 Width = 120, Minimum = 0, Maximum = 150, StepFrequency = 5, VerticalAlignment = VerticalAlignment.Center,
-                Value = Math.Round(App.ToDouble(p["volume"]) * 100),
+                Value = Math.Round(p.Num("volume") * 100),
             };
             volText.Text = $"{vol.Value:0}%";
             ToolTipService.SetToolTip(vol, T("音量"));
@@ -369,7 +369,7 @@ public sealed partial class PhrasesPage : Page
     {
         text = text.Trim();
         if (text.Length == 0) return;
-        var name = p["name"]?.GetValue<string>() is { Length: > 0 } n ? n : text.Length > 20 ? text[..20] : text;
+        var name = p.Str("name") is { Length: > 0 } n ? n : text.Length > 20 ? text[..20] : text;
         foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
         var picker = new Windows.Storage.Pickers.FileSavePicker { SuggestedFileName = name };
         picker.FileTypeChoices.Add(T("WAV 音频"), [".wav"]);
@@ -430,9 +430,9 @@ public sealed partial class PhrasesPage : Page
                 XamlRoot = XamlRoot,
             };
             if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
-            A.Speaker.Player.StopSound(id);
+            A.Player.StopSound(id);
             var arr = A.Phrases;
-            var node = arr.FirstOrDefault(x => x!["id"]!.GetValue<string>() == id);
+            var node = arr.FirstOrDefault(x => x.Str("id") == id);
             if (node != null) arr.Remove(node);
             A.Commit("phrases");
             Rebuild();
@@ -486,7 +486,7 @@ public sealed partial class PhrasesPage : Page
         var p = App.NewPhrase();
         A.Phrases.Add((JsonNode)p);
         A.Commit("phrases");
-        Rebuild(p["id"]!.GetValue<string>());
+        Rebuild(p.Str("id"));
     }
 
     private async void AddAudio_Click(object sender, RoutedEventArgs e) => AddAudio(await PickAudio(true));

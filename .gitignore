@@ -3,6 +3,9 @@ app/
 dist/
 ui/bin/
 ui/obj/
+tests/*/bin/
+tests/*/obj/
+TestResults/
 .vs/
 *.user
 

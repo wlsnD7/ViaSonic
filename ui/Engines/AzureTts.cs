@@ -35,12 +35,12 @@ public sealed class AzureTts(Func<JsonObject> cfg) : OnlineEngine(cfg)
         using var r = await SendAsync(req, CancellationToken.None);
         var list = JsonNode.Parse(await r.Content.ReadAsStringAsync())!.AsArray().OfType<JsonObject>()
             .Select(v => new AzureVoice(
-                v["ShortName"]?.GetValue<string>() ?? "",
-                v["Locale"]?.GetValue<string>() ?? "",
-                v["LocaleName"]?.GetValue<string>() ?? "",
-                v["LocalName"]?.GetValue<string>() ?? "",
-                v["DisplayName"]?.GetValue<string>() ?? "",
-                v["Gender"]?.GetValue<string>() ?? "",
+                v.Str("ShortName"),
+                v.Str("Locale"),
+                v.Str("LocaleName"),
+                v.Str("LocalName"),
+                v.Str("DisplayName"),
+                v.Str("Gender"),
                 v["StyleList"]?.AsArray().Select(s => s?.GetValue<string>() ?? "").Where(s => s.Length > 0).ToArray() ?? []))
             .Where(v => v.Id.Length > 0)
             .ToList();
@@ -54,7 +54,7 @@ public sealed class AzureTts(Func<JsonObject> cfg) : OnlineEngine(cfg)
         var voice = S(c, "azure_voice", "zh-CN-XiaoxiaoNeural");
         var locale = voice.Length > 5 && voice[2] == '-' ? voice[..voice.IndexOf('-', 3)] : "zh-CN";
         var style = S(c, "azure_style");
-        int rate = (int)N(c, "azure_rate");
+        int rate = (int)c.Num("azure_rate");
         var body = new StringBuilder()
             .Append($"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='{locale}'>")
             .Append($"<voice name='{SecurityElement.Escape(voice)}'>");
