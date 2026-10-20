@@ -50,9 +50,10 @@ Real-time text-to-speech, a voice changer (with RVC), phrases and sounds, and a 
 | Doubao Speech | Volcengine's speech synthesis, with Voice Clone 2.0 (clone in the console, then add the voice ID). Needs an API key, and the model must be enabled in the console. |
 | Alibaba Model Studio | Qwen3-TTS and CosyVoice. You can add cloned CosyVoice voices. Needs an API key. |
 | MiniMax | Supports cloned voices. Needs an API key. |
+| iFLYTEK | iFLYTEK Open Platform's online speech synthesis. Needs an APPID, API key and API secret; add voices in the iFLYTEK console first. |
 | Custom API | Connects to any HTTP API that returns audio, such as GPT-SoVITS, IndexTTS or CosyVoice running locally. |
 
-API keys are stored encrypted on this PC and can only be read by the current Windows user. With paid online engines, phrases are synthesized the first time you use them and cached after that.
+API keys (and the iFLYTEK API secret) are stored encrypted on this PC and can only be read by the current Windows user. With paid online engines, phrases are synthesized the first time you use them and cached after that.
 
 Download the GPT-SoVITS package from [lj1995/GPT-SoVITS-windows-package](https://huggingface.co/lj1995/GPT-SoVITS-windows-package/tree/main): choose `GPT-SoVITS-v2pro-20250604-nvidia50.7z` for RTX 50 series, or `GPT-SoVITS-v2pro-20250604.7z` for other NVIDIA GPUs (about 9 GB). To use it, choose GPT-SoVITS as the engine on the Speak page, click ⚙ next to Engine and set the package location in GPT-SoVITS folder, then click + next to Model to add a model.
 
@@ -62,14 +63,21 @@ Turn on the voice changer on the Voice changer page. Basic effects can be stacke
 
 AI voice (RVC) needs an NVIDIA GPU and the RVC package. Download it from [lj1995/VoiceConversionWebUI](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main): choose `RVC20260718Nvidia50x0.7z` for RTX 50 series, or `RVC20260718Nvidia.7z` for other NVIDIA GPUs. Extract it, then click ⚙ next to AI voice on the Voice changer page and set RVC folder. Models (.pth) in the package's `assets\weights` folder are listed automatically.
 
+## Voice input
+
+Turn on Voice input on the Speak page. What you say is turned into text and read in the current voice. Voice input and Mic passthrough can't be on at the same time: turning on voice input turns passthrough off, and turning voice input off brings it back.
+
+- Mode: Hold hotkey (set "Hold for voice input" on the Hotkeys page), or Continuous detection (reads each sentence when you finish; listening pauses during playback).
+- Recognition: a local model (SenseVoice, supports Chinese, English, Japanese, Korean and Cantonese, works offline; click Download on the card, about 230 MB), Azure Speech, Alibaba Model Studio, iFLYTEK, or an OpenAI-compatible speech-to-text API. Azure, Model Studio and iFLYTEK share their keys with the voice engines.
+
 ## Music player
 
 Play music on the Music player tab of the Phrases & sounds page. It also goes out through the virtual microphone. Add files or folders, or import .m3u / .m3u8 playlists. It supports playback speed, back 10 seconds, forward 30 seconds, crossfade and three play modes. Use Audio volume at the top right of the page to set the virtual microphone and monitor volumes separately.
 
 ## In-game setup
 
-1. Install [VB-Audio Virtual Cable](https://vb-audio.com/Cable/). The app tells you if it's missing.
-2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**.
+1. Install [VB-Audio Virtual Cable](https://vb-audio.com/Cable/) or [Voicemeeter](https://vb-audio.com/Voicemeeter/). The app tells you if neither is installed.
+2. In your game or voice app (Discord, TeamSpeak, etc.), **set the microphone to `CABLE Output`**. With Voicemeeter, choose `Voicemeeter Out B1` and turn on B1 for the `Voicemeeter Input` strip in Voicemeeter.
 3. The Audio page outputs to `CABLE Input` by default, and also plays to your headphones so you can hear it.
 4. To send your microphone along with the speech, turn on Mic passthrough on the Audio page and choose your microphone.
 5. To let teammates hear music or video, turn on App audio on the Audio page and add those apps.
@@ -87,6 +95,7 @@ Play music on the Music player tab of the Phrases & sounds page. It also goes ou
 | Turn push to talk on/off | Not set |
 | Play / pause music | Not set |
 | Next | Not set |
+| Hold for voice input | Not set |
 
 Closing the main window keeps ViaSonic running in the background. Right-click the tray icon to exit.
 
