@@ -490,6 +490,8 @@ public static partial class Lang
         ["请先填写 APPID"] = "Enter the APPID first",
         ["请先填写 API Secret"] = "Enter the API Secret first",
         ["这个音色还没有开通，请先在讯飞控制台添加"] = "This voice isn't enabled yet. Add it in the iFLYTEK console first.",
+        ["装了 VB-Cable 或 Voicemeeter 后自己听不到声音"] = "Can't hear anything after installing VB-Cable or Voicemeeter",
+        ["安装时系统的默认播放设备可能被改成了 CABLE Input 或 Voicemeeter Input。在 Windows 设置的「声音」里把输出改回耳机或扬声器。已经打开的软件（比如浏览器）要重启，或者在「音量合成器」里把它的输出设备改回来。"] = "Installing them may switch Windows' default playback device to CABLE Input or Voicemeeter Input. Change the output back to your headphones or speakers under Sound in Windows Settings. Apps that were already open, such as your browser, need a restart, or change their output device back in Volume mixer.",
         ["语音输入没反应"] = "Voice input doesn't respond",
         ["用「按住快捷键」时，要先在「快捷键」页设置「按住语音输入」。用本地模型要先点「下载」。识别用的是「音频」页麦克风直通选的麦克风。"] = "For Hold hotkey, set \"Hold for voice input\" on the Hotkeys page first. The local model needs to be downloaded first. Voice input uses the microphone chosen under Mic passthrough on the Audio page.",
         ["语音输入识别不准"] = "Voice input mishears me",

@@ -68,6 +68,8 @@
                                      Description="{l:T Text='检查 Key 是否复制完整、有没有过期，以及选的地域和 Key 是否一致。'}" />
                     <tk:SettingsCard Header="{l:T Text='耳机里听到自己的声音'}"
                                      Description="{l:T Text='「音频」页监听里的「麦克风」会把你的声音放进耳机，不需要时关掉。'}" />
+                    <tk:SettingsCard Header="{l:T Text='装了 VB-Cable 或 Voicemeeter 后自己听不到声音'}"
+                                     Description="{l:T Text='安装时系统的默认播放设备可能被改成了 CABLE Input 或 Voicemeeter Input。在 Windows 设置的「声音」里把输出改回耳机或扬声器。已经打开的软件（比如浏览器）要重启，或者在「音量合成器」里把它的输出设备改回来。'}" />
                     <tk:SettingsCard Header="{l:T Text='卸载后怎么删配置'}"
                                      Description="{l:T Text='配置、常用语、日志和语音识别模型都在 %LOCALAPPDATA%\ViaSonic，卸载时会保留，需手动删除。'}" />
                 </tk:SettingsExpander.Items>
