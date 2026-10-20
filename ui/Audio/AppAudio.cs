@@ -13,6 +13,8 @@ public sealed class AppAudio
     private readonly BusPool _pool;
     private readonly Timer _timer;
     private readonly object _lock = new();
+    // 同一时间只跑一个 Reconcile；找进程、找设备、开始录音很慢，不拿着 _lock 做（界面线程改设置、读电平时会等）
+    private readonly object _work = new();
     private readonly Dictionary<int, Session> _sessions = []; // 按根进程 pid
     private readonly HashSet<int> _failed = [];
     private string? _cable;
@@ -67,50 +69,71 @@ public sealed class AppAudio
 
     private void Reconcile()
     {
-        lock (_lock)
+        if (!Monitor.TryEnter(_work)) return; // 正在接；3 秒后的下一次会补上这期间的变化
+        try
         {
-            foreach (var (pid, s) in _sessions.ToList())
-                if (!s.Alive) _sessions.Remove(pid);
-            if (_cable == null || _apps.Count == 0) return;
-
-            var roots = Procs.Roots(_apps.Keys);
-            foreach (var (pid, s) in _sessions.ToList())
+            string cableSetting;
+            List<string> exes;
+            lock (_lock)
             {
-                if (roots.Any(r => r.Pid == pid)) continue;
-                s.Stop(); // 进程退出了
-                _sessions.Remove(pid);
+                foreach (var (pid, s) in _sessions.ToList())
+                    if (!s.Alive) _sessions.Remove(pid);
+                if (_cable == null || _apps.Count == 0) return;
+                cableSetting = _cable;
+                exes = [.. _apps.Keys];
             }
-            if (roots.All(r => _sessions.ContainsKey(r.Pid) || _failed.Contains(r.Pid))) return;
+
+            var roots = Procs.Roots(exes);
+            List<(int Pid, string Exe)> todo;
+            lock (_lock)
+            {
+                foreach (var (pid, s) in _sessions.ToList())
+                {
+                    if (roots.Any(r => r.Pid == pid)) continue;
+                    s.Stop(); // 进程退出了
+                    _sessions.Remove(pid);
+                }
+                todo = [.. roots.Where(r => !_sessions.ContainsKey(r.Pid) && !_failed.Contains(r.Pid))];
+            }
+            if (todo.Count == 0) return;
 
             using var en = new MMDeviceEnumerator();
-            var name = _cable.Length > 0 ? _cable : Devices.VirtualCable();
+            var name = cableSetting.Length > 0 ? cableSetting : Devices.VirtualCable();
             var cable = name.Length > 0 ? Devices.Find(en, name) : null;
             if (cable == null) return;
-            foreach (var (pid, exe) in roots)
+            foreach (var (pid, exe) in todo)
             {
-                if (_sessions.ContainsKey(pid) || _failed.Contains(pid)) continue;
+                Session s;
                 try
                 {
-                    var s = new Session(pid, exe, this);
-                    if (!_pool.Add(cable, s.Source, s.Stop))
-                    {
-                        s.Stop();
-                        continue;
-                    }
-                    _sessions[pid] = s;
+                    s = new Session(pid, exe, this);
                 }
                 catch (Exception e)
                 {
-                    _failed.Add(pid); // 同一个进程不反复重试，换了进程（重启应用）再试
+                    lock (_lock) _failed.Add(pid); // 同一个进程不反复重试，换了进程（重启应用）再试
                     Log.Error(T("无法捕获「{0}」的声音：{1}", exe, e.Message));
                     if (e is COMException { HResult: unchecked((int)0x80004001) or unchecked((int)0x80040154) } && !Unsupported)
                     {
                         Unsupported = true;
                         UnsupportedChanged?.Invoke();
                     }
+                    continue;
+                }
+                bool keep;
+                lock (_lock)
+                {
+                    // 接的这段时间里可能关掉了应用声音、换了虚拟麦克风或者去掉了这个应用
+                    keep = _cable == cableSetting && _apps.ContainsKey(exe) && !_sessions.ContainsKey(pid);
+                    if (keep) _sessions[pid] = s;
+                }
+                if (!keep || !_pool.Add(cable, s.Source, s.Stop))
+                {
+                    s.Stop();
+                    if (keep) lock (_lock) _sessions.Remove(pid);
                 }
             }
         }
+        finally { Monitor.Exit(_work); }
     }
 
     public void Dispose()

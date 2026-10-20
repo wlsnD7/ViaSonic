@@ -16,8 +16,11 @@ public sealed class Passthrough
     private readonly RvcHost _rvc;
     private readonly Timer _retry;
     private readonly object _lock = new();
+    // 同一时间只跑一个 Reconcile；查找、打开设备很慢（装了 Voicemeeter 时要好几秒），不能拿着 _lock 做，
+    // 不然界面线程改设置时会一直等
+    private readonly object _work = new();
     private Target? _want;
-    private Session? _cur;
+    private volatile Session? _cur;
     private string _lastError = "";
     private volatile VoiceFx.Settings _fx = VoiceFx.Settings.None;
 
@@ -38,7 +41,7 @@ public sealed class Passthrough
         set
         {
             _fx = value;
-            lock (_lock) _cur?.SetFx(value);
+            _cur?.SetFx(value);
         }
     }
 
@@ -58,40 +61,67 @@ public sealed class Passthrough
 
     private void Reconcile()
     {
-        lock (_lock)
+        if (!Monitor.TryEnter(_work)) return; // 已经在打开了；目标变了的话，它打开后会发现并重来
+        try
         {
-            if (_want is not { } w || _cur is { Alive: true }) return;
-            _cur = null;
-            string micName = w.Mic;
-            try
+            while (true)
             {
-                using var en = new MMDeviceEnumerator();
-                var cableName = w.Cable.Length > 0 ? w.Cable : Devices.VirtualCable();
-                var cable = cableName.Length > 0 ? Devices.Find(en, cableName) : null;
-                if (cable == null) return;
-                var mic = Devices.FindInput(en, w.Mic);
-                if (mic == null) return;
-                micName = mic.FriendlyName;
-                if (Devices.IsVirtual(micName)) return; // 录虚拟麦克风自己会形成回环
-                var monitor = w.Monitor != null ? Devices.Find(en, w.Monitor) : null;
-                if (monitor?.ID == cable.ID) monitor = null;
-                var s = new Session(mic, this, monitor != null, w.Rvc ? _rvc : null);
-                s.SetFx(_fx);
-                if (!_pool.Add(cable, s.Source, s.Stop))
+                Target w;
+                lock (_lock)
                 {
-                    s.Stop();
-                    return;
+                    if (_want is not { } want || _cur is { Alive: true }) return;
+                    w = want;
+                    _cur = null;
                 }
-                if (monitor != null && s.Monitor != null) _pool.Add(monitor, s.Monitor, () => { });
-                _cur = s;
-                _lastError = "";
+                var s = Open(w);
+                lock (_lock)
+                {
+                    if (_want == w && _cur == null)
+                    {
+                        _cur = s;
+                        s?.SetFx(_fx); // 打开期间可能换了效果
+                        return;
+                    }
+                }
+                s?.Stop(); // 打开期间目标变了：丢掉，按新目标再来
             }
-            catch (Exception e)
+        }
+        finally { Monitor.Exit(_work); }
+    }
+
+    /// <summary>找设备、开始录音、接到虚拟麦克风上（不拿 _lock）。打不开时返回 null，3 秒后重试。</summary>
+    private Session? Open(Target w)
+    {
+        string micName = w.Mic;
+        try
+        {
+            using var en = new MMDeviceEnumerator();
+            var cableName = w.Cable.Length > 0 ? w.Cable : Devices.VirtualCable();
+            var cable = cableName.Length > 0 ? Devices.Find(en, cableName) : null;
+            if (cable == null) return null;
+            var mic = Devices.FindInput(en, w.Mic);
+            if (mic == null) return null;
+            micName = mic.FriendlyName;
+            if (Devices.IsVirtual(micName)) return null; // 录虚拟麦克风自己会形成回环
+            var monitor = w.Monitor != null ? Devices.Find(en, w.Monitor) : null;
+            if (monitor?.ID == cable.ID) monitor = null;
+            var s = new Session(mic, this, monitor != null, w.Rvc ? _rvc : null);
+            s.SetFx(_fx);
+            if (!_pool.Add(cable, s.Source, s.Stop))
             {
-                var msg = T("无法打开麦克风「{0}」：{1}", micName.Length > 0 ? micName : T("默认"), e.Message);
-                if (msg != _lastError) Log.Error(msg);
-                _lastError = msg;
+                s.Stop();
+                return null;
             }
+            if (monitor != null && s.Monitor != null) _pool.Add(monitor, s.Monitor, () => { });
+            _lastError = "";
+            return s;
+        }
+        catch (Exception e)
+        {
+            var msg = T("无法打开麦克风「{0}」：{1}", micName.Length > 0 ? micName : T("默认"), e.Message);
+            if (msg != _lastError) Log.Error(msg);
+            _lastError = msg;
+            return null;
         }
     }
 

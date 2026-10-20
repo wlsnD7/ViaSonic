@@ -128,37 +128,67 @@ public sealed class VoiceInput : IDisposable
         ThreadPool.QueueUserWorkItem(_ => Reconcile());
     }
 
+    // 同一时间只跑一个 Reconcile；查找、打开麦克风很慢，不能拿着 _lock 做（界面线程改设置时会等）
+    private readonly object _work = new();
+
     private void Reconcile()
     {
-        lock (_lock)
+        if (!Monitor.TryEnter(_work)) return; // 已经在打开了；目标变了的话，它打开后会发现并重来
+        try
         {
-            if (_want is not { } w || _cap is { Alive: true }) return;
-            _cap = null;
-            var name = w.Mic;
-            try
+            while (true)
             {
-                using var en = new MMDeviceEnumerator();
-                var mic = Devices.FindInput(en, w.Mic);
-                if (mic == null || Devices.IsVirtual(mic.FriendlyName)) return;
-                name = mic.FriendlyName;
-                _speech = false;
-                _cap = new Capture(mic, this, w.Auto ? new SpeechSplitter() : null);
-                if (_lastCapError.Length > 0)
+                (string Mic, bool Auto) w;
+                lock (_lock)
                 {
-                    _lastCapError = "";
-                    Changed?.Invoke();
+                    if (_want is not { } want || _cap is { Alive: true }) return;
+                    w = want;
+                    _cap = null;
                 }
+                var cap = Open(w);
+                lock (_lock)
+                {
+                    if (_want == w && _cap == null)
+                    {
+                        _cap = cap;
+                        return;
+                    }
+                }
+                cap?.Stop(); // 打开期间目标变了：丢掉，按新目标再来
             }
-            catch (Exception e)
+        }
+        finally { Monitor.Exit(_work); }
+    }
+
+    /// <summary>找麦克风、开始录音（不拿 _lock）。打不开时返回 null，3 秒后重试。</summary>
+    private Capture? Open((string Mic, bool Auto) w)
+    {
+        var name = w.Mic;
+        try
+        {
+            using var en = new MMDeviceEnumerator();
+            var mic = Devices.FindInput(en, w.Mic);
+            if (mic == null || Devices.IsVirtual(mic.FriendlyName)) return null;
+            name = mic.FriendlyName;
+            _speech = false;
+            var cap = new Capture(mic, this, w.Auto ? new SpeechSplitter() : null);
+            if (_lastCapError.Length > 0)
             {
-                var msg = T("无法打开麦克风「{0}」：{1}", name.Length > 0 ? name : T("默认"), e.Message);
-                if (msg != _lastCapError)
-                {
-                    Log.Error(msg);
-                    _lastCapError = msg;
-                    Changed?.Invoke();
-                }
+                _lastCapError = "";
+                Changed?.Invoke();
             }
+            return cap;
+        }
+        catch (Exception e)
+        {
+            var msg = T("无法打开麦克风「{0}」：{1}", name.Length > 0 ? name : T("默认"), e.Message);
+            if (msg != _lastCapError)
+            {
+                Log.Error(msg);
+                _lastCapError = msg;
+                Changed?.Invoke();
+            }
+            return null;
         }
     }
 
