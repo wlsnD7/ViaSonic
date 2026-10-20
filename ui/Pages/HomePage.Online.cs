@@ -18,7 +18,7 @@ public sealed partial class HomePage
 
     private void InitOnline()
     {
-        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey })
+        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey, SttAzureKey, SttBailianKey, SttCustomKey })
             box.Password = Secrets.Get(A.Config, (string)box.Tag);
         // 含花括号，写在 XAML 的标记扩展里会被当成绑定语法
         CustomUrlHeader.Tip = T("{text} 会替换成要朗读的文字。");
@@ -32,14 +32,16 @@ public sealed partial class HomePage
             ShowRate(s);
         }
 
-        AzureRegion.Items.Clear();
-        foreach (var r in VoicePresets.AzureRegions) AzureRegion.Items.Add(r);
-        AzureRegion.SelectedItem = VoicePresets.AzureRegions.FirstOrDefault(r => r == A.Str("azure_region"));
-        if (AzureRegion.SelectedItem == null) AzureRegion.Text = A.Str("azure_region");
+        foreach (var box in new[] { AzureRegion, SttAzureRegion })
+        {
+            box.Items.Clear();
+            foreach (var r in VoicePresets.AzureRegions) box.Items.Add(r);
+        }
+        ShowAzureRegion();
 
         MiniMaxModel.Items.Clear();
         foreach (var m in VoicePresets.MiniMaxModels) MiniMaxModel.Items.Add(new ComboBoxItem { Content = m, Tag = m });
-        foreach (var box in new[] { DoubaoModel, BailianRegion, BailianModel, MiniMaxRegion, MiniMaxModel, CustomMethod })
+        foreach (var box in new[] { DoubaoModel, BailianRegion, BailianModel, MiniMaxRegion, MiniMaxModel, CustomMethod, SttBailianRegion })
             Select(box, A.Str((string)box.Tag));
 
         FillVoices("doubao");
@@ -124,6 +126,15 @@ public sealed partial class HomePage
         var plain = box.Password.Trim();
         if (plain == Secrets.Get(A.Config, key)) return;
         A.Set(key, Secrets.Protect(plain));
+        // 语音输入卡片和引擎设置里的同一个 Key：另一个框跟着变
+        foreach (var other in new[] { AzureKey, SttAzureKey, BailianKey, SttBailianKey })
+            if (other != box && (string)other.Tag == key)
+            {
+                bool init = _init;
+                _init = true;
+                other.Password = plain;
+                _init = init;
+            }
         LoadVoices(key[..key.IndexOf('_')]);
     }
 
@@ -144,6 +155,13 @@ public sealed partial class HomePage
                 break;
             case "minimax_region":
                 LoadVoices("minimax", refresh: true);
+                break;
+            case "bailian_region":
+                bool init = _init;
+                _init = true;
+                Select(BailianRegion, value);
+                Select(SttBailianRegion, value);
+                _init = init;
                 break;
         }
         ShowOnlineOptions();
@@ -334,7 +352,7 @@ public sealed partial class HomePage
     // ------------------------------------------------------------------ Azure
     private void AzureRegion_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (!_init && AzureRegion.SelectedItem is string r) SetAzureRegion(r);
+        if (!_init && ((ComboBox)sender).SelectedItem is string r) SetAzureRegion(r);
     }
 
     private void AzureRegion_Submitted(ComboBox sender, ComboBoxTextSubmittedEventArgs args)
@@ -345,14 +363,29 @@ public sealed partial class HomePage
 
     private void AzureRegion_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (!_init && AzureRegion.SelectedItem == null) SetAzureRegion((AzureRegion.Text ?? "").Trim().ToLowerInvariant());
+        if (!_init && sender is ComboBox { SelectedItem: null } box) SetAzureRegion((box.Text ?? "").Trim().ToLowerInvariant());
     }
 
     private void SetAzureRegion(string region)
     {
         if (region == A.Str("azure_region")) return;
         A.Set("azure_region", region);
+        ShowAzureRegion();
         LoadVoices("azure");
+    }
+
+    /// <summary>引擎设置和语音输入卡片里的两个区域框都显示当前区域。</summary>
+    private void ShowAzureRegion()
+    {
+        bool init = _init;
+        _init = true;
+        var region = A.Str("azure_region");
+        foreach (var box in new[] { AzureRegion, SttAzureRegion })
+        {
+            box.SelectedItem = VoicePresets.AzureRegions.FirstOrDefault(r => r == region);
+            if (box.SelectedItem == null) box.Text = region;
+        }
+        _init = init;
     }
 
     private void FillAzure()

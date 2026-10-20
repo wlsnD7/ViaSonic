@@ -18,6 +18,7 @@ public partial class App : Application
     public Player Player { get; private set; } = null!;
     public Speaker Speaker { get; private set; } = null!;
     public Playlist Playlist { get; private set; } = null!;
+    public Asr.VoiceInput VoiceInput { get; private set; } = null!;
     public AppState State { get; private set; } = AppState.Empty;
     /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
     public UpdateCheck.Release? NewRelease { get; set; }
@@ -29,6 +30,8 @@ public partial class App : Application
     public event Action? ConfigReplaced;
     /// <summary>用快捷键开关了按键说话（音频页刷新开关）。</summary>
     public event Action? PttToggled;
+    /// <summary>语音输入的状态、识别结果、模型下载进度变了（界面线程）。</summary>
+    public event Action? VoiceInputChanged;
 
     private TrayIcon? _tray;
     private bool _trayHintShown;
@@ -110,6 +113,9 @@ public partial class App : Application
         Player = new Player(() => _snapshot);
         Speaker = new Speaker(() => _snapshot, Player);
         Playlist = new Playlist(this);
+        VoiceInput = new Asr.VoiceInput(() => _snapshot, Speaker, Player);
+        VoiceInput.Changed += () => Post(() => VoiceInputChanged?.Invoke());
+        VoiceInput.OnConfig();
         Speaker.Changed += () => Post(RefreshState);
         Speaker.Failed += msg => Post(() =>
         {
@@ -187,9 +193,11 @@ public partial class App : Application
 
     private void Changed(string key)
     {
+        Asr.VoiceInput.Exclusive(Config, key); // 语音输入和麦克风直通只能开一个
         _snapshot = Config.DeepClone().AsObject();
         _save!.Run(() => ConfigStore.Save(Config));
         Player.OnConfig();
+        VoiceInput?.OnConfig();
         switch (key)
         {
             case "engine":
@@ -205,7 +213,7 @@ public partial class App : Application
             case "language":
                 Lang.Set(Str("language"));
                 break;
-            case "hotkeys" or "hotkeys_paused":
+            case "hotkeys" or "hotkeys_paused" or "stt_enabled" or "stt_mode" or "mic_passthrough":
                 ApplyHotkeys();
                 break;
             case "overlay":
@@ -214,6 +222,7 @@ public partial class App : Application
         }
         // 填了 Key 或地址后引擎变成可用，主页状态要跟着变
         if (key is "engine" or "azure_region" or "custom_url" || key.EndsWith("_key")) RefreshState();
+        if (key.StartsWith("stt_") || key is "azure_region" or "bailian_region" || key.EndsWith("_key")) VoiceInputChanged?.Invoke();
     }
 
     public static JsonObject NewPhrase() => ConfigStore.NewPhrase();
@@ -264,6 +273,7 @@ public partial class App : Application
         _hotkeys?.Dispose();
         Overlay?.Close();
         _tray?.Dispose();
+        VoiceInput.Dispose();
         Speaker.Dispose();
         Player.Dispose();
         Log.Info(T("ViaSonic 退出"));

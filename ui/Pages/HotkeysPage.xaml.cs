@@ -15,7 +15,7 @@ public sealed partial class HotkeysPage : Page
     {
         InitializeComponent();
         Controls.Bars.Collapse(ErrBar);
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext })
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext, HkStt })
         {
             var name = (string)b.Tag;
             b.HotkeyChanged += v =>
@@ -30,7 +30,7 @@ public sealed partial class HotkeysPage : Page
     {
         _init = true;
         var hk = A.Sub("hotkeys");
-        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext })
+        foreach (var b in new[] { HkInput, HkFocus, HkStop, HkRepeat, HkPtt, HkPlaylist, HkNext, HkStt })
             b.Value = hk[(string)b.Tag]?.GetValue<string>() ?? "";
         Paused.IsOn = A.Bool("hotkeys_paused");
         var o = A.Sub("overlay");

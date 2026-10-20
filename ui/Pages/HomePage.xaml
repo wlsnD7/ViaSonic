@@ -446,6 +446,120 @@
                     </tk:SettingsCard>
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
+
+            <!-- 语音输入：识别说的话再朗读。和麦克风直通只能开一个 -->
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <tk:SettingsCard Style="{StaticResource Row}">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='语音输入'}" Tip="{l:T Text='把你说的话识别成文字，再用当前音色朗读。'}" />
+                        </tk:SettingsCard.Header>
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE720;" /></tk:SettingsCard.HeaderIcon>
+                        <tk:SettingsCard.Description>
+                            <TextBlock x:Name="SttStatus" TextWrapping="Wrap" />
+                        </tk:SettingsCard.Description>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ProgressRing x:Name="SttRing" IsActive="False" Width="20" Height="20" />
+                            <ToggleSwitch x:Name="SttOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="SttOn_Toggled"
+                                          AutomationProperties.Name="{l:T Text='语音输入'}" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='识别'}">
+                        <ComboBox x:Name="SttEngine" MinWidth="220" Tag="stt_engine" SelectionChanged="SttChoice_Changed">
+                            <ComboBoxItem Content="{l:T Text='本地模型'}" Tag="local" />
+                            <ComboBoxItem Content="{l:T Text='Azure 语音'}" Tag="azure" />
+                            <ComboBoxItem Content="{l:T Text='阿里云百炼'}" Tag="bailian" />
+                            <ComboBoxItem Content="{l:T Text='自定义接口'}" Tag="custom" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource SubRow}">
+                        <!-- 选「持续检测」时标题旁出现问号说明 -->
+                        <tk:SettingsCard.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="SttModeTitle" Text="{l:T Text='方式'}" VerticalAlignment="Center" />
+                                <c:InfoHeader x:Name="SttModeTip" Text="{l:T Text='方式'}" Visibility="Collapsed"
+                                              Tip="{l:T Text='说完一句自动朗读，朗读时暂停识别。'}" />
+                            </StackPanel>
+                        </tk:SettingsCard.Header>
+                        <ComboBox x:Name="SttMode" MinWidth="220" Tag="stt_mode" SelectionChanged="SttChoice_Changed">
+                            <ComboBoxItem Content="{l:T Text='按住快捷键'}" Tag="hold" />
+                            <ComboBoxItem Content="{l:T Text='持续检测'}" Tag="auto" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+
+                    <!-- 本地模型：没下载时显示下载按钮，下好后这一行收起 -->
+                    <StackPanel x:Name="SttLocalPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='模型'}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock x:Name="SttModelText" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="300" />
+                                <ProgressBar x:Name="SttModelBar" Width="160" Maximum="1" VerticalAlignment="Center" Visibility="Collapsed" />
+                                <Button x:Name="SttDownload" Content="{l:T Text='下载（约 230 MB）'}" Click="SttDownload_Click" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                    </StackPanel>
+
+                    <!-- Azure：Key 和区域与朗读引擎共用 -->
+                    <StackPanel x:Name="SttAzurePanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Key">
+                            <PasswordBox x:Name="SttAzureKey" Width="340" Tag="azure_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='区域'}">
+                            <ComboBox x:Name="SttAzureRegion" Width="220" IsEditable="True" PlaceholderText="{l:T Text='如 eastasia'}"
+                                      SelectionChanged="AzureRegion_Changed" TextSubmitted="AzureRegion_Submitted" LostFocus="AzureRegion_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='语言'}">
+                            <ComboBox x:Name="SttAzureLang" MinWidth="160" SelectionChanged="SttAzureLang_Changed" />
+                        </tk:SettingsCard>
+                    </StackPanel>
+
+                    <!-- 阿里云百炼：Key 和地域与朗读引擎共用 -->
+                    <StackPanel x:Name="SttBailianPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Key">
+                            <PasswordBox x:Name="SttBailianKey" Width="340" Tag="bailian_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='地域'}">
+                            <ComboBox x:Name="SttBailianRegion" MinWidth="160" Tag="bailian_region" SelectionChanged="Choice_Changed">
+                                <ComboBoxItem Content="{l:T Text='中国大陆'}" Tag="cn" />
+                                <ComboBoxItem Content="{l:T Text='国际'}" Tag="intl" />
+                            </ComboBox>
+                        </tk:SettingsCard>
+                    </StackPanel>
+
+                    <!-- 自定义接口：OpenAI 格式 -->
+                    <StackPanel x:Name="SttCustomPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <tk:SettingsCard.Header>
+                                <c:InfoHeader Text="{l:T Text='接口地址'}" Tip="{l:T Text='兼容 OpenAI 的语音转文字接口（/v1/audio/transcriptions）。'}" />
+                            </tk:SettingsCard.Header>
+                            <TextBox x:Name="SttCustomUrl" Width="340" Tag="stt_custom_url" TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Key">
+                            <PasswordBox x:Name="SttCustomKey" Width="340" Tag="stt_custom_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='模型'}">
+                            <TextBox x:Name="SttCustomModel" Width="340" Tag="stt_custom_model" TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                        </tk:SettingsCard>
+                    </StackPanel>
+
+                    <StackPanel x:Name="SttLastPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='上一句'}">
+                            <TextBlock x:Name="SttLast" TextWrapping="Wrap" MaxWidth="340" IsTextSelectionEnabled="True" />
+                        </tk:SettingsCard>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </c:PageColumn>
     </ScrollViewer>

@@ -9,7 +9,7 @@ namespace ViaSonic.Engines;
 public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 {
     // 区域等填错时域名可能解析到不响应的地址，连接 10 秒没连上就放弃
-    protected static readonly HttpClient Http = new(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(10) })
+    internal static readonly HttpClient Http = new(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(10) })
     {
         Timeout = TimeSpan.FromSeconds(30),
     };
@@ -88,7 +88,7 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
     }
 
     /// <summary>从各家的错误 JSON 里找出说明文字。</summary>
-    protected static string ErrorText(string body)
+    internal static string ErrorText(string body)
     {
         try
         {

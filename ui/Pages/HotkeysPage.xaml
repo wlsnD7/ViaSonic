@@ -67,6 +67,11 @@
                         <c:HotkeyButton x:Name="HkNext" Tag="next" />
                     </tk:SettingsCard>
                     <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='按住语音输入'}">
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE720;" /></tk:SettingsCard.HeaderIcon>
+                        <c:HotkeyButton x:Name="HkStt" Tag="stt" />
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
                     <tk:SettingsCard Style="{StaticResource Row}">
                         <tk:SettingsCard.Header>
                             <c:InfoHeader Text="{l:T Text='暂停快捷键'}" Tip="{l:T Text='暂时停用除「打开/关闭输入框」「聚焦输入框」以外的所有快捷键。'}" />

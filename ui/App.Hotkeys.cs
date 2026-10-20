@@ -17,6 +17,7 @@ public partial class App
         ["ptt"] = "打开/关闭按键说话", // 翻译键
         ["playlist"] = "播放/暂停音乐", // 翻译键
         ["next"] = "下一首", // 翻译键
+        ["stt"] = "按住语音输入", // 翻译键
     };
 
     public void SuspendHotkeys(bool on)
@@ -47,10 +48,15 @@ public partial class App
             b["ptt"] = hk.Str("ptt");
             b["playlist"] = hk.Str("playlist");
             b["next"] = hk.Str("next");
+            // 只在用「按住快捷键」的语音输入时注册，不然白白占着这个键
+            if (Bool("stt_enabled") && Str("stt_mode") != "auto") b["stt"] = hk.Str("stt");
             foreach (var p in Phrases)
                 b["phrase:" + p.Str("id")] = p.Str("hotkey");
         }
         HotkeyErrors = _hotkeys.SetBindings(b);
+        // 单独的修饰键是松开时才触发的，没法按住
+        if (b.TryGetValue("stt", out var stt) && stt.Length > 0 && !HotkeyErrors.ContainsKey("stt") && HoldKey(stt) == 0)
+            HotkeyErrors["stt"] = new HotkeyError(T("需要按住的快捷键不能只用单独的修饰键"));
         HotkeyErrorsChanged?.Invoke();
     }
 
@@ -72,6 +78,13 @@ public partial class App
     public string DescribeError(string name, HotkeyError e) =>
         T("{0}：{1}", DescribeBinding(name), e.ConflictWith != null ? T("与「{0}」重复", DescribeBinding(e.ConflictWith)) : e.Message);
 
+    /// <summary>快捷键的主键（按住时检查它有没有松开）；单独的修饰键或解析失败时为 0。</summary>
+    private static int HoldKey(string text)
+    {
+        try { return HotkeyText.Parse(text).Vk; }
+        catch (HotkeyException) { return 0; }
+    }
+
     private void OnHotkeyThread(string name)
     {
         var fg = Native.GetForegroundWindow(); // 记下游戏窗口，发送后把焦点还回去
@@ -89,6 +102,9 @@ public partial class App
             case "ptt": Set("ptt_enabled", !Bool("ptt_enabled")); PttToggled?.Invoke(); break;
             case "playlist": Playlist.Toggle(); break;
             case "next": Playlist.Next(); break;
+            case "stt":
+                if (HoldKey(Sub("hotkeys").Str("stt")) is > 0 and var vk) VoiceInput.Hold(vk);
+                break;
             default:
                 if (name.StartsWith("phrase:"))
                 {

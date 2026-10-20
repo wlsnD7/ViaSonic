@@ -32,6 +32,12 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.260224002" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+    <!-- 语音输入：本地识别（SenseVoice）和说话检测（Silero VAD） -->
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 原生调用的结构体靠反射读取字段，不能被裁剪 -->
+    <TrimmerRootAssembly Include="sherpa-onnx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />

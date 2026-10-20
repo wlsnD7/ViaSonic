@@ -95,6 +95,15 @@ public static class ConfigStore
         ["sound_monitor_volume"] = 1.0, // 音频文件进监听的音量
         ["play_mode"] = "interrupt",
         ["random_voice"] = false,
+        // 语音输入：识别麦克风说的话再朗读。和麦克风直通只能开一个，stt_pass_restore 记着关掉语音输入时要不要恢复直通
+        ["stt_enabled"] = false,
+        ["stt_engine"] = "local",      // local / azure / bailian / custom；Azure 和百炼的 Key 与朗读引擎共用
+        ["stt_mode"] = "hold",         // hold 按住快捷键 / auto 持续检测
+        ["stt_azure_lang"] = "",       // 空＝跟界面语言
+        ["stt_custom_url"] = "",
+        ["stt_custom_key"] = "",
+        ["stt_custom_model"] = "",
+        ["stt_pass_restore"] = false,
         // 变声：fx_effects 是正在用的效果（调整后点「保存」才写进当前组合）
         ["fx_enabled"] = false,
         ["fx_mic"] = true,
@@ -112,7 +121,7 @@ public static class ConfigStore
         ["ptt_enabled"] = true,
         ["ptt_key"] = "",
         ["ptt_delay_ms"] = 150,
-        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r", ["ptt"] = "", ["playlist"] = "", ["next"] = "" },
+        ["hotkeys"] = new JsonObject { ["input"] = "ctrl+alt+t", ["focus"] = "", ["stop"] = "ctrl+alt+x", ["repeat"] = "ctrl+alt+r", ["ptt"] = "", ["playlist"] = "", ["next"] = "", ["stt"] = "" },
         ["hotkeys_paused"] = false,
         ["overlay"] = new JsonObject
         {

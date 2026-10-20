@@ -15,25 +15,35 @@ internal sealed class Ring(int rate, Func<float> volume) : ISampleProvider
 
     public void Close() => _closed = true;
 
+    public static bool IsFloat(WaveFormat wf) =>
+        wf.Encoding == WaveFormatEncoding.IeeeFloat
+        || (wf is WaveFormatExtensible x && x.SubFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT);
+
+    /// <summary>录音数据里第 frame 帧各声道的平均值。</summary>
+    public static float MonoAt(byte[] data, int frame, WaveFormat wf, bool isFloat)
+    {
+        int ch = wf.Channels, bps = wf.BitsPerSample / 8;
+        float sum = 0;
+        for (int c = 0; c < ch; c++)
+        {
+            int o = frame * wf.BlockAlign + c * bps;
+            sum += isFloat ? BitConverter.ToSingle(data, o)
+                : bps == 2 ? BitConverter.ToInt16(data, o) / 32768f
+                : bps == 3 ? ((data[o] << 8 | data[o + 1] << 16 | data[o + 2] << 24) >> 8) / 8388608f
+                : BitConverter.ToInt32(data, o) / 2147483648f;
+        }
+        return sum / ch;
+    }
+
     public void Write(byte[] data, int bytes, WaveFormat wf)
     {
-        int ch = wf.Channels, bps = wf.BitsPerSample / 8, frames = bytes / wf.BlockAlign;
-        bool isFloat = wf.Encoding == WaveFormatEncoding.IeeeFloat
-                       || (wf is WaveFormatExtensible x && x.SubFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT);
+        int frames = bytes / wf.BlockAlign;
+        bool isFloat = IsFloat(wf);
         lock (_buf)
         {
             for (int f = 0; f < frames; f++)
             {
-                float sum = 0;
-                for (int c = 0; c < ch; c++)
-                {
-                    int o = f * wf.BlockAlign + c * bps;
-                    sum += isFloat ? BitConverter.ToSingle(data, o)
-                        : bps == 2 ? BitConverter.ToInt16(data, o) / 32768f
-                        : bps == 3 ? ((data[o] << 8 | data[o + 1] << 16 | data[o + 2] << 24) >> 8) / 8388608f
-                        : BitConverter.ToInt32(data, o) / 2147483648f;
-                }
-                _buf[(_head + _count) % _buf.Length] = sum / ch;
+                _buf[(_head + _count) % _buf.Length] = MonoAt(data, f, wf, isFloat);
                 if (_count < _buf.Length) _count++;
                 else _head = (_head + 1) % _buf.Length;
             }

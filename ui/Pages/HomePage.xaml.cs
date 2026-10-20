@@ -50,10 +50,13 @@ public sealed partial class HomePage : Page
         SapiRate.Value = A.Num("sapi_rate");
         SapiRateText.Text = $"{SapiRate.Value:+0;-0;0}";
         InitOnline();
+        InitVoiceInput();
         FillModels();
         ShowEngineOptions();
         UpdateStatus();
         A.StateChanged += UpdateStatus;
+        A.VoiceInputChanged += ShowVoiceInput;
+        A.HotkeyErrorsChanged += ShowVoiceInput;
         _init = false;
 
         _edge = [.. Engines.EdgeTts.Voices];
@@ -67,7 +70,12 @@ public sealed partial class HomePage : Page
         LoadVoices(A.Str("engine"));
     }
 
-    protected override void OnNavigatedFrom(NavigationEventArgs e) => A.StateChanged -= UpdateStatus;
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        A.StateChanged -= UpdateStatus;
+        A.VoiceInputChanged -= ShowVoiceInput;
+        A.HotkeyErrorsChanged -= ShowVoiceInput;
+    }
 
     private static int LangIndex(string key) => Math.Max(0, Array.FindIndex(Langs, x => x.Key == key));
 
