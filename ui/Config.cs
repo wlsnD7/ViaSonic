@@ -75,6 +75,12 @@ public static class ConfigStore
         ["minimax_model"] = "speech-2.8-hd",
         ["minimax_voice"] = "male-qn-qingse",
         ["minimax_speed"] = 1.0,
+        ["xunfei_appid"] = "",
+        ["xunfei_key"] = "",
+        ["xunfei_secret"] = "",      // 加密保存，和 *_key 一样
+        ["xunfei_voice"] = "xiaoyan",
+        ["xunfei_rate"] = 0,          // -50~50，讯飞的 speed = 50 + 这个值
+        ["xunfei_voices"] = new JsonArray(),
         ["custom_method"] = "GET",
         ["custom_url"] = "",
         ["custom_headers"] = "",
@@ -97,9 +103,10 @@ public static class ConfigStore
         ["random_voice"] = false,
         // 语音输入：识别麦克风说的话再朗读。和麦克风直通只能开一个，stt_pass_restore 记着关掉语音输入时要不要恢复直通
         ["stt_enabled"] = false,
-        ["stt_engine"] = "local",      // local / azure / bailian / custom；Azure 和百炼的 Key 与朗读引擎共用
+        ["stt_engine"] = "local",      // local / azure / bailian / xunfei / custom；Azure 和百炼的 Key 与朗读引擎共用
         ["stt_mode"] = "hold",         // hold 按住快捷键 / auto 持续检测
         ["stt_azure_lang"] = "",       // 空＝跟界面语言
+        ["stt_xunfei_lang"] = "",      // zh_cn / en_us，空＝跟界面语言
         ["stt_custom_url"] = "",
         ["stt_custom_key"] = "",
         ["stt_custom_model"] = "",

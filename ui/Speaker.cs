@@ -11,14 +11,18 @@ public sealed class Speaker : IDisposable
     /// <summary>Sound：合成后作为音效播放（循环的文字常用语），Tag 是常用语 id。</summary>
     /// <summary>Export：只合成不播放，结果交给导出（不受打断影响）。</summary>
     /// <summary>Random：随机音色，合成前现选引擎和音色。</summary>
+    /// <summary>Repeat：重复上一句，设置没变（或上一句是随机音色）时直接重播刚才的声音。</summary>
     private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false,
-                              TaskCompletionSource<Clip>? Export = null, bool Random = false);
+                              TaskCompletionSource<Clip>? Export = null, bool Random = false, bool Repeat = false);
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
     private readonly Dictionary<string, Clip> _cache = [];
     private readonly LinkedList<string> _cacheOrder = new();
     private readonly Dictionary<string, (DateTime Mtime, Clip Clip)> _files = [];
+    /// <summary>刚朗读的一句（不放进常用语缓存，免得把常用语挤掉）。</summary>
+    private volatile LastClip? _last;
+    private sealed record LastClip(string Key, string Text, bool Random, Clip Clip);
     private int _gen;
 
     public Dictionary<string, ITtsEngine> Engines { get; }
@@ -40,7 +44,7 @@ public sealed class Speaker : IDisposable
         {
             ["gsv"] = Gsv, ["edge"] = new EdgeTts(), ["sapi"] = new SystemTts(),
             ["azure"] = new AzureTts(cfg), ["fish"] = new FishAudio(cfg), ["doubao"] = new Doubao(cfg),
-            ["bailian"] = new Bailian(cfg), ["minimax"] = new MiniMax(cfg), ["custom"] = new CustomApi(cfg),
+            ["bailian"] = new Bailian(cfg), ["minimax"] = new MiniMax(cfg), ["xunfei"] = new Xunfei(cfg), ["custom"] = new CustomApi(cfg),
         };
         Gsv.Changed += () =>
         {
@@ -110,9 +114,12 @@ public sealed class Speaker : IDisposable
         return tcs.Task;
     }
 
+    /// <summary>重复上一句：设置没变就直接重播刚才的声音；换了引擎、音色、语速等就用现在的设置重新合成。</summary>
     public void Repeat()
     {
-        if (LastText.Length > 0) Speak(LastText, cache: true);
+        if (LastText.Length == 0) return;
+        if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen);
+        _jobs.Writer.TryWrite(new Job(_gen, LastText, false, true, Repeat: true));
     }
 
     /// <summary>停止全部：语音和音效。</summary>
@@ -234,6 +241,8 @@ public sealed class Speaker : IDisposable
             var key = eng.CacheKey(cfg) + "|" + job.Text;
             Clip? clip;
             lock (_cache) _cache.TryGetValue(key, out clip);
+            // 随机音色的那句也原样重播（不然每次重复都换一个音色）
+            if (clip == null && job.Repeat && _last is { } last && last.Text == job.Text && (last.Random || last.Key == key)) clip = last.Clip;
             bool show = job.Play || job.Export != null; // 状态栏显示等待 / 合成中
             if (clip == null)
             {
@@ -254,6 +263,7 @@ public sealed class Speaker : IDisposable
                     clip = await eng.SynthAsync(job.Text, cfg, CancellationToken.None);
                     Log.Info(T("合成 {0:0.00}s：{1}", (DateTime.UtcNow - t0).TotalSeconds, job.Text.Length > 40 ? job.Text[..40] : job.Text));
                     if (job.Play) LastSynthMs = (int)(DateTime.UtcNow - t0).TotalMilliseconds; // 状态栏随后会刷新
+                    if (job.Play && !job.Sound) _last = new LastClip(key, job.Text, job.Random, clip);
                 }
                 catch (Exception e)
                 {

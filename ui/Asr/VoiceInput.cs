@@ -60,7 +60,7 @@ public sealed class VoiceInput : IDisposable
         _speaker = speaker;
         Recognizers = new()
         {
-            ["local"] = Local, ["azure"] = new AzureAsr(), ["bailian"] = new BailianAsr(), ["custom"] = new CustomAsr(),
+            ["local"] = Local, ["azure"] = new AzureAsr(), ["bailian"] = new BailianAsr(), ["xunfei"] = new XunfeiAsr(), ["custom"] = new CustomAsr(),
         };
         Local.Changed += () => Changed?.Invoke();
         player.PlayingChanged += p =>
@@ -139,7 +139,7 @@ public sealed class VoiceInput : IDisposable
             {
                 using var en = new MMDeviceEnumerator();
                 var mic = Devices.FindInput(en, w.Mic);
-                if (mic == null || Devices.IsCable(mic.FriendlyName)) return;
+                if (mic == null || Devices.IsVirtual(mic.FriendlyName)) return;
                 name = mic.FriendlyName;
                 _speech = false;
                 _cap = new Capture(mic, this, w.Auto ? new SpeechSplitter() : null);

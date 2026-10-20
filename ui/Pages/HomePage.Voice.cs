@@ -15,6 +15,9 @@ public sealed partial class HomePage
         SttAzureLang.Items.Clear();
         foreach (var (id, name) in AzureAsr.Langs) SttAzureLang.Items.Add(new ComboBoxItem { Content = T(name), Tag = id });
         Select(SttAzureLang, AzureAsr.Lang(A.Config));
+        SttXunfeiLang.Items.Clear();
+        foreach (var (id, name) in XunfeiAsr.Langs) SttXunfeiLang.Items.Add(new ComboBoxItem { Content = T(name), Tag = id });
+        Select(SttXunfeiLang, XunfeiAsr.Lang(A.Config));
         SttCustomUrl.Text = A.Str("stt_custom_url");
         SttCustomModel.Text = A.Str("stt_custom_model");
         ShowVoiceInput();
@@ -29,6 +32,7 @@ public sealed partial class HomePage
         SttLocalPanel.Visibility = engine == "local" && !AsrModel.Ready ? Visibility.Visible : Visibility.Collapsed;
         SttAzurePanel.Visibility = engine == "azure" ? Visibility.Visible : Visibility.Collapsed;
         SttBailianPanel.Visibility = engine == "bailian" ? Visibility.Visible : Visibility.Collapsed;
+        SttXunfeiPanel.Visibility = engine == "xunfei" ? Visibility.Visible : Visibility.Collapsed;
         SttCustomPanel.Visibility = engine == "custom" ? Visibility.Visible : Visibility.Collapsed;
         SttModeTip.Visibility = auto ? Visibility.Visible : Visibility.Collapsed;
         SttModeTitle.Visibility = auto ? Visibility.Collapsed : Visibility.Visible;
@@ -80,6 +84,11 @@ public sealed partial class HomePage
     private void SttAzureLang_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_init && SttAzureLang.SelectedItem is ComboBoxItem { Tag: string id }) A.Set("stt_azure_lang", id);
+    }
+
+    private void SttXunfeiLang_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_init && SttXunfeiLang.SelectedItem is ComboBoxItem { Tag: string id }) A.Set("stt_xunfei_lang", id);
     }
 
     private async void SttDownload_Click(object sender, RoutedEventArgs e) => await A.VoiceInput.DownloadModelAsync();

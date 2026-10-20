@@ -199,3 +199,85 @@ public sealed class CustomAsr : OnlineAsr
         return body.Trim();
     }
 }
+
+/// <summary>讯飞语音听写（流式版）：WebSocket，16kHz PCM 分帧发送，一次最长 60 秒。APPID 和 Key 与讯飞朗读引擎共用。</summary>
+public sealed class XunfeiAsr : IRecognizer
+{
+    public const string Host = "iat-api.xfyun.cn";
+    /// <summary>识别语言：(讯飞语言代码, 显示名)。</summary>
+    public static readonly (string Id, string Name)[] Langs = [("zh_cn", "中文"), ("en_us", "英文")]; // 翻译键
+
+    public string Key => "xunfei";
+    public string Label => T("讯飞语音");
+
+    /// <summary>没选过语言时跟界面语言一致。</summary>
+    public static string Lang(JsonObject c) => c.Str("stt_xunfei_lang") is { Length: > 0 } l ? l : ViaSonic.Lang.Current == "en" ? "en_us" : "zh_cn";
+
+    public string Missing(JsonObject c) => XunfeiWs.Missing(c);
+
+    public async Task<string> RecognizeAsync(float[] pcm, JsonObject c, CancellationToken token)
+    {
+        try
+        {
+            using var ws = await XunfeiWs.ConnectAsync(Host, "/v2/iat", c, Label, token);
+            var bytes = Pcm16(pcm);
+            var lang = Lang(c);
+            var business = new JsonObject { ["language"] = lang, ["domain"] = "iat", ["vad_eos"] = 10000 };
+            if (lang == "zh_cn") business["accent"] = "mandarin";
+            // 已经录完了，不用按实时的 40ms 一帧慢慢送：每帧 160ms 的音频，间隔 20ms
+            const int frame = 5120;
+            for (int off = 0, i = 0; off < bytes.Length || i == 0; off += frame, i++)
+            {
+                int n = Math.Min(frame, bytes.Length - off);
+                var data = new JsonObject
+                {
+                    ["status"] = i == 0 ? 0 : 1,
+                    ["format"] = "audio/L16;rate=16000",
+                    ["encoding"] = "raw",
+                    ["audio"] = Convert.ToBase64String(bytes, off, Math.Max(n, 0)),
+                };
+                var msg = new JsonObject { ["data"] = data };
+                if (i == 0)
+                {
+                    msg["common"] = new JsonObject { ["app_id"] = c.Str("xunfei_appid").Trim() };
+                    msg["business"] = business;
+                }
+                await XunfeiWs.SendAsync(ws, msg, token);
+                await Task.Delay(20, token);
+            }
+            await XunfeiWs.SendAsync(ws, new JsonObject
+            {
+                ["data"] = new JsonObject { ["status"] = 2, ["format"] = "audio/L16;rate=16000", ["encoding"] = "raw", ["audio"] = "" },
+            }, token);
+            var text = new StringBuilder();
+            while (true)
+            {
+                var j = await XunfeiWs.ReceiveAsync(ws, Label, token);
+                text.Append(Words(j));
+                if (j["data"]?["status"]?.GetValue<int>() == 2) break;
+            }
+            return text.ToString();
+        }
+        catch (TtsException e)
+        {
+            throw new AsrException(e.Message);
+        }
+    }
+
+    private static byte[] Pcm16(float[] pcm)
+    {
+        var b = new byte[pcm.Length * 2];
+        for (int i = 0; i < pcm.Length; i++)
+            BitConverter.TryWriteBytes(b.AsSpan(i * 2), (short)Math.Round(Math.Clamp(pcm[i], -1f, 1f) * 32767));
+        return b;
+    }
+
+    /// <summary>一条返回里的文字：data.result.ws[].cw[0].w 依次拼起来。</summary>
+    internal static string Words(JsonNode j)
+    {
+        var sb = new StringBuilder();
+        foreach (var w in j["data"]?["result"]?["ws"] as JsonArray ?? [])
+            if (w?["cw"] is JsonArray { Count: > 0 } cw) sb.Append(cw[0].Str("w"));
+        return sb.ToString();
+    }
+}

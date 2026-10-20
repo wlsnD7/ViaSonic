@@ -218,3 +218,26 @@ public class VoiceInputTests
         Assert.False(vad.IsSpeechDetected());
     }
 }
+
+public class VirtualDeviceTests
+{
+    [Theory]
+    [InlineData("CABLE Output (VB-Audio Virtual Cable)", true)]
+    [InlineData("Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)", true)]
+    [InlineData("VoiceMeeter Aux Output (VB-Audio VoiceMeeter AUX VAIO)", true)]
+    [InlineData("Hi-Fi Cable Output (VB-Audio Hi-Fi Cable)", true)]
+    [InlineData("麦克风 (INZONE H5)", false)]
+    [InlineData("麦克风阵列 (Realtek(R) Audio)", false)]
+    public void Virtual(string name, bool expected) => Assert.Equal(expected, Audio.Devices.IsVirtual(name));
+
+    [Fact]
+    public void PrefersCableThenVoicemeeterInput()
+    {
+        string[] vm = ["扬声器 (Realtek(R) Audio)", "Voicemeeter In 1 (VB-Audio Voicemeeter VAIO)", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)",
+                       "Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)"];
+        Assert.Equal("Voicemeeter Input (VB-Audio Voicemeeter VAIO)", Audio.Devices.PickVirtual(vm));
+        Assert.Equal("CABLE Input (VB-Audio Virtual Cable)", Audio.Devices.PickVirtual([.. vm, "CABLE In 16ch (VB-Audio Virtual Cable)", "CABLE Input (VB-Audio Virtual Cable)"]));
+        Assert.Equal("Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)", Audio.Devices.PickVirtual(["Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)"]));
+        Assert.Equal("", Audio.Devices.PickVirtual(["扬声器 (Realtek(R) Audio)", "耳机 (INZONE H5)"]));
+    }
+}

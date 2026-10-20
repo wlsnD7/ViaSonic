@@ -72,7 +72,7 @@ public sealed class Passthrough
                 var mic = Devices.FindInput(en, w.Mic);
                 if (mic == null) return;
                 micName = mic.FriendlyName;
-                if (Devices.IsCable(micName)) return; // 录虚拟麦克风自己会形成回环
+                if (Devices.IsVirtual(micName)) return; // 录虚拟麦克风自己会形成回环
                 var monitor = w.Monitor != null ? Devices.Find(en, w.Monitor) : null;
                 if (monitor?.ID == cable.ID) monitor = null;
                 var s = new Session(mic, this, monitor != null, w.Rvc ? _rvc : null);

@@ -18,7 +18,7 @@
                 </Button>
             </Grid>
 
-            <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='未检测到 VB-Cable'}">
+            <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='未检测到虚拟麦克风'}">
                 <InfoBar.ActionButton>
                     <HyperlinkButton Content="{l:T Text='下载'}" NavigateUri="https://vb-audio.com/Cable/" />
                 </InfoBar.ActionButton>
@@ -29,7 +29,7 @@
                 <StackPanel>
                     <tk:SettingsCard Style="{StaticResource Row}">
                         <tk:SettingsCard.Header>
-                            <c:InfoHeader Text="{l:T Text='虚拟麦克风'}" Tip="{l:T Text='通过VB-Cable播放语音，需在软件里把麦克风设置为 CABLE Output。'}" />
+                            <c:InfoHeader Text="{l:T Text='虚拟麦克风'}" Tip="{l:T Text='通过虚拟麦克风播放声音。游戏里的麦克风选 CABLE Output；用 Voicemeeter 时选 Voicemeeter Out B1，并在 Voicemeeter 里打开这一路的 B1。'}" />
                         </tk:SettingsCard.Header>
                         <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE720;" /></tk:SettingsCard.HeaderIcon>
                         <ToggleSwitch x:Name="MicOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Toggle_Changed" Tag="mic_enabled" />

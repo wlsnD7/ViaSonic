@@ -287,7 +287,7 @@ public sealed class Player
                 {
                     var name = C.Str("mic_device");
                     if (name.Length == 0) name = Devices.VirtualCable();
-                    if (name.Length == 0) Log.Warn(T("找不到虚拟麦克风（未安装 VB-Cable）"));
+                    if (name.Length == 0) Log.Warn(T("找不到虚拟麦克风（未安装 VB-Cable 或 Voicemeeter）"));
                     else if (Devices.Find(_en, name) is { } d && played.Add(d.ID)) list.Add((d, () => _micVol, false));
                 }
                 if (C.Bool("monitor_enabled") && Devices.Find(_en, C.Str("monitor_device")) is { } m && played.Add(m.ID))

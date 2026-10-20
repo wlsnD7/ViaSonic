@@ -167,14 +167,18 @@ public static class Devices
         return en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).Select(d => d.FriendlyName).ToList();
     }
 
-    /// <summary>录音设备，排除 VB-Cable 自己的 CABLE Output（直通它会形成回环）。</summary>
+    /// <summary>录音设备，排除虚拟麦克风的输出端（CABLE Output、Voicemeeter Out B1 等，直通它们会形成回环）。</summary>
     public static List<string> InputNames()
     {
         using var en = new MMDeviceEnumerator();
-        return en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Select(d => d.FriendlyName).Where(n => !IsCable(n)).ToList();
+        return en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Select(d => d.FriendlyName).Where(n => !IsVirtual(n)).ToList();
     }
 
-    public static bool IsCable(string name) => name.StartsWith("CABLE", StringComparison.OrdinalIgnoreCase);
+    /// <summary>VB-Audio 的虚拟设备：VB-Cable（CABLE Input / Output）和 Voicemeeter（Voicemeeter Input / Out B1 等）。</summary>
+    public static bool IsVirtual(string name) =>
+        name.StartsWith("CABLE", StringComparison.OrdinalIgnoreCase)
+        || name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)
+        || name.Contains("VB-Audio", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>按名称找录音设备；名称为空时返回系统默认录音设备。</summary>
     public static MMDevice? FindInput(MMDeviceEnumerator en, string name)
@@ -187,12 +191,19 @@ public static class Devices
                ?? all.FirstOrDefault(d => d.FriendlyName.StartsWith(name) || name.StartsWith(d.FriendlyName));
     }
 
-    public static string VirtualCable()
+    public static string VirtualCable() => PickVirtual(OutputNames());
+
+    /// <summary>
+    /// 自动选的虚拟麦克风（播放设备）：优先 VB-Cable 的 CABLE Input，没有时用 Voicemeeter 的第一路虚拟输入 Voicemeeter Input，
+    /// 再没有就用其他 CABLE / Voicemeeter 设备。
+    /// </summary>
+    public static string PickVirtual(IEnumerable<string> outputs)
     {
-        var names = OutputNames();
-        return names.FirstOrDefault(n => n.StartsWith("CABLE Input", StringComparison.OrdinalIgnoreCase))
-               ?? names.FirstOrDefault(n => n.Contains("CABLE", StringComparison.OrdinalIgnoreCase)
-                                            || n.Contains("VoiceMeeter", StringComparison.OrdinalIgnoreCase))
+        var names = outputs.ToList();
+        bool Starts(string n, string p) => n.StartsWith(p, StringComparison.OrdinalIgnoreCase);
+        return names.FirstOrDefault(n => Starts(n, "CABLE Input"))
+               ?? names.FirstOrDefault(n => Starts(n, "Voicemeeter Input"))
+               ?? names.FirstOrDefault(IsVirtual)
                ?? "";
     }
 

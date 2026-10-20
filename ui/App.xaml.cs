@@ -221,8 +221,9 @@ public partial class App : Application
                 break;
         }
         // 填了 Key 或地址后引擎变成可用，主页状态要跟着变
-        if (key is "engine" or "azure_region" or "custom_url" || key.EndsWith("_key")) RefreshState();
-        if (key.StartsWith("stt_") || key is "azure_region" or "bailian_region" || key.EndsWith("_key")) VoiceInputChanged?.Invoke();
+        if (key is "engine" or "azure_region" or "custom_url" or "xunfei_appid" || key.EndsWith("_key") || key.EndsWith("_secret")) RefreshState();
+        if (key.StartsWith("stt_") || key is "azure_region" or "bailian_region" or "xunfei_appid" || key.EndsWith("_key") || key.EndsWith("_secret"))
+            VoiceInputChanged?.Invoke();
     }
 
     public static JsonObject NewPhrase() => ConfigStore.NewPhrase();

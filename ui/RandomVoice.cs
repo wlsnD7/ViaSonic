@@ -112,6 +112,9 @@ public static class RandomVoice
                 var presets = key == "doubao" ? Doubao.Presets(model) : Bailian.Presets(model);
                 return presets.Select(v => v.Id).Concat(Saved(key, model))
                     .Where(id => key == "bailian" || Fits(IdLocale(id), lang)).Distinct().ToList();
+            case "xunfei":
+                // 讯飞的音色要在控制台开通：只用正在用的和自己添加的，预置的不一定开通了
+                return Saved("xunfei").Append(c.Str("xunfei_voice")).Where(id => id.Length > 0 && lang == "zh").Distinct().ToList();
             case "minimax":
                 var mm = await ((MiniMax)eng).VoicesAsync(c);
                 return mm.Select(v => v.Id).Where(id => Fits(IdLocale(id), lang)).ToList();

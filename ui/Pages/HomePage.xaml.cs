@@ -148,6 +148,7 @@ public sealed partial class HomePage : Page
         DoubaoPanel.Visibility = key == "doubao" ? Visibility.Visible : Visibility.Collapsed;
         BailianPanel.Visibility = key == "bailian" ? Visibility.Visible : Visibility.Collapsed;
         MiniMaxPanel.Visibility = key == "minimax" ? Visibility.Visible : Visibility.Collapsed;
+        XunfeiPanel.Visibility = key == "xunfei" ? Visibility.Visible : Visibility.Collapsed;
         CustomPanel.Visibility = key == "custom" ? Visibility.Visible : Visibility.Collapsed;
     }
 

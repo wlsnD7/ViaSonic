@@ -67,7 +67,7 @@ public sealed partial class AudioPage : Page
         {
             var devices = await Task.Run(Audio.Devices.OutputNames);
             var inputs = await Task.Run(Audio.Devices.InputNames);
-            var cable = devices.FirstOrDefault(n => n.StartsWith("CABLE Input", StringComparison.OrdinalIgnoreCase)) ?? "";
+            var cable = Audio.Devices.PickVirtual(devices);
             _init = true;
             FillDevices(MicDevice, devices, A.Str("mic_device"), string.IsNullOrEmpty(cable) ? T("自动") : T("自动（{0}）", cable));
             FillDevices(MonDevice, devices, A.Str("monitor_device"), T("默认"));

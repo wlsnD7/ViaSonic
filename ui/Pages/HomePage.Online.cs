@@ -18,12 +18,13 @@ public sealed partial class HomePage
 
     private void InitOnline()
     {
-        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey, SttAzureKey, SttBailianKey, SttCustomKey })
+        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey, XunfeiKey, XunfeiSecret, SttAzureKey, SttBailianKey, SttCustomKey, SttXunfeiKey, SttXunfeiSecret })
             box.Password = Secrets.Get(A.Config, (string)box.Tag);
         // 含花括号，写在 XAML 的标记扩展里会被当成绑定语法
         CustomUrlHeader.Tip = T("{text} 会替换成要朗读的文字。");
         CustomBodyHeader.Tip = T("{text} 会替换成要朗读的文字，接口需要直接返回音频。");
         CustomUrl.Text = A.Str("custom_url");
+        XunfeiAppId.Text = SttXunfeiAppId.Text = A.Str("xunfei_appid");
         CustomHeaders.Text = Secrets.Get(A.Config, "custom_headers");
         CustomBody.Text = A.Str("custom_body");
         foreach (var s in RateLabels.Keys)
@@ -47,6 +48,7 @@ public sealed partial class HomePage
         FillVoices("doubao");
         FillVoices("bailian");
         FillVoices("fish");
+        FillVoices("xunfei");
         FillMiniMax([]);
         FillAzure();
         ShowOnlineOptions();
@@ -127,7 +129,7 @@ public sealed partial class HomePage
         if (plain == Secrets.Get(A.Config, key)) return;
         A.Set(key, Secrets.Protect(plain));
         // 语音输入卡片和引擎设置里的同一个 Key：另一个框跟着变
-        foreach (var other in new[] { AzureKey, SttAzureKey, BailianKey, SttBailianKey })
+        foreach (var other in new[] { AzureKey, SttAzureKey, BailianKey, SttBailianKey, XunfeiKey, SttXunfeiKey, XunfeiSecret, SttXunfeiSecret })
             if (other != box && (string)other.Tag == key)
             {
                 bool init = _init;
@@ -182,7 +184,7 @@ public sealed partial class HomePage
     private Dictionary<Slider, TextBlock> RateLabels => _rateLabels ??= new()
     {
         [AzureRate] = AzureRateText, [FishSpeed] = FishSpeedText, [DoubaoRate] = DoubaoRateText,
-        [BailianSpeed] = BailianSpeedText, [MiniMaxSpeed] = MiniMaxSpeedText,
+        [BailianSpeed] = BailianSpeedText, [MiniMaxSpeed] = MiniMaxSpeedText, [XunfeiRate] = XunfeiRateText,
     };
 
     /// <summary>滑块左边的数值：*_rate 是百分比，*_speed 是倍数。</summary>
@@ -209,6 +211,15 @@ public sealed partial class HomePage
             if (v != Secrets.Get(A.Config, key)) A.Set(key, Secrets.Protect(v));
         }
         else if (v != A.Str(key)) A.Set(key, v);
+        // 讯飞的 APPID 在引擎设置和语音输入卡片里各有一个框
+        var twin = box == XunfeiAppId ? SttXunfeiAppId : box == SttXunfeiAppId ? XunfeiAppId : null;
+        if (twin != null && twin.Text != v)
+        {
+            bool init = _init;
+            _init = true;
+            twin.Text = v;
+            _init = init;
+        }
     }
 
     // ------------------------------------------------------------------ 音色列表（Fish Audio、豆包、百炼）：内置/接口取的 + 自己添加的
@@ -216,11 +227,12 @@ public sealed partial class HomePage
     {
         "fish" => (FishVoice, FishDelVoice),
         "doubao" => (DoubaoVoice, DoubaoDelVoice),
+        "xunfei" => (XunfeiVoice, XunfeiDelVoice),
         _ => (BailianVoice, BailianDelVoice),
     };
 
     /// <summary>豆包、百炼的音色分模型保存；Fish Audio 不分。</summary>
-    private string VoiceModel(string engine) => engine == "fish" ? "" : A.Str(engine + "_model");
+    private string VoiceModel(string engine) => engine is "fish" or "xunfei" ? "" : A.Str(engine + "_model");
 
     private JsonArray SavedVoices(string engine) => A.Config[engine + "_voices"]!.AsArray();
 
@@ -235,6 +247,7 @@ public sealed partial class HomePage
         {
             "fish" => _fishMine,
             "doubao" => Doubao.Presets(A.Str("doubao_model")).Select(v => (v.Id, v.Name)),
+            "xunfei" => VoicePresets.Xunfei.Select(v => (v.Id, v.Name)),
             _ => Bailian.Presets(A.Str("bailian_model")).Select(v => (v.Id, v.Name)),
         };
         foreach (var (id, name) in builtIn)

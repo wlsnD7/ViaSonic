@@ -20,7 +20,7 @@
             </InfoBar>
 
             <InfoBar x:Name="CableBar" Severity="Warning" IsClosable="True" IsOpen="False"
-                     Title="{l:T Text='未检测到虚拟麦克风'}" Message="{l:T Text='需要安装 VB-Cable，游戏里的人才能听到。'}">
+                     Title="{l:T Text='未检测到虚拟麦克风'}" Message="{l:T Text='需要安装 VB-Cable 或 Voicemeeter，其他人才能听到声音。'}">
                 <InfoBar.ActionButton>
                     <HyperlinkButton Content="{l:T Text='下载 VB-Cable'}" NavigateUri="https://vb-audio.com/Cable/" />
                 </InfoBar.ActionButton>
@@ -366,6 +366,47 @@
                         </tk:SettingsCard>
                     </StackPanel>
 
+                    <!-- 讯飞语音：APPID、Key、Secret 和语音输入共用 -->
+                    <StackPanel x:Name="XunfeiPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <tk:SettingsCard.Header>
+                                <c:InfoHeader Text="APPID" Tip="{l:T Text='在讯飞开放平台的控制台创建应用后获得，API Key 和 API Secret 在同一个页面。'}" />
+                            </tk:SettingsCard.Header>
+                            <TextBox x:Name="XunfeiAppId" Width="340" Tag="xunfei_appid" TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Key">
+                            <PasswordBox x:Name="XunfeiKey" Width="340" Tag="xunfei_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Secret">
+                            <PasswordBox x:Name="XunfeiSecret" Width="340" Tag="xunfei_secret" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <tk:SettingsCard.Header>
+                                <c:InfoHeader Text="{l:T Text='音色'}" Tip="{l:T Text='在讯飞控制台添加发音人后，把它的参数值（vcn）点 ＋ 添加进来。'}" />
+                            </tk:SettingsCard.Header>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ComboBox x:Name="XunfeiVoice" Width="260" Tag="xunfei_voice" SelectionChanged="Voice_Changed" />
+                                <Button Click="AddVoice_Click" Tag="xunfei" ToolTipService.ToolTip="{l:T Text='添加音色'}" AutomationProperties.Name="{l:T Text='添加音色'}">
+                                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                                </Button>
+                                <Button x:Name="XunfeiDelVoice" Click="RemoveVoice_Click" Tag="xunfei" ToolTipService.ToolTip="{l:T Text='删除音色'}" AutomationProperties.Name="{l:T Text='删除音色'}">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                </Button>
+                            </StackPanel>
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='语速'}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock x:Name="XunfeiRateText" VerticalAlignment="Center" MinWidth="48" TextAlignment="Right" />
+                                <Slider x:Name="XunfeiRate" Width="220" Minimum="-50" Maximum="50" StepFrequency="5" Tag="xunfei_rate" ValueChanged="Rate_Changed" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                    </StackPanel>
+
                     <!-- 自定义接口 -->
                     <StackPanel x:Name="CustomPanel">
                         <Rectangle Style="{StaticResource Divider}" />
@@ -470,6 +511,7 @@
                             <ComboBoxItem Content="{l:T Text='本地模型'}" Tag="local" />
                             <ComboBoxItem Content="{l:T Text='Azure 语音'}" Tag="azure" />
                             <ComboBoxItem Content="{l:T Text='阿里云百炼'}" Tag="bailian" />
+                            <ComboBoxItem Content="{l:T Text='讯飞语音'}" Tag="xunfei" />
                             <ComboBoxItem Content="{l:T Text='自定义接口'}" Tag="custom" />
                         </ComboBox>
                     </tk:SettingsCard>
@@ -530,6 +572,29 @@
                                 <ComboBoxItem Content="{l:T Text='中国大陆'}" Tag="cn" />
                                 <ComboBoxItem Content="{l:T Text='国际'}" Tag="intl" />
                             </ComboBox>
+                        </tk:SettingsCard>
+                    </StackPanel>
+
+                    <!-- 讯飞语音：APPID、Key、Secret 与朗读引擎共用 -->
+                    <StackPanel x:Name="SttXunfeiPanel">
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}">
+                            <tk:SettingsCard.Header>
+                                <c:InfoHeader Text="APPID" Tip="{l:T Text='在讯飞开放平台的控制台创建应用后获得，API Key 和 API Secret 在同一个页面。'}" />
+                            </tk:SettingsCard.Header>
+                            <TextBox x:Name="SttXunfeiAppId" Width="340" Tag="xunfei_appid" TextChanged="Text_Changed" LostFocus="Text_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Key">
+                            <PasswordBox x:Name="SttXunfeiKey" Width="340" Tag="xunfei_key" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="API Secret">
+                            <PasswordBox x:Name="SttXunfeiSecret" Width="340" Tag="xunfei_secret" PasswordChanged="Key_Changed" LostFocus="Key_LostFocus" />
+                        </tk:SettingsCard>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='语言'}">
+                            <ComboBox x:Name="SttXunfeiLang" MinWidth="160" SelectionChanged="SttXunfeiLang_Changed" />
                         </tk:SettingsCard>
                     </StackPanel>
 
