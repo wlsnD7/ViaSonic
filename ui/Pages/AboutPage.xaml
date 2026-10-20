@@ -62,6 +62,8 @@
                                      Description="{l:T Text='用「按住快捷键」时，要先在「快捷键」页设置「按住语音输入」。用本地模型要先点「下载」。识别用的是「音频」页麦克风直通选的麦克风。'}" />
                     <tk:SettingsCard Header="{l:T Text='语音输入识别不准'}"
                                      Description="{l:T Text='说话时离麦克风近一点，尽量吐字清晰。'}" />
+                    <tk:SettingsCard Header="{l:T Text='手机打不开页面'}"
+                                     Description="{l:T Text='确认手机和电脑在同一个网络下。在卡片上点「允许」。电脑的 IP 变了以后，旧链接会打不开，需要重新扫码。'}" />
                     <tk:SettingsCard Header="{l:T Text='AI 变声（RVC）用不了'}"
                                      Description="{l:T Text='需要 NVIDIA 显卡和 2026 年 7 月以后的 RVC 整合包。第一次加载要半分钟左右，期间麦克风没有声音。显卡跟不上时，点 ⚙ 把采样长度调大。'}" />
                     <tk:SettingsCard Header="{l:T Text='提示 API Key 无效'}"

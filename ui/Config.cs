@@ -111,6 +111,11 @@ public static class ConfigStore
         ["stt_custom_key"] = "",
         ["stt_custom_model"] = "",
         ["stt_pass_restore"] = false,
+        // 手机输入：局域网网页，phone_token 是链接里的令牌（Normalize 里生成），phone_ip 是链接用的网卡地址，空＝自动
+        ["phone_enabled"] = false,
+        ["phone_port"] = 8721,
+        ["phone_token"] = "",
+        ["phone_ip"] = "",
         // 变声：fx_effects 是正在用的效果（调整后点「保存」才写进当前组合）
         ["fx_enabled"] = false,
         ["fx_mic"] = true,
@@ -212,6 +217,8 @@ public static class ConfigStore
         // 2.0 之前音频音量只有一个，监听的那个先用同样的值
         if (raw?["sound_volume"] is JsonValue soundVol && raw["sound_monitor_volume"] == null) cfg["sound_monitor_volume"] = soundVol.DeepClone();
         FixPresets(cfg);
+        if (cfg.Str("phone_token").Length < 16) cfg["phone_token"] = Phone.PhoneInput.NewToken();
+        if (cfg.Num("phone_port") is < 1024 or > 65535 || cfg.Num("phone_port") % 1 != 0) cfg["phone_port"] = 8721;
         foreach (var p in cfg["phrases"]!.AsArray().OfType<JsonObject>())
         {
             // 1.0 的音频常用语没有名称：原来的文字当名称

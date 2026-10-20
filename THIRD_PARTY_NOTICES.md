@@ -14,6 +14,7 @@ ViaSonic is licensed under [MIT](LICENSE). The installer also includes the follo
 | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) | 1.13.5 | Apache 2.0 |
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime)（随 sherpa-onnx 带入 / via sherpa-onnx） | 1.27.1 | MIT |
 | [Silero VAD](https://github.com/snakers4/silero-vad)（`Assets\silero_vad.onnx`） | — | MIT |
+| [QRCoder](https://github.com/codebude/QRCoder) | 1.6.0 | MIT |
 | [RVC](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)（`rvc_server.py` 改写自 `RVCRealtimeVST/worker/rvc_worker.py` / adapted from `RVCRealtimeVST/worker/rvc_worker.py`） | 2026-07-18 | MIT |
 | [Yellowtail 字体 / font](https://fonts.google.com/specimen/Yellowtail)（只用于图标图片，不包含字体文件 / icon image only, font file not included） | — | Apache 2.0 |
 
@@ -75,6 +76,14 @@ MIT License，全文见下方「MIT License」。Full text under "MIT License" b
 （silero_vad.onnx）
 
 Copyright (c) 2020-present Silero Team
+
+MIT License，全文见下方「MIT License」。Full text under "MIT License" below.
+
+## QRCoder
+
+（QRCoder.dll）
+
+Copyright (c) 2013-2018 Raffael Herrmann
 
 MIT License，全文见下方「MIT License」。Full text under "MIT License" below.
 

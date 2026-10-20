@@ -136,19 +136,31 @@ public sealed class BusPool
 {
     private readonly Dictionary<string, Bus> _buses = [];
 
-    /// <summary>把输入加到设备的混音流上；刚好空闲关闭时换一个新的。</summary>
-    public bool Add(MMDevice dev, ISampleProvider mono, Action ended)
+    /// <summary>设备空闲关闭后重新打开时，开头先放的静音。</summary>
+    internal static readonly TimeSpan WarmUp = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>
+    /// 把输入加到设备的混音流上；刚好空闲关闭时换一个新的。
+    /// warmUp：设备是刚打开的就先放一段静音。无线、USB 耳机没声音时会省电静音，重新出声要一点时间，不然开头会被吞掉。
+    /// </summary>
+    public bool Add(MMDevice dev, ISampleProvider mono, Action ended, bool warmUp = false)
     {
         for (int i = 0; i < 2; i++)
-            if (Get(dev) is { } b && b.Add(mono, ended)) return true;
+        {
+            if (Get(dev, out bool fresh) is not { } b) continue;
+            var src = warmUp && fresh ? new OffsetSampleProvider(mono) { DelayBy = WarmUp } : mono;
+            if (b.Add(src, ended)) return true;
+        }
         return false;
     }
 
-    private Bus? Get(MMDevice dev)
+    private Bus? Get(MMDevice dev, out bool fresh)
     {
+        fresh = false;
         lock (_buses)
         {
             if (_buses.TryGetValue(dev.ID, out var b) && !b.Dead) return b;
+            fresh = true;
             try
             {
                 b = new Bus(dev);

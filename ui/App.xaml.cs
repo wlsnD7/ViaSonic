@@ -19,6 +19,7 @@ public partial class App : Application
     public Speaker Speaker { get; private set; } = null!;
     public Playlist Playlist { get; private set; } = null!;
     public Asr.VoiceInput VoiceInput { get; private set; } = null!;
+    public ViaSonic.Phone.PhoneInput Phone { get; private set; } = null!;
     public AppState State { get; private set; } = AppState.Empty;
     /// <summary>GitHub 上有更新的版本时不为 null；用户关掉提示后设为 null。</summary>
     public UpdateCheck.Release? NewRelease { get; set; }
@@ -32,6 +33,8 @@ public partial class App : Application
     public event Action? PttToggled;
     /// <summary>语音输入的状态、识别结果、模型下载进度变了（界面线程）。</summary>
     public event Action? VoiceInputChanged;
+    /// <summary>手机输入的状态、地址、防火墙变了（界面线程）。</summary>
+    public event Action? PhoneChanged;
 
     private TrayIcon? _tray;
     private bool _trayHintShown;
@@ -130,6 +133,9 @@ public partial class App : Application
         _hotkeys = new HotkeyManager(OnHotkeyThread);
         ApplyHotkeys();
         Overlay = new OverlayWindow();
+        Phone = new ViaSonic.Phone.PhoneInput(this);
+        Phone.Changed += () => PhoneChanged?.Invoke();
+        Phone.OnConfig();
         _tray = new TrayIcon();
         _tray.OpenRequested += () => Post(ShowMain);
         _tray.ExitRequested += () => Post(ExitApp);
@@ -219,6 +225,12 @@ public partial class App : Application
             case "overlay":
                 Overlay?.OnConfig();
                 break;
+            case "phone_enabled" or "phone_port" or "phone_token":
+                Phone?.OnConfig();
+                break;
+            case "phone_ip":
+                PhoneChanged?.Invoke();
+                break;
         }
         // 填了 Key 或地址后引擎变成可用，主页状态要跟着变
         if (key is "engine" or "azure_region" or "custom_url" or "xunfei_appid" || key.EndsWith("_key") || key.EndsWith("_secret")) RefreshState();
@@ -274,6 +286,7 @@ public partial class App : Application
         _hotkeys?.Dispose();
         Overlay?.Close();
         _tray?.Dispose();
+        Phone?.Dispose();
         VoiceInput.Dispose();
         Speaker.Dispose();
         Player.Dispose();

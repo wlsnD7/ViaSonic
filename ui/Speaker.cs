@@ -12,8 +12,10 @@ public sealed class Speaker : IDisposable
     /// <summary>Export：只合成不播放，结果交给导出（不受打断影响）。</summary>
     /// <summary>Random：随机音色，合成前现选引擎和音色。</summary>
     /// <summary>Repeat：重复上一句，设置没变（或上一句是随机音色）时直接重播刚才的声音。</summary>
+    /// <summary>Done：朗读结束时调用一次，true＝播完、被停止或被打断，false＝合成失败。</summary>
     private sealed record Job(int Gen, string Text, bool Cache, bool Play, string Tag = "", bool Sound = false,
-                              TaskCompletionSource<Clip>? Export = null, bool Random = false, bool Repeat = false);
+                              TaskCompletionSource<Clip>? Export = null, bool Random = false, bool Repeat = false,
+                              Action<bool>? Done = null);
 
     private readonly Func<JsonObject> _cfg;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
@@ -87,16 +89,20 @@ public sealed class Speaker : IDisposable
     }
 
     // ------------------------------------------------------------------ 朗读
-    /// <summary>tag：常用语的 id，用来在常用语页高亮正在朗读的那一条。</summary>
-    public void Speak(string? text, bool cache = false, string tag = "")
+    /// <summary>tag：常用语的 id，用来在常用语页高亮正在朗读的那一条。done：读完时调用，见 Job.Done。</summary>
+    public void Speak(string? text, bool cache = false, string tag = "", Action<bool>? done = null)
     {
         text = text?.Trim() ?? "";
-        if (text.Length == 0) return;
+        if (text.Length == 0)
+        {
+            done?.Invoke(true);
+            return;
+        }
         LastText = text;
         if (C["play_mode"]?.GetValue<string>() == "interrupt") Interlocked.Increment(ref _gen); // 丢掉还没合成的旧句子
         // 随机音色只换朗读的句子，常用语不变
         bool random = tag.Length == 0 && C.Bool("random_voice");
-        _jobs.Writer.TryWrite(new Job(_gen, text, cache && !random, true, tag, Random: random));
+        _jobs.Writer.TryWrite(new Job(_gen, text, cache && !random, true, tag, Random: random, Done: done));
     }
 
     /// <summary>开了循环的文字常用语：合成后像音效一样叠加、循环播放，不打断也不排队。</summary>
@@ -230,7 +236,11 @@ public sealed class Speaker : IDisposable
     {
         await foreach (var job in _jobs.Reader.ReadAllAsync())
         {
-            if (job.Gen >= 0 && job.Gen != _gen) continue;
+            if (job.Gen >= 0 && job.Gen != _gen)
+            {
+                job.Done?.Invoke(true); // 被新的一句打断
+                continue;
+            }
             var cfg = C.DeepClone().AsObject(); // 合成期间界面改配置不影响这一句
             var eng = Current;
             if (job.Random && await RandomVoice.PickAsync(cfg, job.Text, Engines) is { } pick)
@@ -254,6 +264,7 @@ public sealed class Speaker : IDisposable
                     if (show) SetBusy("");
                     if (job.Export != null) job.Export.TrySetException(new TtsException(why));
                     else if (job.Play) Failed?.Invoke(why);
+                    job.Done?.Invoke(false);
                     continue;
                 }
                 try
@@ -271,6 +282,7 @@ public sealed class Speaker : IDisposable
                     Log.Error(T("合成失败：{0}", e.Message));
                     if (job.Export != null) job.Export.TrySetException(e);
                     else if (job.Play) Failed?.Invoke(e.Message);
+                    job.Done?.Invoke(false);
                     continue;
                 }
                 if (job.Cache)
@@ -300,8 +312,13 @@ public sealed class Speaker : IDisposable
                 catch (Exception e) { Log.Error(T("播放失败"), e); }
             }
             if (job.Play && job.Sound && job.Gen == _gen) _player.PlaySound(job.Tag, clip, speech: true);
-            else if (job.Play && (job.Gen < 0 || job.Gen == _gen)) _player.Play(clip, job.Tag);
-            else if (job.Play) SetBusy("");
+            else if (job.Play && (job.Gen < 0 || job.Gen == _gen))
+                _player.Play(clip, job.Tag, job.Done is { } done ? () => done(true) : null);
+            else
+            {
+                if (job.Play) SetBusy("");
+                job.Done?.Invoke(true);
+            }
         }
     }
 

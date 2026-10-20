@@ -51,12 +51,14 @@ public sealed partial class HomePage : Page
         SapiRateText.Text = $"{SapiRate.Value:+0;-0;0}";
         InitOnline();
         InitVoiceInput();
+        InitPhone();
         FillModels();
         ShowEngineOptions();
         UpdateStatus();
         A.StateChanged += UpdateStatus;
         A.VoiceInputChanged += ShowVoiceInput;
         A.HotkeyErrorsChanged += ShowVoiceInput;
+        A.PhoneChanged += ShowPhone;
         _init = false;
 
         _edge = [.. Engines.EdgeTts.Voices];
@@ -75,6 +77,7 @@ public sealed partial class HomePage : Page
         A.StateChanged -= UpdateStatus;
         A.VoiceInputChanged -= ShowVoiceInput;
         A.HotkeyErrorsChanged -= ShowVoiceInput;
+        A.PhoneChanged -= ShowPhone;
     }
 
     private static int LangIndex(string key) => Math.Max(0, Array.FindIndex(Langs, x => x.Key == key));

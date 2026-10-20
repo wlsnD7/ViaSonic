@@ -11,11 +11,14 @@ namespace ViaSonic.Audio;
 /// </summary>
 public sealed class Player
 {
-    private sealed class Job(Clip clip, string tag)
+    private sealed class Job(Clip clip, string tag, Action? ended)
     {
+        private Action? _ended = ended;
         public Clip Clip { get; } = clip;
         public string Tag { get; } = tag;
         public CancellationTokenSource Cts { get; } = new();
+        /// <summary>播完、被停止或被打断时调用一次。</summary>
+        public void End() => Interlocked.Exchange(ref _ended, null)?.Invoke();
     }
 
     private readonly Func<JsonObject> _cfg;
@@ -146,10 +149,11 @@ public sealed class Player
     }
 
     // ------------------------------------------------------------------ 语音
-    public void Play(Clip clip, string tag = "")
+    /// <param name="ended">播完、被停止或被打断时调用（播放线程）。</param>
+    public void Play(Clip clip, string tag = "", Action? ended = null)
     {
         if (C.Str("play_mode") == "interrupt") StopSpeech();
-        _queue.Add(new Job(clip, tag));
+        _queue.Add(new Job(clip, tag, ended));
         Notify();
     }
 
@@ -157,7 +161,11 @@ public sealed class Player
     {
         lock (_lock)
         {
-            while (_queue.TryTake(out var j)) j.Cts.Cancel();
+            while (_queue.TryTake(out var j))
+            {
+                j.Cts.Cancel();
+                j.End();
+            }
             _current?.Cts.Cancel();
         }
     }
@@ -177,7 +185,11 @@ public sealed class Player
         {
             lock (_lock)
             {
-                if (job.Cts.IsCancellationRequested) continue;
+                if (job.Cts.IsCancellationRequested)
+                {
+                    job.End();
+                    continue;
+                }
                 _current = job;
             }
             Notify();
@@ -194,6 +206,7 @@ public sealed class Player
             {
                 lock (_lock) _current = null;
                 Notify();
+                job.End();
             }
         }
     }
@@ -269,7 +282,7 @@ public sealed class Player
         var targets = Targets();
         voice.Begin(targets.Count);
         foreach (var (dev, vol, mon) in targets)
-            if (!_pool.Add(dev, voice.Stream(vol, mon), voice.StreamEnded)) voice.StreamEnded();
+            if (!_pool.Add(dev, voice.Stream(vol, mon), voice.StreamEnded, warmUp: true)) voice.StreamEnded();
     }
 
     /// <summary>输出设备。枚举设备很慢（有的电脑要 1 秒以上），所以缓存起来，设置或系统设备变化时再重新查找。</summary>

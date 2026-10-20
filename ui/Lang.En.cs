@@ -496,5 +496,27 @@ public static partial class Lang
         ["用「按住快捷键」时，要先在「快捷键」页设置「按住语音输入」。用本地模型要先点「下载」。识别用的是「音频」页麦克风直通选的麦克风。"] = "For Hold hotkey, set \"Hold for voice input\" on the Hotkeys page first. The local model needs to be downloaded first. Voice input uses the microphone chosen under Mic passthrough on the Audio page.",
         ["语音输入识别不准"] = "Voice input mishears me",
         ["说话时离麦克风近一点，尽量吐字清晰。"] = "Speak closer to the microphone and pronounce clearly.",
+
+        // 手机输入
+        ["手机输入"] = "Phone input",
+        ["在手机上打字，在电脑上读出来。"] = "Type on your phone, hear it on your PC.",
+        ["用手机扫码打开，手机和电脑要连在同一个网络。"] = "Scan with your phone. Both need to be on the same network.",
+        ["端口 {0} 被占用，请换一个。"] = "Port {0} is in use. Try another one.",
+        ["没有找到可用的网络。"] = "No network found.",
+        ["被防火墙阻止"] = "Blocked by the firewall",
+        ["允许"] = "Allow",
+        ["网络"] = "Network",
+        ["端口"] = "Port",
+        ["更换链接"] = "New link",
+        ["旧链接会失效，需要重新扫码。"] = "The old link stops working. Scan again.",
+        ["输入文字"] = "Type text",
+        ["发送"] = "Send",
+        ["重复"] = "Repeat",
+        ["常用语"] = "Phrases",
+        ["还没有常用语"] = "No phrases yet",
+        ["无法连接到电脑，请检查 ViaSonic 手机输入是否开启。"] = "Can't connect to your PC. Check that Phone input is on in ViaSonic.",
+        ["链接已失效，请重新扫码。"] = "This link has expired. Scan the code again.",
+        ["手机打不开页面"] = "My phone can't open the page",
+        ["确认手机和电脑在同一个网络下。在卡片上点「允许」。电脑的 IP 变了以后，旧链接会打不开，需要重新扫码。"] = "Make sure your phone and PC are on the same network. Click Allow on the card. If your PC's IP changes, the old link stops working. Scan the code again.",
     };
 }

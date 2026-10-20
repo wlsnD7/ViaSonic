@@ -625,6 +625,58 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+
+            <!-- 手机输入：手机浏览器打开局域网网页，打的字用电脑朗读 -->
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <tk:SettingsCard Style="{StaticResource Row}">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='手机输入'}" Tip="{l:T Text='在手机上打字，在电脑上读出来。'}" />
+                        </tk:SettingsCard.Header>
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8EA;" /></tk:SettingsCard.HeaderIcon>
+                        <tk:SettingsCard.Description>
+                            <TextBlock x:Name="PhoneStatus" TextWrapping="Wrap" />
+                        </tk:SettingsCard.Description>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ProgressRing x:Name="PhoneRing" IsActive="False" Width="20" Height="20" />
+                            <Button x:Name="PhoneAllow" Content="{l:T Text='允许'}" Visibility="Collapsed" Click="PhoneAllow_Click" />
+                            <ToggleSwitch x:Name="PhoneOn" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="PhoneOn_Toggled"
+                                          AutomationProperties.Name="{l:T Text='手机输入'}" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <StackPanel x:Name="PhonePanel" Visibility="Collapsed">
+                        <StackPanel x:Name="PhoneAddrPanel">
+                            <Rectangle Style="{StaticResource Divider}" />
+                            <!-- 二维码在左，和上面的标题对齐；链接和按钮在右边 -->
+                            <Grid Padding="58,14,16,14" ColumnSpacing="20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image x:Name="PhoneQr" Width="144" Height="144" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                                    <TextBlock Text="{l:T Text='地址'}" />
+                                    <TextBlock x:Name="PhoneUrl" IsTextSelectionEnabled="True" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Button Content="{l:T Text='更换链接'}" Margin="0,6,0,0" Click="PhoneNewLink_Click"
+                                            ToolTipService.ToolTip="{l:T Text='旧链接会失效，需要重新扫码。'}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel x:Name="PhoneNetPanel" Visibility="Collapsed">
+                            <Rectangle Style="{StaticResource Divider}" />
+                            <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='网络'}">
+                                <ComboBox x:Name="PhoneNet" MinWidth="220" SelectionChanged="PhoneNet_Changed" />
+                            </tk:SettingsCard>
+                        </StackPanel>
+                        <Rectangle Style="{StaticResource Divider}" />
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='端口'}">
+                            <NumberBox x:Name="PhonePort" Minimum="1024" Maximum="65535" SmallChange="1" LargeChange="10"
+                                       SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="PhonePort_Changed" />
+                        </tk:SettingsCard>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </c:PageColumn>
     </ScrollViewer>
