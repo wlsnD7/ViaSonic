@@ -70,6 +70,14 @@ Turn on Voice input on the Speak page. What you say is turned into text and read
 - Mode: Hold hotkey (set "Hold for voice input" on the Hotkeys page), or Continuous detection (reads each sentence when you finish; listening pauses during playback).
 - Recognition: a local model (SenseVoice, supports Chinese, English, Japanese, Korean and Cantonese, works offline; click Download on the card, about 230 MB), Azure Speech, Alibaba Model Studio, iFLYTEK, or an OpenAI-compatible speech-to-text API. Azure, Model Studio and iFLYTEK share their keys with the voice engines.
 
+## Phone input
+
+Turn on Phone input on the Speak page and scan the QR code with your phone. Type on your phone, hear it on your PC. Both need to be on the same network.
+
+- The phone page can stop, repeat the last line, and play phrases with a tap. After you change phrases on your PC, reload the phone page.
+- The first time you turn it on, Windows asks (UAC) to add a firewall rule. Click Yes. If you don't, the card shows "Blocked by the firewall". Click Allow to try again.
+- New link makes the old link stop working. Scan the code again.
+
 ## Music player
 
 Play music on the Music player tab of the Phrases & sounds page. It also goes out through the virtual microphone. Add files or folders, or import .m3u / .m3u8 playlists. It supports playback speed, back 10 seconds, forward 30 seconds, crossfade and three play modes. Use Audio volume at the top right of the page to set the virtual microphone and monitor volumes separately.
