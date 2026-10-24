@@ -19,10 +19,13 @@ public sealed partial class HomePage : Page
     private readonly Debouncer _fieldSave = new(500);
     private bool _init = true;
     private List<(string Id, string Name)> _edge = [], _sapi = [];
+    // 每次导航页面都会重建，输入框内容留在这里，切回来时还原
+    private static string _draft = "";
 
     public HomePage()
     {
         InitializeComponent();
+        TestBox.Text = _draft;
         Controls.Bars.Collapse(UpdateBar, CableBar, GsvBar);
         foreach (var (_, n) in Langs)
         {
@@ -74,6 +77,7 @@ public sealed partial class HomePage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        _draft = TestBox.Text;
         A.StateChanged -= UpdateStatus;
         A.VoiceInputChanged -= ShowVoiceInput;
         A.HotkeyErrorsChanged -= ShowVoiceInput;
