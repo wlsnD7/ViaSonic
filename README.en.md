@@ -42,8 +42,9 @@ Real-time text-to-speech, a voice changer (with RVC), phrases and sounds, and a 
 
 | Engine | Notes |
 |---|---|
-| Edge TTS | Free, needs internet, many voices. |
+| Edge TTS | Free, needs internet. 300+ voices; pick a language, then a voice. |
 | System voice | Built into Windows, works offline. |
+| Kokoro | Free, works offline, no GPU needed. 100 Chinese voices and 3 English voices; download the model in the app (about 180 MB). |
 | GPT-SoVITS (optional) | Add any GPT-SoVITS model (GPT weights + SoVITS weights + reference audio); the version is detected automatically. Needs an NVIDIA GPU and the GPT-SoVITS package. |
 | Azure Speech | Microsoft's official speech service. More voices than Edge, with speaking styles. Needs an API key; 500K characters free per month. |
 | Fish Audio | Lots of community character voices, plus the models you created yourself (including cloned ones). Needs an API key. |
@@ -51,6 +52,7 @@ Real-time text-to-speech, a voice changer (with RVC), phrases and sounds, and a 
 | Alibaba Model Studio | Qwen3-TTS and CosyVoice. You can add cloned CosyVoice voices. Needs an API key. |
 | MiniMax | Supports cloned voices. Needs an API key. |
 | iFLYTEK | iFLYTEK Open Platform's online speech synthesis. Needs an APPID, API key and API secret; add voices in the iFLYTEK console first. |
+| ElevenLabs | Multilingual voices, including the ones you added from the voice library. Needs an API key; the free plan gives about 10,000 credits a month, non-commercial only. The key needs the Text to Speech and Voices (read) permissions. |
 | Custom API | Connects to any HTTP API that returns audio, such as GPT-SoVITS, IndexTTS or CosyVoice running locally. |
 
 API keys (and the iFLYTEK API secret) are stored encrypted on this PC and can only be read by the current Windows user. With paid online engines, phrases are synthesized the first time you use them and cached after that.

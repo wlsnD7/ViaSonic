@@ -43,8 +43,9 @@
 
 | 引擎 | 说明 |
 |---|---|
-| Edge TTS | 免费，需联网，提供多种音色。 |
+| Edge TTS | 免费，需联网，300 多个音色，先选语言再选音色。 |
 | 系统语音 | Windows 自带，离线。 |
+| Kokoro | 免费，离线，不需要显卡。100 个中文音色和 3 个英文音色，模型在软件里下载（约 180 MB）。 |
 | GPT-SoVITS（可选） | 可添加任意 GPT-SoVITS 模型（GPT 权重 + SoVITS 权重 + 参考音频），版本自动识别。需要 NVIDIA 显卡和 GPT-SoVITS 整合包。 |
 | Azure 语音 | 微软官方语音服务，音色比 Edge 更全，支持风格。需要 API Key，每月 50 万字符免费。 |
 | Fish Audio | 可以使用社区里的大量角色音色，也会列出你自己创建（包括复刻）的模型。需要 API Key。 |
@@ -52,6 +53,7 @@
 | 阿里云百炼 | Qwen3-TTS 和 CosyVoice，CosyVoice 可以添加复刻音色。需要 API Key。 |
 | MiniMax | 支持复刻音色，需要 API Key。 |
 | 讯飞语音 | 讯飞开放平台的在线语音合成。需要 APPID、API Key 和 API Secret，音色要先在讯飞控制台添加。 |
+| ElevenLabs | 多语种音色，会列出你在音色库里添加的音色。需要 API Key，免费版每月约 1 万额度，仅限非商用。Key 要开启 Text to Speech 和 Voices（读取）权限。 |
 | 自定义接口 | 连接任意返回音频的 HTTP 接口，例如本地运行的 GPT-SoVITS、IndexTTS、CosyVoice。 |
 
 API Key（以及讯飞的 API Secret）加密保存在本机，只有当前 Windows 用户能读取。联网付费引擎的常用语在第一次使用时合成，之后用缓存。
