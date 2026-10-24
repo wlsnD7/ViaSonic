@@ -63,7 +63,7 @@ public sealed partial class MainWindow : Window
     {
         if (Content is FrameworkElement root)
         {
-            // 每次启动都弹出输入框；第一次启动先显示欢迎页，关掉后再弹
+            // 开了「启动时打开输入框」就弹出输入框；第一次启动先显示欢迎页，关掉后再弹
             bool started = false;
             async void OnStart()
             {
@@ -74,7 +74,7 @@ public sealed partial class MainWindow : Window
                     App.Current.Set("welcome_shown", true);
                     await new WelcomeDialog(root.XamlRoot).ShowAsync();
                 }
-                App.Current.Overlay?.Show(IntPtr.Zero);
+                if (App.Current.Sub("overlay").Bool("show_on_start", true)) App.Current.Overlay?.Show(IntPtr.Zero);
             }
             if (root.IsLoaded) App.Current.Post(OnStart);
             else root.Loaded += (_, _) => OnStart();

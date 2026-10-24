@@ -86,6 +86,28 @@
 
             <Border Style="{StaticResource Group}">
                 <StackPanel>
+                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='启动时打开输入框'}">
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7E8;" /></tk:SettingsCard.HeaderIcon>
+                        <ToggleSwitch x:Name="ShowOnStart" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="show_on_start" />
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource Row}">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='发送按钮'}" Tip="{l:T Text='在输入框右侧显示发送按钮。'}" />
+                        </tk:SettingsCard.Header>
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE751;" /></tk:SettingsCard.HeaderIcon>
+                        <ToggleSwitch x:Name="SendButton" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="send_button" />
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource Row}">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='最大行数'}" Tip="{l:T Text='文字较多时输入框向上展开，超过这个行数后出现滚动条。'}" />
+                        </tk:SettingsCard.Header>
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8FD;" /></tk:SettingsCard.HeaderIcon>
+                        <NumberBox x:Name="MaxLines" Minimum="1" Maximum="10" SmallChange="1" LargeChange="1"
+                                   SpinButtonPlacementMode="Inline" MinWidth="160" ValueChanged="MaxLines_Changed" />
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
                     <tk:SettingsCard Style="{StaticResource Row}">
                         <tk:SettingsCard.Header>
                             <c:InfoHeader Text="{l:T Text='播完后收起'}" Tip="{l:T Text='开启：语音播完后输入框自动收起。关闭：输入框持久存在，再按一次快捷键收起。'}" />

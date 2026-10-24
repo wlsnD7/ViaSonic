@@ -34,6 +34,9 @@ public sealed partial class HotkeysPage : Page
             b.Value = hk[(string)b.Tag]?.GetValue<string>() ?? "";
         Paused.IsOn = A.Bool("hotkeys_paused");
         var o = A.Sub("overlay");
+        ShowOnStart.IsOn = o.Bool("show_on_start", true);
+        SendButton.IsOn = o.Bool("send_button", true);
+        MaxLines.Value = o["max_lines"] is { } ml ? Json.ToDouble(ml) : 5;
         HideAfter.IsOn = o.Bool("hide_after_send", true);
         RestoreFocus.IsOn = o.Bool("restore_focus", true);
         OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? Json.ToDouble(op) : 0.75) * 100);
@@ -147,6 +150,13 @@ public sealed partial class HotkeysPage : Page
     {
         if (_init || double.IsNaN(args.NewValue)) return;
         A.Sub("overlay")["bottom_offset"] = (int)Math.Clamp(args.NewValue, 0, 2000);
+        A.Commit("overlay");
+    }
+
+    private void MaxLines_Changed(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (_init || double.IsNaN(args.NewValue)) return;
+        A.Sub("overlay")["max_lines"] = (int)Math.Clamp(Math.Round(args.NewValue), 1, 10);
         A.Commit("overlay");
     }
 

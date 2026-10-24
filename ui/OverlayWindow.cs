@@ -12,13 +12,18 @@ using WinRT.Interop;
 namespace ViaSonic;
 
 /// <summary>
-/// 快捷键呼出的半透明输入框：只有一个文本框，回车朗读。
-/// 回车后这句话留在框里显示，播完清空；只有再按快捷键，或开启「播完后收起」时播完，才会收起。
+/// 快捷键呼出的半透明输入框：一个文本框，回车或点发送按钮朗读；文字多了向上展开，超过最大行数后滚动。
+/// 发送后这句话留在框里显示，播完清空；只有再按快捷键，或开启「播完后收起」时播完，才会收起。
 /// </summary>
 public sealed partial class OverlayWindow : Window
 {
+    private const double MinHeightDip = 48; // 一行时输入框的高度
+    private const double BoxMargin = 5;     // 文本框上下各留的空白
+
     private readonly TextBox _box;
+    private readonly Button _send;
     private readonly Grid _root;
+    private double _height = MinHeightDip;  // 当前窗口高度（DIP），跟着输入框的行数变化
     private readonly IntPtr _hwnd;
     private IntPtr _prev, _site, _prevWndProc;
     private bool _visible, _closing;
@@ -42,9 +47,11 @@ public sealed partial class OverlayWindow : Window
             BorderThickness = new Thickness(0),
             Background = new SolidColorBrush(Colors.Transparent),
             VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, BoxMargin, 0, BoxMargin),
             Padding = new Thickness(14, 8, 14, 8),
             IsSpellCheckEnabled = false,
         };
+        ScrollViewer.SetVerticalScrollBarVisibility(_box, ScrollBarVisibility.Auto);
         // 去掉 TextBox 获得焦点时的底色和下划线，保持只是一个干净的框
         foreach (var key in new[] { "TextControlBackgroundFocused", "TextControlBackgroundPointerOver", "TextControlBackground" })
             _box.Resources[key] = new SolidColorBrush(Colors.Transparent);
@@ -55,13 +62,36 @@ public sealed partial class OverlayWindow : Window
         {
             HideClearButton(_box);
             _scroll = FindScroll(_box);
+            // 换行要等下一轮排版，内容变高时再滚一次
+            _scroll?.RegisterPropertyChangedCallback(ScrollViewer.ExtentHeightProperty, (_, _) => ScrollToEnd());
         };
-        // 输入法拼写中的文字不会让单行文本框滚动，超出宽度后新打的字看不到：光标在末尾时滚到最右
+        // 输入法拼写中的文字不会让文本框滚动，超出范围后新打的字看不到：光标在末尾时滚到底（一行时滚到最右）
         _box.TextChanged += (_, _) => ScrollToEnd();
         _box.SelectionChanged += (_, _) => ScrollToEnd();
         _box.TextCompositionChanged += (_, _) => ScrollToEnd();
         _box.TextCompositionEnded += (_, _) => ScrollToEnd();
         Grid.SetColumn(_box, 1);
+
+        // 右下角发送按钮：和回车一样；点击不抢文本框的焦点
+        _send = new Button
+        {
+            Width = 32,
+            Height = 32,
+            Padding = new Thickness(0),
+            Margin = new Thickness(0, 0, 8, 8),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Background = new SolidColorBrush(Colors.Transparent),
+            BorderBrush = new SolidColorBrush(Colors.Transparent),
+            IsTabStop = false,
+            AllowFocusOnInteraction = false,
+            Content = new FontIcon { Glyph = "", FontSize = 16 },
+        };
+        foreach (var key in new[] { "ButtonBackgroundDisabled", "ButtonBorderBrushDisabled" })
+            _send.Resources[key] = new SolidColorBrush(Colors.Transparent);
+        ToolTipService.SetToolTip(_send, T("发送"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_send, T("发送"));
+        _send.Click += (_, _) => Send();
+        Grid.SetColumn(_send, 2);
 
         // 左侧把手：按住拖动输入框
         var grip = new Grip
@@ -74,15 +104,23 @@ public sealed partial class OverlayWindow : Window
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(grip, T("拖动"));
         grip.PointerPressed += OnGripPressed;
 
-        // 窗口本身全透明，只有这层背景按「不透明度」半透明，文字和光标不受影响
+        // 窗口本身全透明，只有这层背景按「不透明度」半透明，文字和光标不受影响。
+        // 这层按文字行数自己定高度，窗口随后再跟着变高变矮（底边不动）
         _root = new Grid
         {
             CornerRadius = new CornerRadius(8),
-            ColumnDefinitions = { new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition() },
-            Children = { grip, _box },
+            MinHeight = MinHeightDip,
+            ColumnDefinitions = { new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition(), new ColumnDefinition { Width = GridLength.Auto } },
+            Children = { grip, _box, _send },
         };
         _root.ActualThemeChanged += (_, _) => ApplyBackground();
-        Content = _root;
+        _root.SizeChanged += (_, e) =>
+        {
+            if (Math.Abs(e.NewSize.Height - _height) < 0.5) return;
+            _height = e.NewSize.Height;
+            if (_visible) Place();
+        };
+        Content = new FreeHeightPanel { Children = { _root } };
         Title = T("ViaSonic 输入");
 
         _hwnd = WindowNative.GetWindowHandle(this);
@@ -101,6 +139,7 @@ public sealed partial class OverlayWindow : Window
         Native.DwmSetWindowAttribute(_hwnd, 34, ref noBorder, sizeof(int));
         SystemBackdrop = new TransparentBackdrop();
         ApplyBackground();
+        ApplyLayout();
 
         A.StateChanged += OnStateChanged;
         AppWindow.Closing += (s, e) =>
@@ -124,7 +163,7 @@ public sealed partial class OverlayWindow : Window
         return null;
     }
 
-    /// <summary>等这次输入排版完，光标在末尾时把文本框滚到最右边。</summary>
+    /// <summary>等这次输入排版完，光标在末尾时把文本框滚到底（不换行时滚到最右）。</summary>
     private void ScrollToEnd()
     {
         if (_scroll == null || _scrollPending) return;
@@ -134,8 +173,47 @@ public sealed partial class OverlayWindow : Window
             _scrollPending = false;
             if (_scroll == null || _box.SelectionStart + _box.SelectionLength < _box.Text.Length) return;
             _scroll.UpdateLayout();
-            _scroll.ChangeView(_scroll.ScrollableWidth, null, null, true);
+            if (_box.TextWrapping == TextWrapping.NoWrap) _scroll.ChangeView(_scroll.ScrollableWidth, null, null, true);
+            else _scroll.ChangeView(null, _scroll.ScrollableHeight, null, true);
         });
+    }
+
+    /// <summary>
+    /// 不按窗口当前高度限制子元素：窗口跟着变高变矮要慢一两帧，这期间输入框照样是新高度（不会挤出滚动条）。
+    /// 比窗口高（正在变高）时贴顶，原来的文字先停在原处，窗口长高后再一起上移；比窗口矮时贴底。
+    /// 变矮时系统常先按新大小画、过一两帧才挪窗口，文字仍会轻微下落一下。
+    /// </summary>
+    private sealed partial class FreeHeightPanel : Panel
+    {
+        protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size available)
+        {
+            foreach (var c in Children) c.Measure(new Windows.Foundation.Size(available.Width, double.PositiveInfinity));
+            return new Windows.Foundation.Size(available.Width, double.IsInfinity(available.Height) ? 0 : available.Height);
+        }
+
+        protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size final)
+        {
+            foreach (var c in Children)
+            {
+                double h = c.DesiredSize.Height;
+                c.Arrange(new Windows.Foundation.Rect(0, Math.Max(0, final.Height - h), final.Width, h));
+            }
+            return final;
+        }
+    }
+
+    /// <summary>发送按钮显隐，以及按最大行数限制文本框高度。</summary>
+    private void ApplyLayout()
+    {
+        var o = A.Sub("overlay");
+        bool send = o.Bool("send_button", true);
+        _send.Visibility = send ? Visibility.Visible : Visibility.Collapsed;
+        _box.Padding = new Thickness(14, 8, send ? 6 : 14, 8);
+        int lines = (int)Math.Clamp(o["max_lines"] is { } v ? Json.ToDouble(v) : 5, 1, 10);
+        // 只有一行时不换行，字多了往左滚
+        _box.TextWrapping = lines == 1 ? TextWrapping.NoWrap : TextWrapping.Wrap;
+        // 行高是字号的 4/3（实测中英文都是 21.33）；用游离的 TextBlock 去量有时只量出一行
+        _box.MaxHeight = Math.Ceiling(lines * _box.FontSize * 4 / 3) + _box.Padding.Top + _box.Padding.Bottom;
     }
 
     /// <summary>TextBox 模板自带的"×"清除按钮由视觉状态控制显隐，这里把它压成 0 宽且不可点。</summary>
@@ -164,12 +242,13 @@ public sealed partial class OverlayWindow : Window
 
     // ------------------------------------------------------------------ 显示 / 收起
     /// <summary>
-    /// 输入框正在用（有焦点）→ 收起；否则显示 / 把焦点拉回来。
-    /// 点回游戏后输入框会留着，再按快捷键就能继续输入；播放中按则直接输入下一句。
+    /// 开着 → 收起（焦点在不在输入框都一样，把焦点拉回来用「聚焦输入框」）；没开 → 显示。
+    /// 播放中按则直接输入下一句。
     /// </summary>
     public void Toggle(IntPtr prev)
     {
-        if (_visible && !_lingering && prev == _hwnd) Hide(true);
+        // 焦点已经在别的窗口时只收起，不再切回呼出前的窗口
+        if (_visible && !_lingering) Hide(prev == _hwnd);
         else Show(prev);
     }
 
@@ -183,8 +262,12 @@ public sealed partial class OverlayWindow : Window
     {
         if (prev != _hwnd && prev != IntPtr.Zero) _prev = prev;
         if (prev == IntPtr.Zero) _prev = IntPtr.Zero;
+        if (!_visible || _lingering) // 只是把焦点拉回来时保留已经打的字
+        {
+            _box.Text = "";
+            _height = MinHeightDip;
+        }
         Place();
-        if (!_visible || _lingering) _box.Text = ""; // 只是把焦点拉回来时保留已经打的字
         StopLinger();
         _visible = true;
         ApplyBackground();
@@ -202,6 +285,7 @@ public sealed partial class OverlayWindow : Window
     public void OnConfig()
     {
         ApplyBackground();
+        ApplyLayout();
         if (_visible) Place();
     }
 
@@ -218,7 +302,7 @@ public sealed partial class OverlayWindow : Window
         var b = (DisplayArea.GetFromWindowId(anchor, DisplayAreaFallback.Primary) ?? DisplayArea.Primary).OuterBounds;
         double scale = Native.GetDpiForWindow(_hwnd) / 96.0;
         int w = (int)(b.Width * ratio);
-        int h = (int)(48 * scale);
+        int h = (int)Math.Ceiling(_height * scale);
         int left = Math.Clamp(b.X + (int)(b.Width * xr) - w / 2, b.X, b.X + b.Width - w);
         int top = Math.Clamp(b.Y + b.Height - h - (int)(bottom * scale), b.Y, b.Y + b.Height - h);
         AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(left, top, w, h));
@@ -393,6 +477,7 @@ public sealed partial class OverlayWindow : Window
         _box.Text = text;
         _box.IsReadOnly = true;
         _box.Opacity = 0.65;
+        _send.IsEnabled = false;
         _lingering = true;
         _sawBusy = false;
         if (o.Bool("restore_focus", true) && _prev != IntPtr.Zero) Native.ForceForeground(_prev);
@@ -424,6 +509,7 @@ public sealed partial class OverlayWindow : Window
         _lingerTimer = null;
         _box.IsReadOnly = false;
         _box.Opacity = 1;
+        _send.IsEnabled = true;
     }
 
     /// <summary>播完了：清空文字；开了「播完后收起」就收起（焦点已经在游戏里，不再切换）。</summary>
