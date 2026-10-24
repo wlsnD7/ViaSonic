@@ -53,13 +53,12 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 
     protected static StringContent Json(JsonNode body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
 
-    /// <summary>发请求，失败时转成界面上的提示。</summary>
-    protected async Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken token)
+    /// <summary>发请求，连不上时转成界面上的提示；HTTP 状态不检查。</summary>
+    protected async Task<HttpResponseMessage> SendRawAsync(HttpRequestMessage req, CancellationToken token = default)
     {
-        HttpResponseMessage r;
         try
         {
-            r = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, token);
+            return await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, token);
         }
         catch (TaskCanceledException) when (!token.IsCancellationRequested)
         {
@@ -69,6 +68,12 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
         {
             throw new TtsException(T("{0} 请求失败：{1}", Label, e.Message));
         }
+    }
+
+    /// <summary>发请求，失败时转成界面上的提示。</summary>
+    protected async Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken token)
+    {
+        var r = await SendRawAsync(req, token);
         if (r.IsSuccessStatusCode) return r;
         var body = "";
         try { body = await r.Content.ReadAsStringAsync(token); } catch { }
@@ -78,7 +83,10 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
 
     protected TtsException Fail(HttpStatusCode status, string body)
     {
-        if (status == HttpStatusCode.Unauthorized) return new TtsException(T("API Key 无效或已过期"));
+        // ElevenLabs 额度用完、免费账号被风控、Key 缺权限也是 401，显示它自己的说明
+        if (status == HttpStatusCode.Unauthorized && !body.Contains("quota_exceeded") && !body.Contains("detected_unusual_activity")
+            && !body.Contains("missing_permissions"))
+            return new TtsException(T("API Key 无效或已过期"));
         // 403 不一定是 Key 不对：豆包的模型或声音复刻没开通时也是 403（45000030 requested resource not granted）
         if (status == HttpStatusCode.Forbidden && (body.Contains("45000030") || body.Contains("not granted")))
             return new TtsException(T("这个模型还没有开通，请先在控制台开通"));
@@ -93,7 +101,7 @@ public abstract class OnlineEngine(Func<JsonObject> cfg) : ITtsEngine
         try
         {
             var j = JsonNode.Parse(body);
-            foreach (var path in new[] { "message", "error_message", "status_msg", "error/message", "base_resp/status_msg", "detail", "header/message" })
+            foreach (var path in new[] { "message", "error_message", "status_msg", "error/message", "base_resp/status_msg", "detail", "detail/message", "header/message" })
             {
                 JsonNode? n = j;
                 foreach (var p in path.Split('/')) n = n is JsonObject o ? o[p] : null;

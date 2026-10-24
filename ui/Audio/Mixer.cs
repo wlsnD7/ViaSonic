@@ -27,7 +27,7 @@ public sealed class Bus : IDisposable
     public Bus(MMDevice dev)
     {
         DeviceId = dev.ID;
-        Name = dev.FriendlyName;
+        Name = Devices.NameOf(dev);
         var mix = dev.AudioClient.MixFormat;
         Format = WaveFormat.CreateIeeeFloatWaveFormat(mix.SampleRate, mix.Channels);
         _out = new WasapiOut(dev, AudioClientShareMode.Shared, true, 40);
@@ -167,7 +167,7 @@ public sealed class BusPool
             }
             catch (Exception e)
             {
-                Log.Error(T("播放到「{0}」失败：{1}", dev.FriendlyName, e.Message));
+                Log.Error(T("播放到「{0}」失败：{1}", Devices.NameOf(dev), e.Message));
                 return null;
             }
             b.Closed += x => { lock (_buses) if (_buses.TryGetValue(x.DeviceId, out var cur) && cur == x) _buses.Remove(x.DeviceId); };

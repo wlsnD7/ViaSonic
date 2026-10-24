@@ -29,6 +29,7 @@ public sealed class Speaker : IDisposable
 
     public Dictionary<string, ITtsEngine> Engines { get; }
     public GsvEngine Gsv { get; } = new();
+    public KokoroTts Kokoro { get; } = new();
     private readonly Player _player;
     public string Busy { get; private set; } = "";
     public string LastText { get; private set; } = "";
@@ -44,9 +45,10 @@ public sealed class Speaker : IDisposable
         _cfg = cfg;
         Engines = new()
         {
-            ["gsv"] = Gsv, ["edge"] = new EdgeTts(), ["sapi"] = new SystemTts(),
+            ["gsv"] = Gsv, ["edge"] = new EdgeTts(), ["sapi"] = new SystemTts(), ["kokoro"] = Kokoro,
             ["azure"] = new AzureTts(cfg), ["fish"] = new FishAudio(cfg), ["doubao"] = new Doubao(cfg),
-            ["bailian"] = new Bailian(cfg), ["minimax"] = new MiniMax(cfg), ["xunfei"] = new Xunfei(cfg), ["custom"] = new CustomApi(cfg),
+            ["bailian"] = new Bailian(cfg), ["minimax"] = new MiniMax(cfg), ["xunfei"] = new Xunfei(cfg),
+            ["elevenlabs"] = new ElevenLabs(cfg), ["custom"] = new CustomApi(cfg),
         };
         Gsv.Changed += () =>
         {
@@ -54,6 +56,14 @@ public sealed class Speaker : IDisposable
             if (Gsv.Ready && !Gsv.Loading && Gsv.Error.Length == 0 && CurrentKey == "gsv") Preload();
             // 缺 GPT-SoVITS / 缺模型文件由主页提示条说明，这里只报意外错误
             if (Gsv.Error.Length > 0 && Gsv.ErrorKind.Length == 0) Failed?.Invoke(Gsv.Error);
+        };
+        Kokoro.Changed += () =>
+        {
+            Changed?.Invoke();
+            if (CurrentKey != "kokoro" || Kokoro.Loading) return;
+            if (Kokoro.Ready) Preload();
+            else if (KokoroModel.Ready && Kokoro.Error.Length == 0) Kokoro.Load(C); // 刚下载完
+            else if (KokoroModel.Ready) Failed?.Invoke(Kokoro.Error);
         };
         _player = player;
         _player.PlayingChanged += p => SetBusy(p ? "播放中" : ""); // 翻译键
@@ -77,6 +87,7 @@ public sealed class Speaker : IDisposable
     {
         // 切走 GPT-SoVITS 时，没开「切换引擎后保持加载」就释放显存和内存
         if (CurrentKey != "gsv" && !C.Bool("gsv_keep_loaded", true) && (Gsv.Ready || Gsv.Loading)) Gsv.Unload();
+        if (CurrentKey != "kokoro") Kokoro.Unload();
         Changed?.Invoke();
         if (!Current.Ready) Current.Load(C);
         else Preload();
@@ -325,5 +336,6 @@ public sealed class Speaker : IDisposable
     public void Dispose()
     {
         Gsv.Dispose();
+        Kokoro.Dispose();
     }
 }

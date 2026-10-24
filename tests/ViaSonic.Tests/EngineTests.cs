@@ -37,6 +37,7 @@ public class OnlineEngineTests : IDisposable
     [InlineData("""{"base_resp": {"status_code": 1, "status_msg": "bad voice"}}""", "bad voice")]
     [InlineData("""{"error": {"message": "nested"}}""", "nested")]
     [InlineData("""{"header": {"message": "doubao"}}""", "doubao")]
+    [InlineData("""{"detail": {"status": "voice_not_found", "message": "elevenlabs"}}""", "elevenlabs")]
     [InlineData("plain text error", "plain text error")]
     public void FindsErrorText(string body, string expected) => Assert.Equal(expected, Probe.ErrorOf(body));
 
@@ -53,6 +54,12 @@ public class OnlineEngineTests : IDisposable
         Assert.Equal("这个模型还没有开通，请先在控制台开通", e.Failure(HttpStatusCode.Forbidden, """{"code": 45000030}""").Message);
         Assert.Equal("Probe 请求失败：HTTP 500", e.Failure(HttpStatusCode.InternalServerError, "").Message);
         Assert.Equal("Probe 请求失败：busy", e.Failure(HttpStatusCode.TooManyRequests, """{"detail": "busy"}""").Message);
+        // ElevenLabs 额度用完也是 401，不能说成 Key 无效
+        Assert.Equal("Probe 请求失败：out of credits",
+            e.Failure(HttpStatusCode.Unauthorized, """{"detail": {"status": "quota_exceeded", "message": "out of credits"}}""").Message);
+        // Key 能用，只是缺某项权限
+        Assert.Equal("Probe 请求失败：missing tts",
+            e.Failure(HttpStatusCode.Unauthorized, """{"detail": {"status": "missing_permissions", "message": "missing tts"}}""").Message);
     }
 
     [Fact]
@@ -142,9 +149,9 @@ public class RandomVoiceTests
     }
 
     [Theory]
-    [InlineData("hello there", "en-US-GuyNeural")]
-    [InlineData("こんにちは", "ja-JP-KeitaNeural")]
-    public async Task PicksVoiceThatCanReadText(string text, string voice)
+    [InlineData("hello there", "en")]
+    [InlineData("こんにちは", "ja")]
+    public async Task PicksVoiceThatCanReadText(string text, string lang)
     {
         var cfg = ConfigStore.Normalize(null, "zh");
         Lang.Init("zh");
@@ -152,7 +159,7 @@ public class RandomVoiceTests
         var pick = (await RandomVoice.PickAsync(cfg, text, engines));
         Assert.NotNull(pick);
         Assert.Equal("edge", pick.Value.Cfg.Str("engine"));
-        Assert.Equal(voice, pick.Value.Cfg.Str("edge_voice"));
+        Assert.Equal(lang, EdgeVoices.LangOf(pick.Value.Cfg.Str("edge_voice")));
         Assert.Equal("zh-CN-YunxiNeural", cfg.Str("edge_voice")); // 原配置不动
     }
 

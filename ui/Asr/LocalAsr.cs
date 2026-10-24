@@ -88,12 +88,6 @@ public sealed class LocalAsr : IRecognizer, IDisposable
 public static class AsrModel
 {
     private const string Repo = "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/";
-    /// <summary>国内连不上 Hugging Face，两边同时连，用先响应的那边。</summary>
-    private static readonly string[] Mirrors = ["https://huggingface.co/", "https://hf-mirror.com/"];
-    private static readonly HttpClient Http = new(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(15) })
-    {
-        Timeout = Timeout.InfiniteTimeSpan,
-    };
 
     public static string Dir => Path.Combine(AppPaths.DataDir, "models", "sense-voice");
     public static string ModelFile => Path.Combine(Dir, "model.int8.onnx");
@@ -104,64 +98,21 @@ public static class AsrModel
     public static async Task DownloadAsync(IProgress<double> progress, CancellationToken token)
     {
         Directory.CreateDirectory(Dir);
-        var (model, mirror) = await FastestAsync("model.int8.onnx", token);
+        var (model, mirror) = await HfMirror.FastestAsync(Repo + "model.int8.onnx", token);
         using var _ = model;
-        // tokens.txt 很小，从同一边下（模型会跳转到 CDN，不能从最终地址推算是哪边）
-        using (var tokens = await Http.GetAsync(mirror + Repo + "tokens.txt", token))
+        // tokens.txt 很小，从同一边下
+        using (var tokens = await HfMirror.Http.GetAsync(mirror + Repo + "tokens.txt", token))
         {
             tokens.EnsureSuccessStatusCode();
             await File.WriteAllBytesAsync(TokensFile + ".part", await tokens.Content.ReadAsByteArrayAsync(token), token);
         }
-        long total = model.Content.Headers.ContentLength ?? 0;
-        var part = ModelFile + ".part";
-        await using (var src = await model.Content.ReadAsStreamAsync(token))
-        await using (var dst = File.Create(part))
+        long total = model.Content.Headers.ContentLength ?? 0, done = 0;
+        await HfMirror.SaveAsync(model, ModelFile, n =>
         {
-            var buf = new byte[1 << 16];
-            long done = 0;
-            int n;
-            while ((n = await src.ReadAsync(buf, token)) > 0)
-            {
-                await dst.WriteAsync(buf.AsMemory(0, n), token);
-                done += n;
-                if (total > 0) progress.Report((double)done / total);
-            }
-            if (total > 0 && done != total) throw new IOException(T("下载不完整"));
-        }
+            done += n;
+            if (total > 0) progress.Report((double)done / total);
+        }, token);
         File.Move(TokensFile + ".part", TokensFile, true);
-        File.Move(part, ModelFile, true);
-    }
-
-    private static async Task<(HttpResponseMessage Response, string Mirror)> FastestAsync(string file, CancellationToken token)
-    {
-        using var race = CancellationTokenSource.CreateLinkedTokenSource(token);
-        var all = Mirrors.Select(m => Http.GetAsync(m + Repo + file, HttpCompletionOption.ResponseHeadersRead, race.Token)).ToList();
-        var tasks = all.ToList();
-        Exception? last = null;
-        while (tasks.Count > 0)
-        {
-            var t = await Task.WhenAny(tasks);
-            tasks.Remove(t);
-            try
-            {
-                var r = await t;
-                if (r.IsSuccessStatusCode)
-                {
-                    race.Cancel();
-                    foreach (var other in tasks)
-                        _ = other.ContinueWith(o => { if (o.IsCompletedSuccessfully) o.Result.Dispose(); }, TaskScheduler.Default);
-                    return (r, Mirrors[all.IndexOf(t)]);
-                }
-                last = new HttpRequestException($"HTTP {(int)r.StatusCode}");
-                r.Dispose();
-            }
-            catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
-            {
-                last = e;
-            }
-        }
-        token.ThrowIfCancellationRequested();
-        throw last ?? new HttpRequestException();
     }
 }
 

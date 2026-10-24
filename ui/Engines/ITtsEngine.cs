@@ -20,5 +20,7 @@ public interface ITtsEngine
     /// <summary>参数变化时缓存失效。</summary>
     string CacheKey(JsonObject cfg);
     void Load(JsonObject cfg);
+    /// <summary>还缺什么设置（没填 Key、模型没下载），主页状态栏显示；空＝不缺。</summary>
+    string Missing(JsonObject cfg) => "";
     Task<Clip> SynthAsync(string text, JsonObject cfg, CancellationToken token);
 }

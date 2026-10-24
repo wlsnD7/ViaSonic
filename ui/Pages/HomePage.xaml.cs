@@ -18,7 +18,7 @@ public sealed partial class HomePage : Page
     private readonly Debouncer _save = new();
     private readonly Debouncer _fieldSave = new(500);
     private bool _init = true;
-    private List<(string Id, string Name)> _edge = [], _sapi = [];
+    private List<(string Id, string Name)> _sapi = [];
     // 每次导航页面都会重建，输入框内容留在这里，切回来时还原
     private static string _draft = "";
 
@@ -50,6 +50,8 @@ public sealed partial class HomePage : Page
         GsvDevice.SelectedItem = GsvDevice.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == A.Str("gsv_device"));
         EdgeRate.Value = A.Num("edge_rate");
         EdgeRateText.Text = $"{EdgeRate.Value:+0;-0;0}%";
+        FillEdge();
+        Fill(KokoroVoice, Engines.KokoroTts.Voices(), A.Str("kokoro_voice"), v => v.Name);
         SapiRate.Value = A.Num("sapi_rate");
         SapiRateText.Text = $"{SapiRate.Value:+0;-0;0}";
         InitOnline();
@@ -64,12 +66,10 @@ public sealed partial class HomePage : Page
         A.PhoneChanged += ShowPhone;
         _init = false;
 
-        _edge = [.. Engines.EdgeTts.Voices];
         _sapi = await Task.Run(Engines.SystemTts.ListVoices);
         var cable = await Task.Run(Audio.Devices.VirtualCable);
         CableBar.IsOpen = A.Bool("mic_enabled") && cable.Length == 0;
         _init = true;
-        Fill(EdgeVoice, _edge, A.Str("edge_voice"), v => T(v.Name));
         Fill(SapiVoice, _sapi, A.Str("sapi_voice"), v => v.Name, fallback: s => s.Contains("zh-"));
         _init = false;
         LoadVoices(A.Str("engine"));
@@ -111,6 +111,7 @@ public sealed partial class HomePage : Page
         LoadRing.IsActive = loading || busy.StartsWith("合成") || busy.StartsWith("等待") || busy.StartsWith("切换");
         var error = en?.Error ?? "";
         LoadButton.Visibility = !ready && !loading && missing.Length == 0 && error.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowKokoroModel();
         var ms = A.Speaker.LastSynthMs;
         SynthText.Text = ms > 0 ? T("上一句生成耗时 {0} ms", ms) : "";
         SynthText.Visibility = ms > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -144,12 +145,29 @@ public sealed partial class HomePage : Page
 
     private void UpdateBar_Closed(InfoBar sender, InfoBarClosedEventArgs args) => A.NewRelease = null;
 
+    /// <summary>Kokoro 模型没下载时显示下载行：未下载 / 下载中 / 下载失败的原因。</summary>
+    private void ShowKokoroModel()
+    {
+        var k = A.Speaker.Kokoro;
+        KokoroModelPanel.Visibility = Engines.KokoroModel.Ready ? Visibility.Collapsed : Visibility.Visible;
+        bool downloading = k.Download != null;
+        KokoroModelText.Text = downloading ? T("下载中 {0}%", (int)(k.Download!.Value * 100))
+            : k.DownloadError.Length > 0 ? k.DownloadError : T("未下载");
+        KokoroModelBar.Visibility = downloading ? Visibility.Visible : Visibility.Collapsed;
+        KokoroModelBar.Value = k.Download ?? 0;
+        KokoroDownload.Visibility = downloading ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void KokoroDownload_Click(object sender, RoutedEventArgs e) => await A.Speaker.Kokoro.DownloadModelAsync();
+
     private void ShowEngineOptions()
     {
         var key = A.Str("engine");
         GsvPanel.Visibility = ModelPanel.Visibility = GsvGear.Visibility = key == "gsv" ? Visibility.Visible : Visibility.Collapsed;
         EdgePanel.Visibility = key == "edge" ? Visibility.Visible : Visibility.Collapsed;
         SapiPanel.Visibility = key == "sapi" ? Visibility.Visible : Visibility.Collapsed;
+        KokoroPanel.Visibility = key == "kokoro" ? Visibility.Visible : Visibility.Collapsed;
+        ElevenLabsPanel.Visibility = key == "elevenlabs" ? Visibility.Visible : Visibility.Collapsed;
         AzurePanel.Visibility = key == "azure" ? Visibility.Visible : Visibility.Collapsed;
         FishPanel.Visibility = key == "fish" ? Visibility.Visible : Visibility.Collapsed;
         DoubaoPanel.Visibility = key == "doubao" ? Visibility.Visible : Visibility.Collapsed;
@@ -363,6 +381,34 @@ public sealed partial class HomePage : Page
     }
 
     // ------------------------------------------------------------------ Edge / 系统语音
+    /// <summary>语言下拉框和当前语言的音色。</summary>
+    private void FillEdge()
+    {
+        bool init = _init;
+        _init = true;
+        Fill(EdgeLang, Engines.EdgeVoices.Langs(), Engines.EdgeVoices.LangOf(A.Str("edge_voice")), v => v.Name);
+        _init = init;
+        FillEdgeVoices();
+    }
+
+    private void FillEdgeVoices()
+    {
+        bool init = _init;
+        _init = true;
+        var voice = A.Str("edge_voice");
+        Fill(EdgeVoice, Engines.EdgeVoices.Voices(Engines.EdgeVoices.LangOf(voice)), voice, v => v.Name);
+        _init = init;
+    }
+
+    private void EdgeLang_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_init || EdgeLang.SelectedItem is not ComboBoxItem { Tag: string lang } || lang == Engines.EdgeVoices.LangOf(A.Str("edge_voice"))) return;
+        var voices = Engines.EdgeVoices.Voices(lang);
+        if (voices.Count == 0) return;
+        A.Set("edge_voice", voices[0].Id); // 换语言时先用这种语言的第一个音色
+        FillEdgeVoices(); // 只换音色列表：在语言框自己的事件里清空它的 Items 会让 WinUI 崩溃
+    }
+
     private void EdgeVoice_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_init && EdgeVoice.SelectedItem is ComboBoxItem { Tag: string id }) A.Set("edge_voice", id);

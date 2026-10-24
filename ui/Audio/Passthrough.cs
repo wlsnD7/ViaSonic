@@ -101,7 +101,7 @@ public sealed class Passthrough
             if (cable == null) return null;
             var mic = Devices.FindInput(en, w.Mic);
             if (mic == null) return null;
-            micName = mic.FriendlyName;
+            micName = Devices.NameOf(mic);
             if (Devices.IsVirtual(micName)) return null; // 录虚拟麦克风自己会形成回环
             var monitor = w.Monitor != null ? Devices.Find(en, w.Monitor) : null;
             if (monitor?.ID == cable.ID) monitor = null;
@@ -162,7 +162,7 @@ public sealed class Passthrough
             _cap.DataAvailable += (_, e) => _ring.Write(e.Buffer, e.BytesRecorded, wf);
             _cap.RecordingStopped += (_, e) =>
             {
-                if (e.Exception != null) Log.Error(T("无法打开麦克风「{0}」：{1}", mic.FriendlyName, e.Exception.Message));
+                if (e.Exception != null) Log.Error(T("无法打开麦克风「{0}」：{1}", Devices.NameOf(mic), e.Exception.Message));
                 Stop();
             };
             _cap.StartRecording();

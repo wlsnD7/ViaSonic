@@ -46,6 +46,8 @@ public static class ConfigStore
         ["gsv_text_lang"] = "zh",
         ["edge_voice"] = "zh-CN-YunxiNeural",
         ["edge_rate"] = 0,
+        ["kokoro_voice"] = "3",      // 说话人编号，3＝女声 01
+        ["kokoro_speed"] = 1.0,
         ["sapi_voice"] = "",
         ["sapi_rate"] = 0,
         // 联网服务：*_key 和 custom_headers 用 DPAPI 加密保存（Secrets）
@@ -81,6 +83,10 @@ public static class ConfigStore
         ["xunfei_voice"] = "xiaoyan",
         ["xunfei_rate"] = 0,          // -50~50，讯飞的 speed = 50 + 这个值
         ["xunfei_voices"] = new JsonArray(),
+        ["elevenlabs_key"] = "",
+        ["elevenlabs_model"] = "eleven_flash_v2_5",
+        ["elevenlabs_voice"] = "JBFqnCBsd6RMkjVDRZzb", // 官方预置音色 George
+        ["elevenlabs_speed"] = 1.0,
         ["custom_method"] = "GET",
         ["custom_url"] = "",
         ["custom_headers"] = "",

@@ -114,6 +114,8 @@ public partial class App : Application
         _save = new Debouncer(300);
 
         Player = new Player(() => _snapshot);
+        // 设备名第一次读很慢（见 Devices.NameOf），启动时在后台先读一遍，打开音频页时直接用缓存
+        _ = Task.Run(() => { try { Audio.Devices.OutputNames(); Audio.Devices.InputNames(); } catch { } });
         Speaker = new Speaker(() => _snapshot, Player);
         Playlist = new Playlist(this);
         VoiceInput = new Asr.VoiceInput(() => _snapshot, Speaker, Player);
@@ -165,7 +167,7 @@ public partial class App : Application
     private void RefreshState()
     {
         var engines = Speaker.Engines.Select(kv => new EngineState(kv.Key, kv.Value.Label, kv.Value.Ready, kv.Value.Loading,
-            kv.Value.Error, kv.Value.ErrorKind, kv.Value is Engines.OnlineEngine o ? o.Missing(Config) : "")).ToList();
+            kv.Value.Error, kv.Value.ErrorKind, kv.Value.Missing(Config))).ToList();
         State = new AppState(Speaker.Busy, _lastError, _errorSeq, engines);
         StateChanged?.Invoke();
     }

@@ -324,7 +324,11 @@ public sealed class Player
         public void OnDeviceAdded(string pwstrDeviceId) => changed();
         public void OnDeviceRemoved(string deviceId) => changed();
         public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) => changed();
-        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
+        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key)
+        {
+            var name = PropertyKeys.PKEY_Device_FriendlyName;
+            if (key.formatId == name.formatId && key.propertyId == name.propertyId) Devices.Forget(pwstrDeviceId); // 设备改名了
+        }
     }
 
     private void Notify()

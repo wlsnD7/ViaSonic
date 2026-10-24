@@ -18,7 +18,7 @@ public sealed partial class HomePage
 
     private void InitOnline()
     {
-        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey, XunfeiKey, XunfeiSecret, SttAzureKey, SttBailianKey, SttCustomKey, SttXunfeiKey, SttXunfeiSecret })
+        foreach (var box in new[] { AzureKey, FishKey, DoubaoKey, BailianKey, MiniMaxKey, XunfeiKey, ElevenLabsKey, XunfeiSecret, SttAzureKey, SttBailianKey, SttCustomKey, SttXunfeiKey, SttXunfeiSecret })
             box.Password = Secrets.Get(A.Config, (string)box.Tag);
         // 含花括号，写在 XAML 的标记扩展里会被当成绑定语法
         CustomUrlHeader.Tip = T("{text} 会替换成要朗读的文字。");
@@ -42,14 +42,17 @@ public sealed partial class HomePage
 
         MiniMaxModel.Items.Clear();
         foreach (var m in VoicePresets.MiniMaxModels) MiniMaxModel.Items.Add(new ComboBoxItem { Content = m, Tag = m });
-        foreach (var box in new[] { DoubaoModel, BailianRegion, BailianModel, MiniMaxRegion, MiniMaxModel, CustomMethod, SttBailianRegion })
+        ElevenLabsModel.Items.Clear();
+        foreach (var m in VoicePresets.ElevenLabsModels) ElevenLabsModel.Items.Add(new ComboBoxItem { Content = m.Name, Tag = m.Id });
+        foreach (var box in new[] { DoubaoModel, BailianRegion, BailianModel, MiniMaxRegion, MiniMaxModel, ElevenLabsModel, CustomMethod, SttBailianRegion })
             Select(box, A.Str((string)box.Tag));
 
         FillVoices("doubao");
         FillVoices("bailian");
         FillVoices("fish");
         FillVoices("xunfei");
-        FillMiniMax([]);
+        FillListed(MiniMaxVoice, []);
+        FillListed(ElevenLabsVoice, []);
         FillAzure();
         ShowOnlineOptions();
     }
@@ -85,7 +88,7 @@ public sealed partial class HomePage
     /// <summary>引擎就绪（填了 Key）时从接口取音色列表。</summary>
     private async void LoadVoices(string engine, bool refresh = false)
     {
-        if (engine is not ("azure" or "fish" or "minimax") || !A.Speaker.Engines[engine].Ready) return;
+        if (engine is not ("azure" or "fish" or "minimax" or "elevenlabs") || !A.Speaker.Engines[engine].Ready) return;
         var cfg = A.Config.DeepClone().AsObject();
         try
         {
@@ -100,7 +103,10 @@ public sealed partial class HomePage
                     FillVoices("fish");
                     break;
                 case "minimax":
-                    FillMiniMax(await Engine<MiniMax>("minimax").VoicesAsync(cfg, refresh));
+                    FillListed(MiniMaxVoice, await Engine<MiniMax>("minimax").VoicesAsync(cfg, refresh));
+                    break;
+                case "elevenlabs":
+                    FillListed(ElevenLabsVoice, await Engine<ElevenLabs>("elevenlabs").VoicesAsync(cfg, refresh));
                     break;
             }
         }
@@ -185,6 +191,7 @@ public sealed partial class HomePage
     {
         [AzureRate] = AzureRateText, [FishSpeed] = FishSpeedText, [DoubaoRate] = DoubaoRateText,
         [BailianSpeed] = BailianSpeedText, [MiniMaxSpeed] = MiniMaxSpeedText, [XunfeiRate] = XunfeiRateText,
+        [ElevenLabsSpeed] = ElevenLabsSpeedText, [KokoroSpeed] = KokoroSpeedText,
     };
 
     /// <summary>滑块左边的数值：*_rate 是百分比，*_speed 是倍数。</summary>
@@ -348,17 +355,18 @@ public sealed partial class HomePage
         FillVoices(engine);
     }
 
-    // ------------------------------------------------------------------ MiniMax
-    private void FillMiniMax(List<(string Id, string Name)> list)
+    // ------------------------------------------------------------------ MiniMax、ElevenLabs：音色列表从接口取
+    /// <summary>box.Tag 是配置项；还没取到列表（或列表里没有）时，当前音色先按 ID 显示。</summary>
+    private void FillListed(ComboBox box, List<(string Id, string Name)> list)
     {
-        if (DeferIfOpen(MiniMaxVoice, () => FillMiniMax(list))) return;
+        if (DeferIfOpen(box, () => FillListed(box, list))) return;
         bool init = _init;
         _init = true;
-        var cur = A.Str("minimax_voice");
-        MiniMaxVoice.Items.Clear();
-        if (!list.Any(v => v.Id == cur)) MiniMaxVoice.Items.Add(new ComboBoxItem { Content = cur, Tag = cur });
-        foreach (var v in list) MiniMaxVoice.Items.Add(new ComboBoxItem { Content = v.Name, Tag = v.Id });
-        Select(MiniMaxVoice, cur);
+        var cur = A.Str((string)box.Tag);
+        box.Items.Clear();
+        if (!list.Any(v => v.Id == cur)) box.Items.Add(new ComboBoxItem { Content = cur, Tag = cur });
+        foreach (var v in list) box.Items.Add(new ComboBoxItem { Content = v.Name, Tag = v.Id });
+        Select(box, cur);
         _init = init;
     }
 

@@ -10,27 +10,12 @@ namespace ViaSonic.Engines;
 /// <summary>微软 Edge 朗读接口（免费，需联网）。协议参照 rany2/edge-tts。</summary>
 public sealed class EdgeTts : ITtsEngine
 {
-    public static readonly (string Id, string Name)[] Voices =
-    [
-        ("zh-CN-YunxiNeural", "云希（男）"), // 翻译键
-        ("zh-CN-YunjianNeural", "云健（男）"), // 翻译键
-        ("zh-CN-YunyangNeural", "云扬（男）"), // 翻译键
-        ("zh-CN-YunxiaNeural", "云夏（童声）"), // 翻译键
-        ("zh-CN-XiaoxiaoNeural", "晓晓（女）"), // 翻译键
-        ("zh-CN-XiaoyiNeural", "晓伊（女）"), // 翻译键
-        ("zh-CN-liaoning-XiaobeiNeural", "晓北（东北话）"), // 翻译键
-        ("zh-CN-shaanxi-XiaoniNeural", "晓妮（陕西话）"), // 翻译键
-        ("zh-TW-HsiaoChenNeural", "曉臻（中国台湾）"), // 翻译键
-        ("zh-HK-WanLungNeural", "雲龍（粤语）"), // 翻译键
-        ("en-US-GuyNeural", "Guy（英语）"), // 翻译键
-        ("ja-JP-KeitaNeural", "圭太（日语）"), // 翻译键
-    ];
-
     private const string TrustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
     private const string ChromiumFull = "143.0.3650.75";
     private const string ChromiumMajor = "143";
-    // 2026 年 10 月起旧地址 speech.platform.bing.com 拒绝合成（403），Edge 改用这个地址，令牌作为 Ocp-Apim-Subscription-Key 传
-    private const string WssUrl = "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1";
+    // 2026 年 10 月 13 日起 Edge 改用第 2 版 Sec-MS-GEC 令牌（见 EdgeToken），地址又换回 speech.platform.bing.com；
+    // 之前用的 api.msedgeservices.com 现在对握手只回 200，不再升级成 WebSocket
+    private const string WssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1";
     private static double _clockSkew;
 
     public string Key => "edge";
@@ -43,15 +28,8 @@ public sealed class EdgeTts : ITtsEngine
     public string CacheKey(JsonObject c) => $"edge|{c["edge_voice"]}|{c["edge_rate"]}";
     public void Load(JsonObject cfg) { }
 
-    /// <summary>Sec-MS-GEC：Windows 文件时间向下取整到 5 分钟，拼上 token 后 SHA256。</summary>
-    private static string SecMsGec()
-    {
-        double ticks = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0 + _clockSkew + 11644473600;
-        ticks -= ticks % 300;
-        ticks *= 1e7;
-        var hash = SHA256.HashData(Encoding.ASCII.GetBytes($"{ticks:F0}{TrustedClientToken}"));
-        return Convert.ToHexString(hash);
-    }
+    private static string SecMsGec() =>
+        EdgeToken.Make(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0 + _clockSkew, TrustedClientToken);
 
     private static string JsDate() =>
         DateTime.UtcNow.ToString("ddd MMM dd yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)
@@ -103,7 +81,7 @@ public sealed class EdgeTts : ITtsEngine
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
         var ct = timeout.Token;
-        var url = $"{WssUrl}?Ocp-Apim-Subscription-Key={TrustedClientToken}&ConnectionId={Id()}&Sec-MS-GEC={SecMsGec()}&Sec-MS-GEC-Version=1-{ChromiumFull}";
+        var url = $"{WssUrl}?TrustedClientToken={TrustedClientToken}&ConnectionId={Id()}&Sec-MS-GEC={SecMsGec()}&Sec-MS-GEC-Version=2-{ChromiumFull}";
         try
         {
             await ws.ConnectAsync(new Uri(url), ct);

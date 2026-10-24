@@ -24,7 +24,7 @@ The following are not bundled with ViaSonic. Users download and install them sep
 
 - [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)（MIT）：可选的本地语音合成，`gsv_server.py` 运行在用户自己下载的整合包里。Optional local speech synthesis; `gsv_server.py` runs inside the package the user downloads.
 - [RVC](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)（MIT）：可选的 AI 变声，`rvc_server.py` 运行在用户自己下载的整合包里。Optional AI voice conversion; `rvc_server.py` runs inside the package the user downloads.
-- [edge-tts](https://github.com/rany2/edge-tts)：Edge TTS 的通信协议参考了这个项目，没有使用它的代码。The Edge TTS protocol was referenced from this project; none of its code is used.
+- [edge-tts](https://github.com/rany2/edge-tts)：Edge TTS 的通信协议和 Sec-MS-GEC 令牌算法参考了这个项目，按算法重新实现，没有使用它的代码。The Edge TTS protocol and the Sec-MS-GEC token algorithm were referenced from this project and reimplemented; none of its code is used.
 - [SenseVoice](https://github.com/FunAudioLLM/SenseVoice)（[FunASR 模型许可 / FunASR Model License](https://github.com/modelscope/FunASR?tab=readme-ov-file#license)）：语音输入的本地识别模型，用户在软件里点「下载」后从 Hugging Face 下载。Local speech recognition model for voice input, downloaded from Hugging Face when the user clicks Download.
 - [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)：虚拟麦克风驱动，需要用户自行安装。Virtual microphone driver, installed by the user.
 - 安装程序用 [Inno Setup](https://jrsoftware.org/isinfo.php) 制作，简体中文语言文件由 Zhenghan Yang 维护。The installer is built with Inno Setup; the Simplified Chinese language file is maintained by Zhenghan Yang.

@@ -168,8 +168,8 @@ public sealed class VoiceInput : IDisposable
         {
             using var en = new MMDeviceEnumerator();
             var mic = Devices.FindInput(en, w.Mic);
-            if (mic == null || Devices.IsVirtual(mic.FriendlyName)) return null;
-            name = mic.FriendlyName;
+            if (mic == null || Devices.IsVirtual(Devices.NameOf(mic))) return null;
+            name = Devices.NameOf(mic);
             _speech = false;
             var cap = new Capture(mic, this, w.Auto ? new SpeechSplitter() : null);
             if (_lastCapError.Length > 0)
@@ -384,7 +384,7 @@ public sealed class VoiceInput : IDisposable
             };
             _cap.RecordingStopped += (_, e) =>
             {
-                if (e.Exception != null) Log.Error(T("无法打开麦克风「{0}」：{1}", mic.FriendlyName, e.Exception.Message));
+                if (e.Exception != null) Log.Error(T("无法打开麦克风「{0}」：{1}", Devices.NameOf(mic), e.Exception.Message));
                 Stop();
             };
             _cap.StartRecording();

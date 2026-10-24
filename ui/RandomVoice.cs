@@ -86,7 +86,7 @@ public static class RandomVoice
         switch (key)
         {
             case "edge":
-                return EdgeTts.Voices.Select(v => v.Id).Where(id => Fits(id[..2], lang)).ToList();
+                return EdgeVoices.Ids.Where(id => EdgeVoices.LangOf(id) == lang || (lang == "zh" && EdgeVoices.LangOf(id) == "yue")).ToList();
             case "sapi":
                 return Windows.Media.SpeechSynthesis.SpeechSynthesizer.AllVoices
                     .Where(v => Fits(v.Language, lang)).Select(v => v.Id).ToList();
@@ -115,6 +115,13 @@ public static class RandomVoice
             case "xunfei":
                 // 讯飞的音色要在控制台开通：只用正在用的和自己添加的，预置的不一定开通了
                 return Saved("xunfei").Append(c.Str("xunfei_voice")).Where(id => id.Length > 0 && lang == "zh").Distinct().ToList();
+            case "kokoro":
+                // 0~2 是英文音色，其余是中文音色（也能读夹在中文里的英文）
+                return KokoroTts.Voices().Select(v => v.Id)
+                    .Where(id => lang == "zh" ? int.Parse(id) >= 3 : lang == "en" && int.Parse(id) < 3).ToList();
+            case "elevenlabs":
+                // 多语种模型，音色不分语言
+                return (await ((ElevenLabs)eng).VoicesAsync(c)).Select(v => v.Id).ToList();
             case "minimax":
                 var mm = await ((MiniMax)eng).VoicesAsync(c);
                 return mm.Select(v => v.Id).Where(id => Fits(IdLocale(id), lang)).ToList();

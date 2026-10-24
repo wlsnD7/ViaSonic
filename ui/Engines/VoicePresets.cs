@@ -9,11 +9,11 @@ public static class VoicePresets
     /// <summary>讯飞在线语音合成的基础发音人（参数值 vcn）。其他发音人在讯飞控制台添加后，用 ＋ 填进来。</summary>
     public static readonly VoiceItem[] Xunfei =
     [
-        new("xiaoyan", "小燕（女）", "Xiaoyan (female)"), // 音色名
-        new("aisjiuxu", "许久（男）", "Xu Jiu (male)"), // 音色名
-        new("aisxping", "小萍（女）", "Xiaoping (female)"), // 音色名
-        new("aisjinger", "小婧（女）", "Xiaojing (female)"), // 音色名
-        new("aisbabyxu", "许小宝（童声）", "Xu Xiaobao (child)"), // 音色名
+        new("xiaoyan", "小燕", "Xiaoyan"), // 音色名
+        new("aisjiuxu", "许久", "Xu Jiu"), // 音色名
+        new("aisxping", "小萍", "Xiaoping"), // 音色名
+        new("aisjinger", "小婧", "Xiaojing"), // 音色名
+        new("aisbabyxu", "许小宝", "Xu Xiaobao"), // 音色名
     ];
 
     /// <summary>豆包语音合成模型 2.0（seed-tts-2.0）。</summary>
@@ -169,4 +169,7 @@ public static class VoicePresets
 
     public static readonly string[] MiniMaxModels =
         ["speech-2.8-hd", "speech-2.8-turbo", "speech-2.6-hd", "speech-2.6-turbo", "speech-02-hd", "speech-02-turbo"];
+
+    public static readonly (string Id, string Name)[] ElevenLabsModels =
+        [("eleven_flash_v2_5", "Flash v2.5"), ("eleven_multilingual_v2", "Multilingual v2"), ("eleven_v3", "v3")];
 }

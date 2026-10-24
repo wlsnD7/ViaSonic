@@ -161,17 +161,27 @@ public static class AudioEncode
 
 public static class Devices
 {
+    /// <summary>
+    /// 设备 ID → 名称。有的电脑读一次设备名要 0.5~1 秒（装了 Voicemeeter 时 12 个输出读一遍要 6~12 秒），读 ID 几乎不花时间，
+    /// 所以名称按 ID 缓存，每个设备只读一次。系统里给设备改名时，Player 的设备监听会调 Forget。
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> Names = new();
+
+    public static string NameOf(MMDevice d) => Names.GetOrAdd(d.ID, _ => d.FriendlyName);
+
+    public static void Forget(string id) => Names.TryRemove(id, out _);
+
     public static List<string> OutputNames()
     {
         using var en = new MMDeviceEnumerator();
-        return en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).Select(d => d.FriendlyName).ToList();
+        return en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).Select(NameOf).ToList();
     }
 
     /// <summary>录音设备，排除虚拟麦克风的输出端（CABLE Output、Voicemeeter Out B1 等，直通它们会形成回环）。</summary>
     public static List<string> InputNames()
     {
         using var en = new MMDeviceEnumerator();
-        return en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Select(d => d.FriendlyName).Where(n => !IsVirtual(n)).ToList();
+        return en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).Select(NameOf).Where(n => !IsVirtual(n)).ToList();
     }
 
     /// <summary>VB-Audio 的虚拟设备：VB-Cable（CABLE Input / Output）和 Voicemeeter（Voicemeeter Input / Out B1 等）。</summary>
@@ -187,8 +197,8 @@ public static class Devices
             return en.HasDefaultAudioEndpoint(DataFlow.Capture, Role.Console)
                 ? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console) : null;
         var all = en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
-        return all.FirstOrDefault(d => d.FriendlyName == name)
-               ?? all.FirstOrDefault(d => d.FriendlyName.StartsWith(name) || name.StartsWith(d.FriendlyName));
+        return all.FirstOrDefault(d => NameOf(d) == name)
+               ?? all.FirstOrDefault(d => NameOf(d).StartsWith(name) || name.StartsWith(NameOf(d)));
     }
 
     public static string VirtualCable() => PickVirtual(OutputNames());
@@ -214,7 +224,7 @@ public static class Devices
             return en.HasDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia)
                 ? en.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia) : null;
         var all = en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
-        return all.FirstOrDefault(d => d.FriendlyName == name)
-               ?? all.FirstOrDefault(d => d.FriendlyName.StartsWith(name) || name.StartsWith(d.FriendlyName));
+        return all.FirstOrDefault(d => NameOf(d) == name)
+               ?? all.FirstOrDefault(d => NameOf(d).StartsWith(name) || name.StartsWith(NameOf(d)));
     }
 }
