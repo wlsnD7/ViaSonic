@@ -94,6 +94,8 @@ public static partial class Lang
         ["在输入框右侧显示发送按钮。"] = "Shows a send button on the right of the input box.",
         ["最大行数"] = "Max lines",
         ["文字较多时输入框向上展开，超过这个行数后出现滚动条。"] = "The input box grows upward as you type; past this many lines it scrolls.",
+        ["聚焦时禁止输入"] = "Block input on focus",
+        ["呼出输入框后约 1 秒内暂时禁止输入，等焦点稳定后再允许。"] = "Input is blocked for about 1 second after the box opens, until focus settles.",
         ["归还焦点"] = "Restore focus",
         ["发送语音后，以及输入框收起时，自动切回呼出前的窗口。"] = "After sending, and when the input box hides, switch back to the window you were in.",
         ["不透明度"] = "Opacity",
@@ -413,7 +415,7 @@ public static partial class Lang
         ["耳机里听到自己的声音"] = "I hear myself in my headphones",
         ["「音频」页监听里的「麦克风」会把你的声音放进耳机，不需要时关掉。"] = "Microphone under Monitor on the Audio page plays your voice in your headphones. Turn it off if you don't need it.",
         ["• 使用联网语音引擎（Edge TTS、Azure、Fish Audio、豆包、阿里云百炼、MiniMax、讯飞、ElevenLabs、自定义接口）时，你输入的文字会发送到对应服务商的服务器，收费服务按各家的价格计费。语音输入用在线识别（Azure、阿里云百炼、讯飞、自定义接口）时，录下的声音会发送到对应服务商。"] = "• When you use an online voice engine (Edge TTS, Azure, Fish Audio, Doubao, Alibaba Bailian, MiniMax, iFLYTEK, ElevenLabs, custom API), the text you type is sent to that provider's servers. Paid services charge at their own prices. When voice input uses online recognition (Azure, Alibaba Cloud Bailian, iFLYTEK, Custom API), your recorded voice is sent to that provider.",
-        ["• ViaSonic 不收集、不上传任何数据，API Key 只加密保存在本机。启动时会访问 GitHub 和 Gitee 检查新版本。"] = "• ViaSonic doesn't collect or upload any data. API keys are stored encrypted on this computer only. It checks GitHub and Gitee for new versions at startup.",
+        ["• ViaSonic 不收集、不上传任何数据，API Key 只加密保存在本机。启动时会访问 GitHub 检查新版本。"] = "• ViaSonic doesn't collect or upload any data. API keys are stored encrypted on this computer only. It checks GitHub for new versions at startup.",
         ["• ViaSonic 会监听全局快捷键，还会模拟按下按键说话的键。个别游戏的反作弊系统可能会因此有反应，请自行判断，因此造成的封号等后果由使用者承担。"] = "• ViaSonic listens for global hotkeys and simulates pressing your push-to-talk key. Some anti-cheat systems may react to this; use your own judgment. You are responsible for any consequences, such as bans.",
         ["• 使用 GPT-SoVITS 或 RVC 模型时，不要用来冒充他人、诈骗或骚扰，由此产生的责任由使用者承担。模型的版权归原作者。"] = "• Don't use GPT-SoVITS or RVC models to impersonate others, scam or harass anyone; you are responsible for any consequences. Models are copyrighted by their creators.",
         // 播放列表

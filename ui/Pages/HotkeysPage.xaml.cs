@@ -39,6 +39,7 @@ public sealed partial class HotkeysPage : Page
         MaxLines.Value = o["max_lines"] is { } ml ? Json.ToDouble(ml) : 5;
         HideAfter.IsOn = o.Bool("hide_after_send", true);
         RestoreFocus.IsOn = o.Bool("restore_focus", true);
+        AwaitFocus.IsOn = o.Bool("await_focus", true);
         OpacitySlider.Value = Math.Round((o["opacity"] is { } op ? Json.ToDouble(op) : 0.75) * 100);
         OpacityText.Text = $"{OpacitySlider.Value:0}%";
         WidthSlider.Value = Math.Round(o.Num("width_ratio") * 100);

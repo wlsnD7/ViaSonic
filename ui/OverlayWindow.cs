@@ -278,7 +278,7 @@ public sealed partial class OverlayWindow : Window
         _box.SelectionStart = _box.Text.Length;
         _site = ContentInputSite();
         Ime.OpenNative(_site);
-        BeginAwaitFocus();
+        if (A.Sub("overlay").Bool("await_focus", true)) BeginAwaitFocus();
     }
 
     /// <summary>输入框的设置改了：显示着的话立即按新设置摆放。</summary>

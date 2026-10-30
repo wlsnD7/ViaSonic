@@ -124,6 +124,14 @@
                         <ToggleSwitch x:Name="RestoreFocus" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="restore_focus" />
                     </tk:SettingsCard>
                     <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource Row}">
+                        <tk:SettingsCard.Header>
+                            <c:InfoHeader Text="{l:T Text='聚焦时禁止输入'}" Tip="{l:T Text='呼出输入框后约 1 秒内暂时禁止输入，等焦点稳定后再允许。'}" />
+                        </tk:SettingsCard.Header>
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE72E;" /></tk:SettingsCard.HeaderIcon>
+                        <ToggleSwitch x:Name="AwaitFocus" OnContent="{l:T Text='开'}" OffContent="{l:T Text='关'}" Toggled="Overlay_Toggled" Tag="await_focus" />
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
                     <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='不透明度'}">
                         <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
                         <StackPanel Orientation="Horizontal" Spacing="12">
