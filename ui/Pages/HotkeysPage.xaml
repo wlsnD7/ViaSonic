@@ -24,6 +24,81 @@
                 </StackPanel>
             </Border>
 
+            <TextBlock Text="{l:T Text='外观'}" Style="{StaticResource SectionHeader}" />
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='主题'}">
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE706;" /></tk:SettingsCard.HeaderIcon>
+                        <ComboBox x:Name="ThemeBox" MinWidth="160" SelectionChanged="Appearance_Changed" Tag="theme">
+                            <ComboBoxItem Content="{l:T Text='跟随系统'}" Tag="system" />
+                            <ComboBoxItem Content="{l:T Text='浅色'}" Tag="light" />
+                            <ComboBoxItem Content="{l:T Text='深色'}" Tag="dark" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <Rectangle Style="{StaticResource Divider}" />
+                    <tk:SettingsCard Style="{StaticResource Row}" Header="{l:T Text='背景'}">
+                        <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE771;" /></tk:SettingsCard.HeaderIcon>
+                        <ComboBox x:Name="BackdropBox" MinWidth="160" SelectionChanged="Appearance_Changed" Tag="backdrop">
+                            <ComboBoxItem Content="{l:T Text='云母'}" Tag="mica" />
+                            <ComboBoxItem Content="{l:T Text='亚克力'}" Tag="acrylic" />
+                            <ComboBoxItem Content="{l:T Text='纯色'}" Tag="solid" />
+                            <ComboBoxItem Content="{l:T Text='渐变'}" Tag="gradient" />
+                            <ComboBoxItem Content="{l:T Text='图片'}" Tag="image" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                    <StackPanel x:Name="ColorRows" Visibility="Collapsed">
+                        <tk:SettingsCard x:Name="ColorRow" Style="{StaticResource SubRow}" Header="{l:T Text='颜色'}">
+                            <Button x:Name="ColorButton" Tag="color" Padding="4" MinWidth="160" HorizontalContentAlignment="Stretch">
+                                <Border x:Name="ColorSwatch" Height="24" CornerRadius="2" />
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker x:Name="ColorPick" IsAlphaEnabled="False" IsMoreButtonVisible="True" ColorChanged="ColorPick_Changed" />
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </tk:SettingsCard>
+                        <tk:SettingsCard x:Name="Color2Row" Style="{StaticResource SubRow}" Header="{l:T Text='结束颜色'}">
+                            <Button x:Name="Color2Button" Tag="color2" Padding="4" MinWidth="160" HorizontalContentAlignment="Stretch">
+                                <Border x:Name="Color2Swatch" Height="24" CornerRadius="2" />
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker x:Name="Color2Pick" IsAlphaEnabled="False" IsMoreButtonVisible="True" ColorChanged="ColorPick_Changed" />
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </tk:SettingsCard>
+                        <tk:SettingsCard x:Name="DirectionRow" Style="{StaticResource SubRow}" Header="{l:T Text='方向'}">
+                            <ComboBox x:Name="DirectionBox" MinWidth="160" SelectionChanged="Appearance_Changed" Tag="direction">
+                                <ComboBoxItem Content="{l:T Text='从上到下'}" Tag="vertical" />
+                                <ComboBoxItem Content="{l:T Text='从左到右'}" Tag="horizontal" />
+                                <ComboBoxItem Content="{l:T Text='从左上到右下'}" Tag="diagonal" />
+                            </ComboBox>
+                        </tk:SettingsCard>
+                    </StackPanel>
+                    <StackPanel x:Name="ImageRows" Visibility="Collapsed">
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='图片'}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock x:Name="ImageName" Style="{StaticResource HintText}" VerticalAlignment="Center" MaxWidth="240" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                <Button Content="{l:T Text='选择'}" Click="ChooseImage_Click" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='显示方式'}">
+                            <ComboBox x:Name="FitBox" MinWidth="160" SelectionChanged="Appearance_Changed" Tag="fit">
+                                <ComboBoxItem Content="{l:T Text='填满'}" Tag="fill" />
+                                <ComboBoxItem Content="{l:T Text='完整显示'}" Tag="fit" />
+                                <ComboBoxItem Content="{l:T Text='拉伸'}" Tag="stretch" />
+                            </ComboBox>
+                        </tk:SettingsCard>
+                        <tk:SettingsCard Style="{StaticResource SubRow}" Header="{l:T Text='遮罩'}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock x:Name="DimText" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                                <Slider x:Name="DimSlider" Width="220" Minimum="0" Maximum="90" StepFrequency="5" ValueChanged="Dim_Changed" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <InfoBar x:Name="ErrBar" Severity="Warning" IsClosable="False" IsOpen="False" Title="{l:T Text='快捷键冲突'}" />
 
             <TextBlock Text="{l:T Text='快捷键'}" Style="{StaticResource SectionHeader}" />

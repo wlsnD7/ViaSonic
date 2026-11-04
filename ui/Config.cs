@@ -152,6 +152,13 @@ public static class ConfigStore
         ["playlist_crossfade"] = 0,          // 交叉过渡秒数，0＝关
         ["welcome_shown"] = false,
         ["language"] = "",
+        // 主窗口外观：theme system/light/dark；backdrop mica/acrylic/solid/gradient/image；
+        // direction vertical/horizontal/diagonal；image 是复制到数据文件夹里的文件名；fit fill/fit/stretch；dim 0~0.9
+        ["appearance"] = new JsonObject
+        {
+            ["theme"] = "system", ["backdrop"] = "mica", ["color"] = "#2B5797", ["color2"] = "#1E7145", ["direction"] = "vertical",
+            ["image"] = "", ["fit"] = "fill", ["dim"] = 0.4,
+        },
     };
 
     public static JsonObject Load()

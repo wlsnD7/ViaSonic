@@ -428,6 +428,7 @@ public sealed partial class PhrasesPage : Page
                 CloseButtonText = T("取消"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot,
+                RequestedTheme = A.Main.Theme,
             };
             if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
             A.Player.StopSound(id);

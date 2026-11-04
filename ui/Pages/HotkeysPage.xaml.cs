@@ -1,7 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.Storage.Pickers;
 
 namespace ViaSonic.Pages;
 
@@ -49,6 +51,7 @@ public sealed partial class HotkeysPage : Page
         A.HotkeyErrorsChanged += ShowErrors;
         if (A.Overlay != null) A.Overlay.Moved += OnOverlayMoved;
         LangBox.SelectedItem = LangBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == Lang.Current);
+        LoadAppearance();
         _init = false;
     }
 
@@ -162,4 +165,98 @@ public sealed partial class HotkeysPage : Page
     }
 
     private void Preview_Click(object sender, RoutedEventArgs e) => A.Overlay?.Show(IntPtr.Zero);
+
+    // ------------------------------------------------------------------ 外观
+    private readonly Debouncer _colorSave = new(100);
+
+    private void LoadAppearance()
+    {
+        var a = A.Sub("appearance");
+        foreach (var box in new[] { ThemeBox, BackdropBox, DirectionBox, FitBox })
+            box.SelectedItem = box.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == a.Str((string)box.Tag)) ?? box.Items[0];
+        ColorPick.Color = MainWindow.ParseColor(a.Str("color"));
+        Color2Pick.Color = MainWindow.ParseColor(a.Str("color2"));
+        ColorSwatch.Background = new SolidColorBrush(ColorPick.Color);
+        Color2Swatch.Background = new SolidColorBrush(Color2Pick.Color);
+        ImageName.Text = ImageLabel(a.Str("image"));
+        DimSlider.Value = Math.Round(a.Num("dim") * 100);
+        DimText.Text = $"{DimSlider.Value:0}%";
+        ShowAppearanceRows();
+    }
+
+    /// <summary>纯色只显示颜色；渐变显示起止颜色和方向；图片显示图片相关的几行。</summary>
+    private void ShowAppearanceRows()
+    {
+        var kind = (BackdropBox.SelectedItem as ComboBoxItem)?.Tag as string;
+        bool gradient = kind == "gradient";
+        ColorRows.Visibility = kind is "solid" or "gradient" ? Visibility.Visible : Visibility.Collapsed;
+        ColorRow.Header = T(gradient ? "起始颜色" : "颜色");
+        Color2Row.Visibility = DirectionRow.Visibility = gradient ? Visibility.Visible : Visibility.Collapsed;
+        ImageRows.Visibility = kind == "image" ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void Appearance_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_init || sender is not ComboBox { SelectedItem: ComboBoxItem { Tag: string v } } box) return;
+        A.Sub("appearance")[(string)box.Tag] = v;
+        A.Commit("appearance");
+        ShowAppearanceRows();
+    }
+
+    private void ColorPick_Changed(ColorPicker sender, ColorChangedEventArgs args)
+    {
+        if (ColorSwatch == null || Color2Swatch == null) return;
+        bool first = sender == ColorPick;
+        (first ? ColorSwatch : Color2Swatch).Background = new SolidColorBrush(args.NewColor);
+        if (_init) return;
+        _colorSave.Run(() =>
+        {
+            var a = A.Sub("appearance");
+            a["color"] = MainWindow.FormatColor(ColorPick.Color);
+            a["color2"] = MainWindow.FormatColor(Color2Pick.Color);
+            A.Commit("appearance");
+        });
+    }
+
+    private void Dim_Changed(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (DimText == null) return;
+        DimText.Text = $"{e.NewValue:0}%";
+        if (_init) return;
+        _colorSave.Run(() =>
+        {
+            A.Sub("appearance")["dim"] = Math.Round(DimSlider.Value / 100.0, 2);
+            A.Commit("appearance");
+        });
+    }
+
+    /// <summary>选好的图片复制到数据文件夹（每次换个文件名，旧的删掉），原文件挪了删了都不影响。</summary>
+    private async void ChooseImage_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.PicturesLibrary };
+        foreach (var t in new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" }) picker.FileTypeFilter.Add(t);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, A.Main.Hwnd);
+        var file = await picker.PickSingleFileAsync();
+        if (file == null) return;
+        var name = $"background_{DateTime.Now:yyyyMMddHHmmss}_{file.Name}";
+        try
+        {
+            Directory.CreateDirectory(AppPaths.DataDir);
+            File.Copy(file.Path, Path.Combine(AppPaths.DataDir, name), true);
+        }
+        catch (Exception ex)
+        {
+            A.Main.ShowError(T("无法打开图片：{0}", ex.Message));
+            return;
+        }
+        foreach (var old in Directory.EnumerateFiles(AppPaths.DataDir, "background_*"))
+            if (Path.GetFileName(old) != name) try { File.Delete(old); } catch { }
+        A.Sub("appearance")["image"] = name;
+        A.Commit("appearance");
+        ImageName.Text = file.Name;
+    }
+
+    /// <summary>background_时间_原文件名 → 原文件名。</summary>
+    private static string ImageLabel(string name) =>
+        name.Split('_', 3) is [_, _, var orig] ? orig : name;
 }

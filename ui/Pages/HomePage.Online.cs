@@ -305,6 +305,7 @@ public sealed partial class HomePage
             CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
+            RequestedTheme = A.Main.Theme,
         };
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
         var id = VoiceId(input.Text);

@@ -299,6 +299,7 @@ public sealed partial class HomePage : Page
             CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
+            RequestedTheme = A.Main.Theme,
         };
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
         Models.Remove(cur);
@@ -445,5 +446,5 @@ public sealed partial class HomePage : Page
 
     private void Speak_Click(object sender, RoutedEventArgs e) => A.Speaker.Speak(TestBox.Text);
     private void Stop_Click(object sender, RoutedEventArgs e) => A.Speaker.Stop();
-    private void Overlay_Click(object sender, RoutedEventArgs e) => A.Overlay?.Show(IntPtr.Zero);
+    private void Overlay_Click(object sender, RoutedEventArgs e) => A.Overlay?.Toggle(IntPtr.Zero);
 }

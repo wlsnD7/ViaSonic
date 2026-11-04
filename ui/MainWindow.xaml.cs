@@ -30,6 +30,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(TitleBar);
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "ViaSonic.ico"));
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+        ApplyAppearance();
 
         double scale = Native.GetDpiForWindow(Hwnd) / 96.0;
         AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1040 * scale), (int)(760 * scale)));

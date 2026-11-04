@@ -9,11 +9,17 @@
         <MicaBackdrop Kind="BaseAlt" />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid x:Name="Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <!-- 图片背景：底色、图片、和主题同色的遮罩 -->
+        <Grid x:Name="BgLayer" Grid.RowSpan="2" Visibility="Collapsed" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+            <Image x:Name="BgImage" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Rectangle x:Name="BgDim" Fill="{ThemeResource SolidBackgroundFillColorBaseBrush}" />
+        </Grid>
 
         <!-- 自定义标题栏 -->
         <Grid x:Name="TitleBar" Grid.Row="0" Padding="16,0,0,0">

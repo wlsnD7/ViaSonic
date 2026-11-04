@@ -267,6 +267,7 @@ public sealed partial class VoicePage : Page
                 CloseButtonText = T("取消"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = XamlRoot,
+                RequestedTheme = A.Main.Theme,
             };
             var choice = await dlg.ShowAsync();
             if (choice == ContentDialogResult.None)
@@ -307,6 +308,7 @@ public sealed partial class VoicePage : Page
             CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
+            RequestedTheme = A.Main.Theme,
         };
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return null;
         var name = box.Text.Trim();
@@ -343,6 +345,7 @@ public sealed partial class VoicePage : Page
             CloseButtonText = T("取消"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
+            RequestedTheme = A.Main.Theme,
         };
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
         Presets.Remove(p);

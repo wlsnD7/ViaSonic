@@ -227,6 +227,9 @@ public partial class App : Application
             case "overlay":
                 Overlay?.OnConfig();
                 break;
+            case "appearance":
+                Main.ApplyAppearance();
+                break;
             case "phone_enabled" or "phone_port" or "phone_token":
                 Phone?.OnConfig();
                 break;

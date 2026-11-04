@@ -20,6 +20,7 @@ public sealed class WelcomeDialog : ContentDialog
     public WelcomeDialog(XamlRoot root)
     {
         XamlRoot = root;
+        RequestedTheme = App.Current.Main.Theme;
         Resources["ContentDialogMaxWidth"] = 640.0; // 默认 548 放不下卡片，右边会被截掉
         Title = T("欢迎使用 ViaSonic");
         PrimaryButtonText = T("开始使用");
