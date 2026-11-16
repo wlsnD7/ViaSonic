@@ -252,23 +252,45 @@ public sealed class Speaker : IDisposable
                 job.Done?.Invoke(true); // 被新的一句打断
                 continue;
             }
-            var cfg = C.DeepClone().AsObject(); // 合成期间界面改配置不影响这一句
-            var eng = Current;
-            if (job.Random && await RandomVoice.PickAsync(cfg, job.Text, Engines) is { } pick)
-            {
-                eng = pick.Engine;
-                cfg = pick.Cfg;
-            }
-            var key = eng.CacheKey(cfg) + "|" + job.Text;
-            Clip? clip;
-            lock (_cache) _cache.TryGetValue(key, out clip);
-            // 随机音色的那句也原样重播（不然每次重复都换一个音色）
-            if (clip == null && job.Repeat && _last is { } last && last.Text == job.Text && (last.Random || last.Key == key)) clip = last.Clip;
             bool show = job.Play || job.Export != null; // 状态栏显示等待 / 合成中
+            ITtsEngine eng;
+            JsonObject cfg;
+            string key;
+            Clip? clip;
+            bool stopped = false;
+            while (true)
+            {
+                cfg = C.DeepClone().AsObject(); // 合成期间界面改配置不影响这一句
+                eng = Current;
+                if (job.Random && await RandomVoice.PickAsync(cfg, job.Text, Engines) is { } pick)
+                {
+                    eng = pick.Engine;
+                    cfg = pick.Cfg;
+                }
+                key = eng.CacheKey(cfg) + "|" + job.Text;
+                lock (_cache) _cache.TryGetValue(key, out clip);
+                // 随机音色的那句也原样重播（不然每次重复都换一个音色）
+                if (clip == null && job.Repeat && _last is { } last && last.Text == job.Text && (last.Random || last.Key == key)) clip = last.Clip;
+                if (clip != null || eng.Ready || !eng.Loading) break;
+                // 等引擎加载（GPT-SoVITS 要几十秒）：期间按了停止 / 被新句子打断就放弃；切到别的引擎就改用新引擎读
+                if (show) SetBusy("等待加载"); // 翻译键
+                bool switched = false;
+                while (!eng.Ready && eng.Loading)
+                {
+                    await Task.Delay(200);
+                    if (job.Gen >= 0 && job.Gen != _gen) { stopped = true; break; }
+                    if (!job.Random && Current != eng) { switched = true; break; }
+                }
+                if (!switched) break;
+            }
+            if (stopped)
+            {
+                if (show && !_player.Playing) SetBusy("");
+                job.Done?.Invoke(true);
+                continue;
+            }
             if (clip == null)
             {
-                if (!eng.Ready && eng.Loading && show) SetBusy("等待加载"); // 翻译键
-                while (!eng.Ready && eng.Loading) await Task.Delay(200);
                 if (!eng.Ready)
                 {
                     var why = eng.Error.Length > 0 ? eng.Error : T("{0} 未就绪", eng.Label);
