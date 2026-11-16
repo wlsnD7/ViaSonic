@@ -82,6 +82,7 @@ public sealed partial class HotkeyManager : IDisposable
             else if (msg.message == Native.WM_APP)
             {
                 while (_ops.TryDequeue(out var op)) op.Done.TrySetResult(Apply(op.Bindings));
+                UpdateHook();
             }
         }
         foreach (var id in _ids.Keys) Native.UnregisterHotKey(IntPtr.Zero, id);
@@ -92,6 +93,17 @@ public sealed partial class HotkeyManager : IDisposable
     private void Fire(string name)
     {
         try { _onHotkey(name); } catch { }
+    }
+
+    /// <summary>
+    /// 输入框「聚焦时禁止输入」期间拦下打字的键：只读挡不住输入法，按键会先被输入法拼写，放开后照样上屏。
+    /// 带 Ctrl/Alt/Win 的组合键照常放行（快捷键还能收起输入框）。只在拦截期间装钩子。
+    /// </summary>
+    public void BlockTyping(bool on)
+    {
+        if (_block == on) return;
+        _block = on;
+        Native.PostThreadMessage(_threadId, Native.WM_APP, IntPtr.Zero, IntPtr.Zero);
     }
 
     public void Dispose()
@@ -125,17 +137,19 @@ public sealed partial class HotkeyManager : IDisposable
 
     private readonly LowLevelKeyboardProc _hookProc; // 必须持有引用，否则会被 GC 回收
     private IntPtr _hook;
+    private volatile bool _block;
     private string? _candidate; // 当前按住、还没被其他键打断的修饰键
     private uint _candidateTime;
 
     private void UpdateHook()
     {
-        if (_taps.Count > 0 && _hook == IntPtr.Zero)
+        bool need = _taps.Count > 0 || _block;
+        if (need && _hook == IntPtr.Zero)
         {
             _hook = SetWindowsHookEx(WH_KEYBOARD_LL, _hookProc, GetModuleHandle(null), 0);
             if (_hook == IntPtr.Zero) Log.Error(T("安装键盘钩子失败（{0}），单独修饰键的快捷键不可用", Marshal.GetLastWin32Error()));
         }
-        else if (_taps.Count == 0 && _hook != IntPtr.Zero)
+        else if (!need && _hook != IntPtr.Zero)
         {
             UnhookWindowsHookEx(_hook);
             _hook = IntPtr.Zero;
@@ -163,6 +177,8 @@ public sealed partial class HotkeyManager : IDisposable
                 var mod = ModifierOf(k.vkCode);
                 if (down)
                 {
+                    if (mod == null && _block && !Native.IsDown(0x11) && !Native.IsDown(0x12) && !Native.IsDown(0x5B) && !Native.IsDown(0x5C))
+                        return 1;                                    // 禁止输入期间：吞掉，不交给输入法
                     if (mod == null) _candidate = null;              // 按了别的键：这是组合键
                     else if (_candidate == null) { _candidate = mod; _candidateTime = k.time; }
                     else if (_candidate != mod) _candidate = null;   // 同时按了两个修饰键

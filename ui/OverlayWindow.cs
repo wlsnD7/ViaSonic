@@ -387,6 +387,7 @@ public sealed partial class OverlayWindow : Window
         if (!_visible) return;
         _awaiting = false;
         _awaitTimer?.Stop();
+        A.BlockTyping(false);
         StopLinger();
         _box.Text = "";
         _visible = false;
@@ -399,11 +400,12 @@ public sealed partial class OverlayWindow : Window
     /// <summary>
     /// 从游戏呼出后约 0.6~1 秒，游戏线程响应激活通知较慢，系统会把键盘焦点挪到外层窗口一次
     /// （WinUI 仍以为文本框有焦点，但按键不再经过它：光标消失、拼音变英文字母）。
-    /// 在那之前先禁止输入（只读、变暗），焦点被挪走并抢回后再允许输入；1.2 秒内没发生就直接放开。
+    /// 开了「聚焦时禁止输入」：弹出后固定 1.2 秒禁止输入（只读、变暗、拦下打字的键），到时把焦点抢回输入框再放开。
     /// </summary>
     private void BeginAwaitFocus()
     {
         _awaiting = true;
+        A.BlockTyping(true);
         _box.IsReadOnly = true;
         _box.Opacity = 0.45;
         _awaitTimer?.Stop();
@@ -419,11 +421,17 @@ public sealed partial class OverlayWindow : Window
         if (!_awaiting || !_visible) return;
         _awaiting = false;
         _awaitTimer?.Stop();
+        A.BlockTyping(false);
         if (_lingering) return;
         _box.IsReadOnly = false;
         _box.Opacity = 1;
+        // 抢回焦点：窗口拉到前台，键盘焦点交给 WinUI 内容子窗口，再聚焦文本框、打开输入法
+        Native.ForceForeground(_hwnd);
+        _site = ContentInputSite();
+        if (_site != IntPtr.Zero) Native.SetFocus(_site);
         _box.Focus(FocusState.Programmatic);
         _box.SelectionStart = _box.Text.Length;
+        Ime.OpenNative(_site);
     }
 
     /// <summary>
@@ -440,7 +448,6 @@ public sealed partial class OverlayWindow : Window
             if (msg == 0x0007 /* WM_SETFOCUS */ && _visible && _site != IntPtr.Zero && Native.GetFocus() == _hwnd)
             {
                 Native.SetFocus(_site);
-                if (_awaiting) A.Post(EndAwaitFocus);
             }
             return r;
         };

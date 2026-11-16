@@ -6,6 +6,9 @@ public partial class App
     public Dictionary<string, HotkeyError> HotkeyErrors { get; private set; } = [];
     public event Action? HotkeyErrorsChanged;
     private HotkeyManager? _hotkeys;
+
+    /// <summary>输入框等焦点期间拦下打字的键，见 HotkeyManager.BlockTyping。</summary>
+    public void BlockTyping(bool on) => _hotkeys?.BlockTyping(on);
     private int _suspend;
 
     public static readonly Dictionary<string, string> HotkeyLabels = new()
